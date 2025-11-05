@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phaser Game</title>
+    <style>
+      body {
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Phaser -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+
+    <!-- Сначала сцены -->
+    <script src="./js/scenes/PreloadScene.js"></script>
+    <script src="./js/scenes/GameScene.js"></script>
+    <script src="./js/scenes/UIScene.js"></script>
+
+    <!-- Затем конфиг -->
+    <script src="./js/config.js"></script>
+
+    <!-- В самом конце — запуск игры -->
+    <script src="./js/main.js"></script>
+  </body>
+</html>
