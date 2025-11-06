@@ -14,6 +14,34 @@ class GameScene extends Phaser.Scene {
     this.healthText.setText(`HP: ${this.humanHealth}%`);
   }
 
+  startWave() {
+    this.ticksSpawned = 0;
+    this.waveText.setText(`Wave ${this.wave}`);
+
+    this.tickSpawner = this.time.addEvent({
+      delay: this.spawnInterval,
+      loop: true,
+      callback: () => {
+        if (this.ticksSpawned >= this.ticksToSpawn) {
+          this.tickSpawner.remove();
+
+          // Пауза между волнами
+          this.time.delayedCall(2000, () => {
+            this.wave++;
+            this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
+            this.spawnInterval = Math.max(600, this.spawnInterval - 150);
+            this.startWave();
+          });
+
+          return;
+        }
+
+        this.spawnTick();
+        this.ticksSpawned++;
+      },
+    });
+  }
+
   create() {
     this.add.image(400, 300, "sky");
     this.add.image(400, 300, "background");
@@ -68,21 +96,6 @@ class GameScene extends Phaser.Scene {
       },
     });
 
-    // Таймер пауз
-    // this.time.addEvent({
-    //   delay: 6000,
-    //   loop: true,
-    //   callback: () => {
-    //     this.humanPaused = true;
-    //     this.human.setVelocityX(0);
-
-    //     this.time.delayedCall(4000, () => {
-    //       this.humanPaused = false;
-    //       this.human.setVelocityX(this.humanSpeed * this.humanDirection);
-    //     });
-    //   },
-    // });
-
     //Цикл пауз
     this.time.addEvent({
       delay: 6000,
@@ -115,10 +128,6 @@ class GameScene extends Phaser.Scene {
     this.add.rectangle(40, 550, 5, 100, 0xff0000).setOrigin(0.5);
     this.add.rectangle(760, 550, 5, 100, 0xff0000).setOrigin(0.5);
 
-    // Группа клещей
-    // this.ticks = this.physics.add.group({
-    //   allowGravity: false,
-    // });
     this.ticks = this.add.group();
 
     // Появление клещей каждые 1–2 секунды
@@ -129,6 +138,23 @@ class GameScene extends Phaser.Scene {
         this.spawnTick();
       },
     });
+
+    // Настройки волн
+    this.wave = 1;
+    this.ticksToSpawn = 5; // сколько клещей в волне
+    this.ticksSpawned = 0;
+    this.spawnInterval = 1500; // ms между клещами в начале
+
+    // Текст волны
+    this.waveText = this.add
+      .text(400, 20, "Wave 1", {
+        fontSize: "24px",
+        fill: "#ffffff",
+      })
+      .setOrigin(0.5);
+
+    // Старт первой волны
+    this.startWave();
   }
 
   update() {
@@ -229,61 +255,6 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  //   update() {
-  //     // Движение по горизонтали
-  //     if (this.cursors.left.isDown) {
-  //       this.dog.setVelocityX(-200);
-  //       this.dog.flipX = false; // поворот влево
-  //     } else if (this.cursors.right.isDown) {
-  //       this.dog.setVelocityX(200);
-  //       this.dog.flipX = true; // вправо
-  //     } else {
-  //       this.dog.setVelocityX(0);
-  //     }
-
-  //     // Прыжок (только если сейчас не прыгаем)
-  //     if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
-  //       this.isJumping = true;
-  //       this.tweens.add({
-  //         targets: this.dog,
-  //         y: this.dog.y - 120, // высота прыжка
-  //         duration: 250,
-  //         yoyo: true,
-  //         ease: "Power2",
-  //         onComplete: () => {
-  //           this.isJumping = false;
-  //         },
-  //       });
-  //     }
-
-  //     // Границы экрана
-  //     const leftBound = 40;
-  //     const rightBound = 760;
-
-  //     // Если достиг правой границы — идём влево
-  //     if (this.human.x >= rightBound) {
-  //       this.humanDirection = -1;
-  //       this.human.flipX = true;
-  //     }
-
-  //     // Если достиг левой — идём вправо
-  //     if (this.human.x <= leftBound) {
-  //       this.humanDirection = 1;
-  //       this.human.flipX = false;
-  //     }
-
-  //     // Движение только если не пауза
-  //     if (!this.humanPaused) {
-  //       this.human.setVelocityX(this.humanSpeed * this.humanDirection);
-  //     } else {
-  //       this.human.setVelocityX(0);
-  //     }
-
-  //     // Рот следует за собакой
-  //     this.mouth.x = this.dog.x + (this.dog.flipX ? -16 : 16);
-  //     this.mouth.y = this.dog.y;
-  //   }
-
   spawnTick() {
     const startX = Phaser.Math.Between(50, 750);
     const startY = 600;
@@ -340,56 +311,5 @@ class GameScene extends Phaser.Scene {
     // Добавим в группу, если ты её используешь для коллизий
     if (this.ticks) this.ticks.add(tick);
   }
-
-  //   spawnTick() {
-  //     const startX = Phaser.Math.Between(50, 750);
-  //     const startY = 600; // ниже экрана
-
-  //     const midY = 300; // центр экрана по вертикали
-
-  //     const endX = startX + Phaser.Math.Between(-200, 200); // отклонение в сторону
-  //     const endY = 600; // вернуться вниз
-
-  //     const tick = this.add.sprite(startX, startY, "tick").setScale(0.8);
-
-  //     // Эллиптическая траектория через quadratic bezier
-  //     this.tweens.add({
-  //       targets: tick,
-
-  //       // Квадратичная кривая → дуга
-  //       x: {
-  //         getStart: () => startX,
-  //         getEnd: () => endX,
-  //       },
-  //       y: {
-  //         getStart: () => startY,
-  //         getEnd: () => endY,
-  //       },
-
-  //       // Кастомный прогресс по кривой
-  //       ease: (t) => {
-  //         // t от 0 до 1 → формируем дугу
-  //         const p = Phaser.Math.Easing.Quadratic.Out(t);
-  //         return p;
-  //       },
-
-  //       // Делаем дугу (пик в середине)
-  //       onUpdate: (tween, target) => {
-  //         const t = tween.progress;
-
-  //         // подняться до midY, затем обратно
-  //         const yUp = Phaser.Math.Interpolation.Linear([startY, midY], t * 2);
-  //         const yDown = Phaser.Math.Interpolation.Linear(
-  //           [midY, endY],
-  //           (t - 0.5) * 2
-  //         );
-
-  //         target.y = t < 0.5 ? yUp : yDown;
-  //       },
-
-  //       duration: Phaser.Math.Between(1000, 1600),
-  //       onComplete: () => tick.destroy(),
-  //     });
-  //   }
 }
 // Логика обновления игры
