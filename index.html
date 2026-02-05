@@ -48,8 +48,178 @@
         }
 
         create() {
-          this.scene.start("GameScene");
-          this.scene.launch("UIScene");
+          // this.scene.start("GameScene");
+          // this.scene.launch("UIScene");
+          this.scene.start("MainMenuScene");
+        }
+      }
+      // =================================================================
+      // SCENE 2: MAIN MENU
+      // =================================================================
+      class MainMenuScene extends Phaser.Scene {
+        constructor() {
+          super("MainMenuScene");
+        }
+
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+
+          this.add
+            .text(400, 200, "Клещ", {
+              fontSize: "72px",
+              fontFamily: '"Arial Black", Gadget, sans-serif',
+              color: "#ffffff",
+            })
+            .setOrigin(0.5)
+            .setShadow(2, 2, "#000000", 2, true, true);
+
+          const startButton = this.add
+            .text(400, 350, "Старт", {
+              fontSize: "32px",
+              color: "#00ff00",
+              fontStyle: "bold",
+            })
+            .setOrigin(0.5)
+            .setInteractive();
+          startButton.on("pointerover", () => {
+            startButton.setStyle({ fill: "#ff0" });
+          });
+          startButton.on("pointerout", () => {
+            startButton.setStyle({ fill: "#00ff00" });
+          });
+          startButton.on("pointerdown", () => {
+            this.scene.start("GameScene");
+            this.scene.launch("UIScene");
+          });
+
+          this.human = this.physics.add.sprite(100, 580, "player");
+          this.human.setOrigin(0.5, 1).body.allowGravity = false;
+          this.humanDirection = 1;
+          this.humanPaused = false;
+          this.time.addEvent({
+            delay: 6000,
+            loop: true,
+            callback: () => {
+              this.humanPaused = true;
+              this.time.delayedCall(4000, () => {
+                this.humanPaused = false;
+              });
+            },
+          });
+
+          this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
+          this.dog.setOrigin(0.5, 1).body.allowGravity = false;
+          this.dogDirection = "left";
+
+          this.time.addEvent({
+            delay: Phaser.Math.Between(2000, 5000),
+            loop: true,
+            callback: () => {
+              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              switch (action) {
+                case "left":
+                  this.dog.setVelocityX(-100);
+                  this.dogDirection = "left";
+                  break;
+                case "right":
+                  this.dog.setVelocityX(100);
+                  this.dogDirection = "right";
+                  break;
+                case "idle":
+                  this.dog.setVelocityX(0);
+                  break;
+              }
+            },
+          });
+
+          // *** ИСПРАВЛЕНИЕ: ВЫЗЫВАЕМ ОТДЕЛЬНУЮ ФУНКЦИЮ ДЛЯ АНИМАЦИЙ МЕНЮ ***
+          this.createMenuAnimations();
+        }
+
+        update() {
+          this.updateHumanAI();
+          this.updateDogAI();
+        }
+
+        updateDogAI() {
+          this.dog.flipX = false; // Сбрасываем flipX, так как у нас отдельные анимации
+          if (this.dog.body.velocity.x < 0) {
+            this.dog.anims.play("menu_dog_walk_left", true);
+          } else if (this.dog.body.velocity.x > 0) {
+            this.dog.anims.play("menu_dog_walk_right", true);
+          } else {
+            this.dog.anims.play("menu_dog_idle", true);
+            this.dog.flipX = this.dogDirection === "left";
+          }
+        }
+
+        updateHumanAI() {
+          if (this.humanPaused) {
+            this.human.setVelocityX(0);
+            this.human.anims.play("menu_human_idle", true);
+            return;
+          }
+          const leftBound = 40,
+            rightBound = 760;
+          if (this.human.x >= rightBound) {
+            this.humanDirection = -1;
+          } else if (this.human.x <= leftBound) {
+            this.humanDirection = 1;
+          }
+          this.human.setVelocityX(100 * this.humanDirection);
+          this.human.flipX = this.human.body.velocity.x < 0;
+          this.human.anims.play("menu_human_walk", true);
+        }
+
+        // *** ИСПРАВЛЕНИЕ: ОТДЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СОЗДАНИЯ АНИМАЦИЙ В МЕНЮ ***
+        createMenuAnimations() {
+          this.anims.create({
+            key: "menu_human_walk",
+            frames: this.anims.generateFrameNumbers("player", {
+              start: 4,
+              end: 11,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "menu_human_idle",
+            frames: this.anims.generateFrameNumbers("player", {
+              start: 0,
+              end: 3,
+            }),
+            frameRate: 5,
+            repeat: -1,
+          });
+
+          this.anims.create({
+            key: "menu_dog_idle",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 0,
+              end: 3,
+            }),
+            frameRate: 5,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "menu_dog_walk_right",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 12,
+              end: 15,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "menu_dog_walk_left",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 5,
+              end: 7,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
         }
       }
 
@@ -128,40 +298,55 @@
         }
 
         updateDog() {
-          // --- Логика прыжка ---
+          this.mouth.x = this.dog.body.center.x;
+          this.mouth.y = this.dog.body.center.y - 40;
+
           if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
             this.isJumping = true;
-            this.dog.setVelocityX(0);
             this.dog.anims.play("dog_jump");
-            this.dog.once("animationcomplete-dog_jump", () => {
-              this.isJumping = false;
-            });
+
+            // Устанавливаем отражение для прыжка, основываясь на "памяти"
+            this.dog.flipX = this.dogFacing === "left";
+
+            if (this.cursors.left.isDown) {
+              this.dog.setVelocityX(-200);
+            } else if (this.cursors.right.isDown) {
+              this.dog.setVelocityX(200);
+            } else {
+              this.dog.setVelocityX(0);
+            }
+
             this.tweens.add({
               targets: this.dog,
-              y: this.dog.y - 180,
+              y: this.dog.y - 280,
               duration: 400,
               yoyo: true,
               ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.dog.setVelocityX(0);
+              },
             });
           }
 
           if (this.isJumping) return;
 
-          // --- Новая логика движения ---
           if (this.cursors.left.isDown) {
             this.dog.setVelocityX(-200);
-            this.dog.anims.play("dog_walk_left", true); // Используем анимацию для левой стороны
+            this.dog.anims.play("dog_walk_left", true);
+            this.dogFacing = "left"; // Обновляем "память"
+            this.dog.flipX = false; // Принудительно отключаем flipX для этой анимации
           } else if (this.cursors.right.isDown) {
             this.dog.setVelocityX(200);
-            this.dog.anims.play("dog_walk_right", true); // Используем анимацию для правой стороны
+            this.dog.anims.play("dog_walk_right", true);
+            this.dogFacing = "right"; // Обновляем "память"
+            this.dog.flipX = false; // Принудительно отключаем flipX для этой анимации
           } else {
             this.dog.setVelocityX(0);
             this.dog.anims.play("dog_idle", true);
+            // Устанавливаем отражение для idle, основываясь на "памяти"
+            this.dog.flipX = this.dogFacing === "left";
           }
-
-          // flipX больше не нужен для ходьбы!
-          this.mouth.x = this.dog.body.center.x; // Центрируем рот
-          this.mouth.y = this.dog.body.center.y - 40;
         }
 
         createAnimations() {
@@ -226,8 +411,8 @@
           this.anims.create({
             key: "dog_jump",
             frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 8,
-              end: 11,
+              start: 12,
+              end: 15,
             }),
             frameRate: 12,
             repeat: 0,
@@ -262,21 +447,23 @@
             this.human.anims.play("human_idle", true);
           }
         }
+
         updateTicks() {
           this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
-            if (tick.body) tick.destroy();
+            // Съесть можно только "активного" (падающего) клеща
+            if (tick.isFalling) {
+              tick.destroy();
+            }
           });
+
           this.physics.overlap(this.human, this.ticks, (human, tick) => {
-            if (tick.body && human.body) {
+            // Урон наносит только "активный" (падающий) клещ
+            if (tick.isFalling && tick.body && human.body) {
               this.events.emit("damageHuman", 10);
               tick.destroy();
             }
           });
-          this.ticks.getChildren().forEach((tick) => {
-            if (tick && tick.y > 600) tick.destroy();
-          });
         }
-
         startWave() {
           if (this.isHumanDead) return;
           this.ticksSpawned = 0;
@@ -301,75 +488,46 @@
             },
           });
         }
-
         spawnTick() {
           if (this.isHumanDead) return;
-          const x = Phaser.Math.Between(50, 750);
-          const tick = this.ticks.create(x, -50, "tick");
-          if (tick) {
-            tick.setScale(0.8);
-            tick.setGravityY(Phaser.Math.Between(50, 150));
-          }
+          const startX = Phaser.Math.Between(50, 750);
+          const startY = 580; // Появляются из "травы"
+          const peakY = Phaser.Math.Between(100, 300); // На какую высоту прыгнут
+          const endX = startX + Phaser.Math.Between(-150, 150);
+
+          const tick = this.ticks.create(startX, startY, "tick");
+          if (!tick) return;
+
+          tick.setScale(0.8);
+          tick.body.setAllowGravity(false); // Отключаем стандартную гравитацию
+          tick.isFalling = false; // Флаг "активности"
+
+          // Создаем tween-анимацию для прыжка по дуге
+          this.tweens.add({
+            targets: tick,
+            x: endX,
+            ease: "Sine.easeInOut",
+            duration: Phaser.Math.Between(1200, 1800),
+            onUpdate: (tween, target) => {
+              const t = tween.progress; // Прогресс анимации от 0 до 1
+              // Формула параболы: y = 4 * h * t * (1 - t)
+              // h - высота прыжка
+              const h = startY - peakY;
+              target.y = startY - 4 * h * t * (1 - t);
+
+              // Активируем клеща, когда он пролетел пик дуги
+              if (!target.isFalling && t > 0.5) {
+                target.isFalling = true;
+              }
+            },
+            onComplete: () => {
+              // Уничтожаем клеща, если он долетел до земли и не был съеден
+              if (tick) {
+                tick.destroy();
+              }
+            },
+          });
         }
-        // spawnTick() {
-        //   const startX = Phaser.Math.Between(50, 750);
-        //   const startY = 600;
-
-        //   const midY = 200;
-        //   const endX = startX + Phaser.Math.Between(-200, 200);
-        //   const endY = 600;
-
-        //   const tick = this.add.sprite(startX, startY, "tick").setScale(0.8);
-
-        //   // 👉 Важно: флаг состояния клеща
-        //   tick.isFalling = false;
-
-        //   this.tweens.add({
-        //     targets: tick,
-        //     x: {
-        //       getStart: () => startX,
-        //       getEnd: () => endX,
-        //     },
-        //     y: {
-        //       getStart: () => startY,
-        //       getEnd: () => endY,
-        //     },
-        //     ease: (t) => {
-        //       const p = Phaser.Math.Easing.Quadratic.Out(t);
-        //       return p;
-        //     },
-
-        //     onUpdate: (tween, target) => {
-        //       const t = tween.progress;
-
-        //       const yUp = Phaser.Math.Interpolation.Linear(
-        //         [startY, midY],
-        //         t * 2,
-        //       );
-        //       const yDown = Phaser.Math.Interpolation.Linear(
-        //         [midY, endY],
-        //         (t - 0.5) * 2,
-        //       );
-
-        //       target.y = t < 0.5 ? yUp : yDown;
-
-        //       // 👉 Когда t > 0.5 — клещ падает
-        //       if (!target.isFalling && t > 0.5) {
-        //         target.isFalling = true;
-        //       }
-        //     },
-
-        //     duration: Phaser.Math.Between(1000, 1600),
-
-        //     // 👉 Когда долетел до земли — удалить
-        //     onComplete: () => {
-        //       tick.destroy();
-        //     },
-        //   });
-
-        //   // Добавим в группу, если ты её используешь для коллизий
-        //   if (this.ticks) this.ticks.add(tick);
-        // }
       }
 
       // Re-pasting unchanged methods for GameScene
@@ -411,15 +569,15 @@
           },
         });
       };
-      GameScene.prototype.spawnTick = function () {
-        if (this.isHumanDead) return;
-        const x = Phaser.Math.Between(50, 750);
-        const tick = this.ticks.create(x, -50, "tick");
-        if (tick) {
-          tick.setScale(0.8);
-          tick.setGravityY(Phaser.Math.Between(50, 150));
-        }
-      };
+      // GameScene.prototype.spawnTick = function () {
+      //   if (this.isHumanDead) return;
+      //   const x = Phaser.Math.Between(50, 750);
+      //   const tick = this.ticks.create(x, -50, "tick");
+      //   if (tick) {
+      //     tick.setScale(0.8);
+      //     tick.setGravityY(Phaser.Math.Between(50, 150));
+      //   }
+      // };
 
       // =================================================================
       // SCENE 3: UI
@@ -546,7 +704,8 @@
             debug: true, // Отладчик выключен
           },
         },
-        scene: [PreloadScene, GameScene, UIScene],
+        // scene: [PreloadScene, GameScene, UIScene],
+        scene: [PreloadScene, MainMenuScene, GameScene, UIScene],
       };
 
       window.onload = () => new Phaser.Game(config);
