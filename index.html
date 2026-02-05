@@ -127,53 +127,6 @@
           this.updateTicks();
         }
 
-        // updateDog() {
-        //   // =================================================================
-        //   // *** ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПОЗИЦИЯ РТА ОБНОВЛЯЕТСЯ ВСЕГДА ***
-        //   // =================================================================
-        //   this.mouth.x = this.dog.body.center.x;
-        //   this.mouth.y = this.dog.body.center.y - 40;
-
-        //   if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
-        //     this.isJumping = true;
-        //     this.dog.anims.play("dog_jump");
-
-        //     if (this.cursors.left.isDown) {
-        //       this.dog.setVelocityX(-200);
-        //     } else if (this.cursors.right.isDown) {
-        //       this.dog.setVelocityX(200);
-        //     } else {
-        //       this.dog.setVelocityX(0);
-        //     }
-
-        //     this.tweens.add({
-        //       targets: this.dog,
-        //       y: this.dog.y - 280,
-        //       duration: 400,
-        //       yoyo: true,
-        //       ease: "Power2",
-        //       onComplete: () => {
-        //         this.isJumping = false;
-        //         this.dog.setVelocityX(0);
-        //       },
-        //     });
-        //   }
-
-        //   if (this.isJumping) {
-        //     return; // Если в прыжке, не обрабатываем ходьбу
-        //   }
-
-        //   if (this.cursors.left.isDown) {
-        //     this.dog.setVelocityX(-200);
-        //     this.dog.anims.play("dog_walk_left", true);
-        //   } else if (this.cursors.right.isDown) {
-        //     this.dog.setVelocityX(200);
-        //     this.dog.anims.play("dog_walk_right", true);
-        //   } else {
-        //     this.dog.setVelocityX(0);
-        //     this.dog.anims.play("dog_idle", true);
-        //   }
-        // }
         updateDog() {
           this.mouth.x = this.dog.body.center.x;
           this.mouth.y = this.dog.body.center.y - 40;
@@ -324,35 +277,23 @@
             this.human.anims.play("human_idle", true);
           }
         }
-        // updateTicks() {
-        //   this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
-        //     if (tick.body) tick.destroy();
-        //   });
-        //   this.physics.overlap(this.human, this.ticks, (human, tick) => {
-        //     if (tick.body && human.body) {
-        //       this.events.emit("damageHuman", 10);
-        //       tick.destroy();
-        //     }
-        //   });
-        //   this.ticks.getChildren().forEach((tick) => {
-        //     if (tick && tick.y > 600) tick.destroy();
-        //   });
-        // }
+
         updateTicks() {
           this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
-            if (tick.body) tick.destroy();
+            // Съесть можно только "активного" (падающего) клеща
+            if (tick.isFalling) {
+              tick.destroy();
+            }
           });
+
           this.physics.overlap(this.human, this.ticks, (human, tick) => {
-            if (tick.body && human.body) {
+            // Урон наносит только "активный" (падающий) клещ
+            if (tick.isFalling && tick.body && human.body) {
               this.events.emit("damageHuman", 10);
               tick.destroy();
             }
           });
-          this.ticks.getChildren().forEach((tick) => {
-            if (tick && tick.y > 600) tick.destroy();
-          });
         }
-
         startWave() {
           if (this.isHumanDead) return;
           this.ticksSpawned = 0;
@@ -377,16 +318,55 @@
             },
           });
         }
-
         spawnTick() {
           if (this.isHumanDead) return;
-          const x = Phaser.Math.Between(50, 750);
-          const tick = this.ticks.create(x, -50, "tick");
-          if (tick) {
-            tick.setScale(0.8);
-            tick.setGravityY(Phaser.Math.Between(50, 150));
-          }
+          const startX = Phaser.Math.Between(50, 750);
+          const startY = 580; // Появляются из "травы"
+          const peakY = Phaser.Math.Between(100, 300); // На какую высоту прыгнут
+          const endX = startX + Phaser.Math.Between(-150, 150);
+
+          const tick = this.ticks.create(startX, startY, "tick");
+          if (!tick) return;
+
+          tick.setScale(0.8);
+          tick.body.setAllowGravity(false); // Отключаем стандартную гравитацию
+          tick.isFalling = false; // Флаг "активности"
+
+          // Создаем tween-анимацию для прыжка по дуге
+          this.tweens.add({
+            targets: tick,
+            x: endX,
+            ease: "Sine.easeInOut",
+            duration: Phaser.Math.Between(1200, 1800),
+            onUpdate: (tween, target) => {
+              const t = tween.progress; // Прогресс анимации от 0 до 1
+              // Формула параболы: y = 4 * h * t * (1 - t)
+              // h - высота прыжка
+              const h = startY - peakY;
+              target.y = startY - 4 * h * t * (1 - t);
+
+              // Активируем клеща, когда он пролетел пик дуги
+              if (!target.isFalling && t > 0.5) {
+                target.isFalling = true;
+              }
+            },
+            onComplete: () => {
+              // Уничтожаем клеща, если он долетел до земли и не был съеден
+              if (tick) {
+                tick.destroy();
+              }
+            },
+          });
         }
+        // spawnTick() {
+        //   if (this.isHumanDead) return;
+        //   const x = Phaser.Math.Between(50, 750);
+        //   const tick = this.ticks.create(x, -50, "tick");
+        //   if (tick) {
+        //     tick.setScale(0.8);
+        //     tick.setGravityY(Phaser.Math.Between(50, 150));
+        //   }
+        // }
         // spawnTick() {
         //   const startX = Phaser.Math.Between(50, 750);
         //   const startY = 600;
@@ -487,15 +467,15 @@
           },
         });
       };
-      GameScene.prototype.spawnTick = function () {
-        if (this.isHumanDead) return;
-        const x = Phaser.Math.Between(50, 750);
-        const tick = this.ticks.create(x, -50, "tick");
-        if (tick) {
-          tick.setScale(0.8);
-          tick.setGravityY(Phaser.Math.Between(50, 150));
-        }
-      };
+      // GameScene.prototype.spawnTick = function () {
+      //   if (this.isHumanDead) return;
+      //   const x = Phaser.Math.Between(50, 750);
+      //   const tick = this.ticks.create(x, -50, "tick");
+      //   if (tick) {
+      //     tick.setScale(0.8);
+      //     tick.setGravityY(Phaser.Math.Between(50, 150));
+      //   }
+      // };
 
       // =================================================================
       // SCENE 3: UI
