@@ -109,11 +109,12 @@
           });
 
           this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
+          this.dog.setCollideWorldBounds(true);
           this.dog.setOrigin(0.5, 1).body.allowGravity = false;
           this.dogDirection = "left";
 
           this.time.addEvent({
-            delay: Phaser.Math.Between(2000, 5000),
+            delay: Phaser.Math.Between(1000, 3000),
             loop: true,
             callback: () => {
               const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
