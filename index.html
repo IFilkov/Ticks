@@ -128,108 +128,31 @@
         }
 
         // updateDog() {
-        //   // --- Логика прыжка ---
         //   if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
         //     this.isJumping = true;
-        //     this.dog.setVelocityX(0);
         //     this.dog.anims.play("dog_jump");
-        //     this.dog.once("animationcomplete-dog_jump", () => {
-        //       this.isJumping = false;
-        //     });
+
+        //     if (this.cursors.left.isDown) {
+        //       this.dog.setVelocityX(-200);
+        //     } else if (this.cursors.right.isDown) {
+        //       this.dog.setVelocityX(200);
+        //     } else {
+        //       this.dog.setVelocityX(0);
+        //     }
+
         //     this.tweens.add({
         //       targets: this.dog,
-        //       y: this.dog.y - 180,
+        //       y: this.dog.y - 280,
         //       duration: 400,
         //       yoyo: true,
         //       ease: "Power2",
-        //     });
-        //   }
-
-        //   if (this.isJumping) return;
-
-        //   // --- Новая логика движения ---
-        //   if (this.cursors.left.isDown) {
-        //     this.dog.setVelocityX(-200);
-        //     this.dog.anims.play("dog_walk_left", true); // Используем анимацию для левой стороны
-        //   } else if (this.cursors.right.isDown) {
-        //     this.dog.setVelocityX(200);
-        //     this.dog.anims.play("dog_walk_right", true); // Используем анимацию для правой стороны
-        //   } else {
-        //     this.dog.setVelocityX(0);
-        //     this.dog.anims.play("dog_idle", true);
-        //   }
-
-        //   // flipX больше не нужен для ходьбы!
-        //   this.mouth.x = this.dog.body.center.x; // Центрируем рот
-        //   this.mouth.y = this.dog.body.center.y - 40;
-        // }
-        updateDog() {
-          if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
-            this.isJumping = true; // Запрещаем прыгать немедленно
-            this.dog.setVelocityX(0);
-            this.dog.anims.play("dog_jump");
-
-            // Tween отвечает за физическое движение
-            this.tweens.add({
-              targets: this.dog,
-              y: this.dog.y - 180,
-              duration: 400,
-              yoyo: true,
-              ease: "Power2",
-              // onComplete сработает, когда собака ПРИЗЕМЛИТСЯ
-              onComplete: () => {
-                this.isJumping = false; // Разрешаем прыгать снова ТОЛЬКО после приземления
-              },
-            });
-          }
-
-          // Движение в стороны, если не в прыжке
-          if (!this.isJumping) {
-            if (this.cursors.left.isDown) {
-              this.dog.setVelocityX(-200);
-              this.dog.anims.play("dog_walk_left", true);
-            } else if (this.cursors.right.isDown) {
-              this.dog.setVelocityX(200);
-              this.dog.anims.play("dog_walk_right", true);
-            } else {
-              this.dog.setVelocityX(0);
-              this.dog.anims.play("dog_idle", true);
-            }
-          }
-
-          // Возвращаем вашу логику позиционирования рта, чтобы он снова ел клещей
-          this.mouth.x = this.dog.body.center.x;
-          this.mouth.y = this.dog.body.center.y - 40;
-        }
-        // updateDog() {
-        //   // =================================================================
-        //   // *** ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПРАВИЛЬНАЯ ЛОГИКА ПРЫЖКА ***
-        //   // =================================================================
-
-        //   // --- Логика прыжка ---
-        //   if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
-        //     // 1. Устанавливаем флаг, чтобы предотвратить повторные прыжки
-        //     this.isJumping = true;
-
-        //     this.dog.setVelocityX(0);
-        //     this.dog.anims.play("dog_jump");
-
-        //     // 2. Создаем tween-анимацию движения вверх-вниз
-        //     this.tweens.add({
-        //       targets: this.dog,
-        //       y: this.dog.y - 180, // Насколько высоко прыгнуть
-        //       duration: 400,
-        //       yoyo: true, // Заставляет tween вернуться в исходное положение
-        //       ease: "Power2",
-        //       // 3. onComplete сработает только тогда, когда tween ПОЛНОСТЬЮ завершится
         //       onComplete: () => {
-        //         this.isJumping = false; // Разрешаем прыгать снова только после приземления
+        //         this.isJumping = false;
+        //         this.dog.setVelocityX(0);
         //       },
         //     });
         //   }
 
-        //   // --- Логика движения ---
-        //   // Не позволяем двигаться в стороны во время прыжка
         //   if (this.isJumping) return;
 
         //   if (this.cursors.left.isDown) {
@@ -243,11 +166,56 @@
         //     this.dog.anims.play("dog_idle", true);
         //   }
 
-        //   // flipX больше не нужен для ходьбы!
-        //   this.mouth.x = this.dog.body.center.x; // Центрируем рот
+        //   this.mouth.x = this.dog.body.center.x;
         //   this.mouth.y = this.dog.body.center.y - 40;
         // }
+        updateDog() {
+          // =================================================================
+          // *** ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПОЗИЦИЯ РТА ОБНОВЛЯЕТСЯ ВСЕГДА ***
+          // =================================================================
+          this.mouth.x = this.dog.body.center.x;
+          this.mouth.y = this.dog.body.center.y - 40;
 
+          if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
+            this.isJumping = true;
+            this.dog.anims.play("dog_jump");
+
+            if (this.cursors.left.isDown) {
+              this.dog.setVelocityX(-200);
+            } else if (this.cursors.right.isDown) {
+              this.dog.setVelocityX(200);
+            } else {
+              this.dog.setVelocityX(0);
+            }
+
+            this.tweens.add({
+              targets: this.dog,
+              y: this.dog.y - 280,
+              duration: 400,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.dog.setVelocityX(0);
+              },
+            });
+          }
+
+          if (this.isJumping) {
+            return; // Если в прыжке, не обрабатываем ходьбу
+          }
+
+          if (this.cursors.left.isDown) {
+            this.dog.setVelocityX(-200);
+            this.dog.anims.play("dog_walk_left", true);
+          } else if (this.cursors.right.isDown) {
+            this.dog.setVelocityX(200);
+            this.dog.anims.play("dog_walk_right", true);
+          } else {
+            this.dog.setVelocityX(0);
+            this.dog.anims.play("dog_idle", true);
+          }
+        }
         createAnimations() {
           this.anims.create({
             key: "human_walk",
@@ -310,8 +278,8 @@
           this.anims.create({
             key: "dog_jump",
             frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 8,
-              end: 11,
+              start: 12,
+              end: 15,
             }),
             frameRate: 12,
             repeat: 0,
@@ -346,6 +314,20 @@
             this.human.anims.play("human_idle", true);
           }
         }
+        // updateTicks() {
+        //   this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
+        //     if (tick.body) tick.destroy();
+        //   });
+        //   this.physics.overlap(this.human, this.ticks, (human, tick) => {
+        //     if (tick.body && human.body) {
+        //       this.events.emit("damageHuman", 10);
+        //       tick.destroy();
+        //     }
+        //   });
+        //   this.ticks.getChildren().forEach((tick) => {
+        //     if (tick && tick.y > 600) tick.destroy();
+        //   });
+        // }
         updateTicks() {
           this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
             if (tick.body) tick.destroy();
