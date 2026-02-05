@@ -128,6 +128,12 @@
         }
 
         // updateDog() {
+        //   // =================================================================
+        //   // *** ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПОЗИЦИЯ РТА ОБНОВЛЯЕТСЯ ВСЕГДА ***
+        //   // =================================================================
+        //   this.mouth.x = this.dog.body.center.x;
+        //   this.mouth.y = this.dog.body.center.y - 40;
+
         //   if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
         //     this.isJumping = true;
         //     this.dog.anims.play("dog_jump");
@@ -153,7 +159,9 @@
         //     });
         //   }
 
-        //   if (this.isJumping) return;
+        //   if (this.isJumping) {
+        //     return; // Если в прыжке, не обрабатываем ходьбу
+        //   }
 
         //   if (this.cursors.left.isDown) {
         //     this.dog.setVelocityX(-200);
@@ -165,20 +173,17 @@
         //     this.dog.setVelocityX(0);
         //     this.dog.anims.play("dog_idle", true);
         //   }
-
-        //   this.mouth.x = this.dog.body.center.x;
-        //   this.mouth.y = this.dog.body.center.y - 40;
         // }
         updateDog() {
-          // =================================================================
-          // *** ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПОЗИЦИЯ РТА ОБНОВЛЯЕТСЯ ВСЕГДА ***
-          // =================================================================
           this.mouth.x = this.dog.body.center.x;
           this.mouth.y = this.dog.body.center.y - 40;
 
           if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
             this.isJumping = true;
             this.dog.anims.play("dog_jump");
+
+            // Устанавливаем отражение для прыжка, основываясь на "памяти"
+            this.dog.flipX = this.dogFacing === "left";
 
             if (this.cursors.left.isDown) {
               this.dog.setVelocityX(-200);
@@ -201,21 +206,26 @@
             });
           }
 
-          if (this.isJumping) {
-            return; // Если в прыжке, не обрабатываем ходьбу
-          }
+          if (this.isJumping) return;
 
           if (this.cursors.left.isDown) {
             this.dog.setVelocityX(-200);
             this.dog.anims.play("dog_walk_left", true);
+            this.dogFacing = "left"; // Обновляем "память"
+            this.dog.flipX = false; // Принудительно отключаем flipX для этой анимации
           } else if (this.cursors.right.isDown) {
             this.dog.setVelocityX(200);
             this.dog.anims.play("dog_walk_right", true);
+            this.dogFacing = "right"; // Обновляем "память"
+            this.dog.flipX = false; // Принудительно отключаем flipX для этой анимации
           } else {
             this.dog.setVelocityX(0);
             this.dog.anims.play("dog_idle", true);
+            // Устанавливаем отражение для idle, основываясь на "памяти"
+            this.dog.flipX = this.dogFacing === "left";
           }
         }
+
         createAnimations() {
           this.anims.create({
             key: "human_walk",
