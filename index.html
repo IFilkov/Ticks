@@ -3,6 +3,7 @@
   <head>
     <title>Tick Defender</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
       body {
         display: flex;
@@ -67,16 +68,17 @@
 
           this.add
             .text(400, 200, "Клещ", {
-              fontSize: "72px",
-              fontFamily: '"Arial Black", Gadget, sans-serif',
-              color: "#ffffff",
+              fontSize: "200px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#eb1717",
             })
             .setOrigin(0.5)
             .setShadow(2, 2, "#000000", 2, true, true);
 
           const startButton = this.add
             .text(400, 350, "Старт", {
-              fontSize: "32px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "82px",
               color: "#00ff00",
               fontStyle: "bold",
             })
@@ -570,37 +572,29 @@
           },
         });
       };
-      // GameScene.prototype.spawnTick = function () {
-      //   if (this.isHumanDead) return;
-      //   const x = Phaser.Math.Between(50, 750);
-      //   const tick = this.ticks.create(x, -50, "tick");
-      //   if (tick) {
-      //     tick.setScale(0.8);
-      //     tick.setGravityY(Phaser.Math.Between(50, 150));
-      //   }
-      // };
 
-      // =================================================================
-      // SCENE 3: UI
-      // =================================================================
       class UIScene extends Phaser.Scene {
         constructor() {
           super("UIScene");
         }
         create() {
+          // *** ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ НОВЫЙ ШРИФТ ***
+          const textStyle = {
+            fontFamily: "3_Muz-TV2000.ttf",
+            fontSize: "16px",
+            fill: "#fff",
+          };
           this.healthBarBg = this.add
             .rectangle(120, 30, 160, 20, 0x000000)
             .setOrigin(0.5);
           this.healthBar = this.add
             .rectangle(120, 30, 160, 20, 0x00ff00)
             .setOrigin(0.5);
-          this.healthText = this.add.text(45, 45, "HP: 100%", {
-            fontSize: "14px",
-            fill: "#fff",
-          });
+          this.healthText = this.add.text(45, 45, "HP: 100%", textStyle);
           this.waveText = this.add
-            .text(400, 30, "Wave 1", { fontSize: "24px", fill: "#ffffff" })
+            .text(400, 30, "Wave 1", { ...textStyle, fontSize: "24px" })
             .setOrigin(0.5);
+
           const gameScene = this.scene.get("GameScene");
           gameScene.events.on("updateWave", (wave) =>
             this.waveText.setText(`Wave ${wave}`),
@@ -617,9 +611,11 @@
                 "animationcomplete",
                 () => {
                   gameScene.scene.pause();
+                  // *** ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ НОВЫЙ ШРИФТ ***
                   this.add
                     .text(400, 300, "GAME OVER", {
-                      fontSize: "40px",
+                      fontFamily: "3_Muz-TV2000.ttf",
+                      fontSize: "48px",
                       color: "#ff0000",
                     })
                     .setOrigin(0.5);
@@ -648,15 +644,20 @@
           .rectangle(120, 30, 160, 20, 0x00ff00)
           .setOrigin(0.5);
         this.healthText = this.add.text(45, 45, "HP: 100%", {
+          fontFamily: '"3_Muz-TV2000.ttf"',
           fontSize: "14px",
           fill: "#fff",
         });
         this.waveText = this.add
-          .text(400, 30, "Wave 1", { fontSize: "24px", fill: "#ffffff" })
+          .text(400, 30, "Волна 1", {
+            fontFamily: '"3_Muz-TV2000.ttf"',
+            fontSize: "24px",
+            fill: "#eb8c17",
+          })
           .setOrigin(0.5);
         const gameScene = this.scene.get("GameScene");
         gameScene.events.on("updateWave", (wave) =>
-          this.waveText.setText(`Wave ${wave}`),
+          this.waveText.setText(`Волна ${wave}`),
         );
         gameScene.events.on("damageHuman", (damage) => {
           if (gameScene.isHumanDead) return;
@@ -671,8 +672,9 @@
               () => {
                 gameScene.scene.pause();
                 this.add
-                  .text(400, 300, "GAME OVER", {
-                    fontSize: "40px",
+                  .text(400, 300, "Конец", {
+                    fontFamily: '"3_Muz-TV2000.ttf"',
+                    fontSize: "140px",
                     color: "#ff0000",
                   })
                   .setOrigin(0.5);
