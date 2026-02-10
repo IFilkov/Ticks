@@ -694,12 +694,15 @@
             .setOrigin(0.5);
           this.healthText = this.add.text(45, 45, "HP: 100%", textStyle);
           this.waveText = this.add
-            .text(400, 30, "Wave 1", { ...textStyle, fontSize: "24px" })
+            .text(400, 30, "Волна 1", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "24px",
+              fill: "#eb8c17",
+            })
             .setOrigin(0.5);
-
           const gameScene = this.scene.get("GameScene");
           gameScene.events.on("updateWave", (wave) =>
-            this.waveText.setText(`Wave ${wave}`),
+            this.waveText.setText(`Волна ${wave}`),
           );
           gameScene.events.on("damageHuman", (damage) => {
             if (gameScene.isHumanDead) return;
@@ -736,6 +739,64 @@
           this.healthText.setText(`HP: ${currentHealth}%`);
         }
       }
+
+      // Re-pasting unchanged methods for UIScene
+      // UIScene.prototype.create = function () {
+      //   this.healthBarBg = this.add
+      //     .rectangle(120, 30, 160, 20, 0x000000)
+      //     .setOrigin(0.5);
+      //   this.healthBar = this.add
+      //     .rectangle(120, 30, 160, 20, 0x00ff00)
+      //     .setOrigin(0.5);
+      //   this.healthText = this.add.text(45, 45, "HP: 100%", {
+      //     fontFamily: '"3_Muz-TV2000.ttf"',
+      //     fontSize: "14px",
+      //     fill: "#fff",
+      //   });
+      //   this.waveText = this.add
+      //     .text(400, 30, "Волна 1", {
+      //       fontFamily: '"3_Muz-TV2000.ttf"',
+      //       fontSize: "24px",
+      //       fill: "#eb8c17",
+      //     })
+      //     .setOrigin(0.5);
+      //   const gameScene = this.scene.get("GameScene");
+      //   gameScene.events.on("updateWave", (wave) =>
+      //     this.waveText.setText(`Волна ${wave}`),
+      //   );
+      //   gameScene.events.on("damageHuman", (damage) => {
+      //     if (gameScene.isHumanDead) return;
+      //     gameScene.humanHealth -= damage;
+      //     this.updateHealthBar(gameScene.humanHealth);
+      //     if (gameScene.humanHealth <= 0) {
+      //       gameScene.isHumanDead = true;
+      //       const human = gameScene.human;
+      //       human.anims.play("human_death", true);
+      //       human.on(
+      //         "animationcomplete",
+      //         () => {
+      //           gameScene.scene.pause();
+      //           this.add
+      //             .text(400, 300, "Конец", {
+      //               fontFamily: '"3_Muz-TV2000.ttf"',
+      //               fontSize: "140px",
+      //               color: "#ff0000",
+      //             })
+      //             .setOrigin(0.5);
+      //         },
+      //         this,
+      //       );
+      //     }
+      //   });
+      // };
+      // UIScene.prototype.updateHealthBar = function (health) {
+      //   const currentHealth = Math.max(0, health);
+      //   this.healthBar.width = (currentHealth / 100) * 160;
+      //   if (currentHealth > 60) this.healthBar.setFillStyle(0x00ff00);
+      //   else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
+      //   else this.healthBar.setFillStyle(0xff0000);
+      //   this.healthText.setText(`HP: ${currentHealth}%`);
+      // };
 
       // =================================================================
       // GAME CONFIGURATION
