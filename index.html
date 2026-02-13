@@ -304,7 +304,7 @@
 
           // *** Таймер для появления гриба ***
           this.time.addEvent({
-            delay: 10000,
+            delay: 1000,
             loop: true,
             callback: this.spawnMushroom,
             callbackScope: this,
@@ -330,7 +330,7 @@
           mushroom.setOrigin(0.5, 1).setScale(0.1);
 
           this.time.delayedCall(
-            4000,
+            8000,
             () => {
               if (mushroom.active) mushroom.destroy();
             },
@@ -345,7 +345,7 @@
           this.dog.hasMushroom = true;
           this.dog.setTint(0x00ff00);
           this.mushroomCarryTimer = this.time.delayedCall(
-            4000,
+            8000,
             () => {
               this.dog.hasMushroom = false;
               this.dog.clearTint();
@@ -358,71 +358,23 @@
         deliverMushroom(dog, human) {
           if (!this.dog.hasMushroom) return;
           this.dog.hasMushroom = false;
+          this.events.emit("damageHuman", -20);
           this.dog.clearTint();
-          this.events.emit("healHuman", 20);
           if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
         }
 
-        // updateDog() {
-        //   this.mouth.x = this.dog.body.center.x;
-        //   this.mouth.y = this.dog.body.center.y - 40;
-
-        //   if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
-        //     this.isJumping = true;
-        //     this.dog.anims.play("dog_jump");
-
-        //     // Устанавливаем отражение для прыжка, основываясь на "памяти"
-        //     this.dog.flipX = this.dogFacing === "left";
-
-        //     if (this.cursors.left.isDown) {
-        //       this.dog.setVelocityX(-200);
-        //     } else if (this.cursors.right.isDown) {
-        //       this.dog.setVelocityX(200);
-        //     } else {
-        //       this.dog.setVelocityX(0);
-        //     }
-
-        //     this.tweens.add({
-        //       targets: this.dog,
-        //       y: this.dog.y - 280,
-        //       duration: 400,
-        //       yoyo: true,
-        //       ease: "Power2",
-        //       onComplete: () => {
-        //         this.isJumping = false;
-        //         this.dog.setVelocityX(0);
-        //       },
-        //     });
-        //   }
-
-        //   if (this.isJumping) return;
-
-        //   if (this.cursors.left.isDown) {
-        //     this.dog.setVelocityX(-200);
-        //     this.dog.anims.play("dog_walk_left", true);
-        //     this.dogFacing = "left"; // Обновляем "память"
-        //     this.dog.flipX = false; // Принудительно отключаем flipX для этой анимации
-        //   } else if (this.cursors.right.isDown) {
-        //     this.dog.setVelocityX(200);
-        //     this.dog.anims.play("dog_walk_right", true);
-        //     this.dogFacing = "right"; // Обновляем "память"
-        //     this.dog.flipX = false; // Принудительно отключаем flipX для этой анимации
-        //   } else {
-        //     this.dog.setVelocityX(0);
-        //     this.dog.anims.play("dog_idle", true);
-        //     // Устанавливаем отражение для idle, основываясь на "памяти"
-        //     this.dog.flipX = this.dogFacing === "left";
-        //   }
-        // }
         updateDog() {
           this.mouth.x = this.dog.body.center.x;
           this.mouth.y = this.dog.body.center.y - 40;
 
           if (this.dog.hasMushroom) {
             this.carriedMushroom.setVisible(true);
-            const mushroomOffsetX = this.dogFacing === "left" ? -50 : 50;
-            this.carriedMushroom.x = this.dog.x + mushroomOffsetX;
-            this.carriedMushroom.y = this.dog.y - 80;
+            const mushroomOffsetX = this.dogFacing === "left" ? -60 : 60;
+            // this.carriedMushroom.x = this.dog.x + mushroomOffsetX;
+            // this.carriedMushroom.y = this.dog.y - 80;
+            const offset = this.dogFacing === "left" ? -60 : 60; // Смещение влево/вправо
+            this.carriedMushroom.x = this.mouth.x + offset;
+            this.carriedMushroom.y = this.mouth.y;
           } else {
             this.carriedMushroom.setVisible(false);
           }
