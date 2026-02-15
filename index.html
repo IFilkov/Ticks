@@ -815,9 +815,9 @@
                     gameScene.scene.pause();
 
                     const gameOverText = this.add
-                      .text(400, 300, "GAME OVER", {
+                      .text(400, 300, "ИГРА ОКОНЧЕНА", {
                         fontFamily: "3_Muz-TV2000.ttf",
-                        fontSize: "48px",
+                        fontSize: "248px",
                         color: "#ff0000",
                       })
                       .setOrigin(0.5);
@@ -1037,15 +1037,62 @@
         updateCollisions() {
           // *** НОВАЯ ЛОГИКА: Зона у ног ЛОВИТ клещей ***
           this.physics.overlap(this.footZone, this.ticks, (footZone, tick) => {
-            if (!this.human.hasMushroom && tick.isFalling && tick.body) {
-              console.log("Клещ пойман зоной у ног!");
-              tick.destroy();
+            if (
+              !this.human.hasMushroom &&
+              tick.isFalling &&
+              tick.body &&
+              !tick.isKicked
+            ) {
+              console.log("Клещ пойман зоной у ног! ПИНОК!");
+
+              // *** ЭФФЕКТ ПИНКА ***
+              tick.isKicked = true; // Помечаем что клещ был пнут
+              tick.isFalling = false; // Больше не может наносить урон
+
+              // Определяем направление пинка (противоположное направлению человека)
+              const kickDirection = this.humanFacing === "right" ? 1 : -1;
+              const kickDistance = 200; // Дистанция полёта
+              const kickHeight = 150; // Высота дуги
+
+              const startX = tick.x;
+              const startY = tick.y;
+              const endX = startX + kickDistance * kickDirection;
+
+              // Останавливаем физику для клеща
+              tick.body.setVelocity(0, 0);
+
+              // Визуальный эффект - серый цвет (обезврежен)
+              tick.setTint(0x888888);
+
+              // Анимация полёта по дуге
+              this.tweens.add({
+                targets: tick,
+                x: endX,
+                scale: 0.5, // Уменьшаем размер во время полёта
+                ease: "Sine.easeOut",
+                duration: 500,
+                onUpdate: (tween) => {
+                  const t = tween.progress;
+                  // Параболическая траектория вверх и вниз
+                  tick.y = startY - 4 * kickHeight * t * (1 - t);
+                  // Быстрое вращение клеща во время полёта
+                  tick.rotation = t * Math.PI * 4 * kickDirection;
+                  // Постепенное исчезновение
+                  tick.alpha = 1 - t * 0.5;
+                },
+                onComplete: () => {
+                  if (tick && tick.active) {
+                    console.log("Клещ приземлился и исчезает");
+                    tick.destroy();
+                  }
+                },
+              });
             }
           });
 
           // *** НОВАЯ ЛОГИКА: Зона у головы ПОЛУЧАЕТ УРОН ***
           this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
-            if (tick.isFalling && tick.body) {
+            if (tick.isFalling && tick.body && !tick.isKicked) {
               console.log("Клещ попал в голову человека! Урон -10 HP");
               this.events.emit("damageHuman", 10);
               tick.destroy();
@@ -1054,7 +1101,7 @@
 
           // *** Клещи наносят урон СОБАКЕ ***
           this.physics.overlap(this.dog, this.ticks, (dog, tick) => {
-            if (tick.isFalling && tick.body) {
+            if (tick.isFalling && tick.body && !tick.isKicked) {
               console.log("Клещ попал в собаку! Урон -10 HP");
               this.events.emit("damageDog", 10);
               tick.destroy();
@@ -1376,9 +1423,9 @@
                     gameScene.scene.pause();
 
                     const gameOverText = this.add
-                      .text(400, 300, "GAME OVER", {
+                      .text(400, 300, "ИГРА ОКОНЧЕНА", {
                         fontFamily: "3_Muz-TV2000.ttf",
-                        fontSize: "48px",
+                        fontSize: "248px",
                         color: "#ff0000",
                       })
                       .setOrigin(0.5);
@@ -1484,9 +1531,9 @@
                     gameScene.scene.pause();
 
                     const gameOverText = this.add
-                      .text(400, 300, "GAME OVER", {
+                      .text(400, 300, "ИГРА ОКОНЧЕНА", {
                         fontFamily: "3_Muz-TV2000.ttf",
-                        fontSize: "48px",
+                        fontSize: "248px",
                         color: "#ff0000",
                       })
                       .setOrigin(0.5);
