@@ -416,11 +416,15 @@
           const x = Phaser.Math.Between(100, 700);
           const mushroom = this.mushrooms.create(x, 580, "mushroom");
           mushroom.setOrigin(0.5, 1).setScale(0.1);
+          mushroom.collected = false; // Флаг - был ли подобран гриб
 
           this.time.delayedCall(
             8000,
             () => {
-              if (mushroom.active) mushroom.destroy();
+              // Удаляем только если гриб НЕ был подобран
+              if (mushroom.active && !mushroom.collected) {
+                mushroom.destroy();
+              }
             },
             [],
             this,
@@ -429,6 +433,7 @@
 
         collectMushroom(mouth, mushroom) {
           if (this.dog.hasMushroom) return;
+          mushroom.collected = true; // Помечаем что гриб подобран
           mushroom.destroy();
           this.dog.hasMushroom = true;
           this.dog.setTint(0x00ff00);
@@ -961,14 +966,20 @@
         }
 
         spawnMushroom() {
+          if (this.isDogDead || this.isHumanDead) return;
           if (this.mushrooms.countActive(true) > 0) return;
           const x = Phaser.Math.Between(100, 700);
           const mushroom = this.mushrooms.create(x, 580, "mushroom");
           mushroom.setOrigin(0.5, 1).setScale(0.1);
+          mushroom.collected = false; // Флаг - был ли подобран гриб
           this.time.delayedCall(
             8000,
             () => {
-              if (mushroom.active) mushroom.destroy();
+              // Удаляем только если гриб НЕ был подобран
+              if (mushroom.active && !mushroom.collected) {
+                console.log("Гриб исчез (не был подобран)");
+                mushroom.destroy();
+              }
             },
             [],
             this,
@@ -977,14 +988,31 @@
 
         collectMushroom(human, mushroom) {
           if (this.human.hasMushroom) return;
+          mushroom.collected = true; // Помечаем что гриб подобран
           mushroom.destroy();
           this.human.hasMushroom = true;
           this.human.setTint(0x00ff00);
+          console.log("Человек подобрал гриб, таймер запущен на 8 секунд");
+
+          // *** НОВОЕ: Если гриб не отдали собаке за 8 секунд, человек его съедает сам ***
           this.mushroomCarryTimer = this.time.delayedCall(
             8000,
             () => {
-              this.human.hasMushroom = false;
-              this.human.clearTint();
+              console.log(
+                "Таймер истёк! Проверка: this.human.hasMushroom =",
+                this.human.hasMushroom,
+              );
+              if (this.human && this.human.hasMushroom) {
+                // Человек съедает гриб и лечится
+                this.human.hasMushroom = false;
+                this.human.clearTint();
+                console.log(
+                  "Человек съедает гриб! Отправляем событие healHuman",
+                );
+                this.events.emit("healHuman", 20); // Лечим человека
+              } else {
+                console.log("Человек уже отдал гриб или его нет");
+              }
             },
             [],
             this,
@@ -992,11 +1020,18 @@
         }
 
         deliverMushroom() {
-          if (!this.human.hasMushroom) return;
+          if (!this.human.hasMushroom) {
+            console.log("deliverMushroom: у человека нет гриба");
+            return;
+          }
+          console.log("deliverMushroom: человек отдаёт гриб собаке");
           this.human.hasMushroom = false;
           this.human.clearTint();
           this.events.emit("healDog", 20); // *** Собака получает HP ***
-          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+          if (this.mushroomCarryTimer) {
+            console.log("deliverMushroom: отменяем таймер гриба");
+            this.mushroomCarryTimer.remove();
+          }
         }
 
         updateCollisions() {
@@ -1203,6 +1238,7 @@
           this.events.off("damageDog");
           this.events.off("damageHuman");
           this.events.off("healDog");
+          this.events.off("healHuman");
         }
       }
 
@@ -1498,6 +1534,50 @@
                 onComplete: () => healText.destroy(),
               });
             });
+
+            // *** НОВОЕ: Восстановление здоровья человека (когда съедает гриб сам) ***
+            gameScene.events.on("healHuman", (heal) => {
+              console.log(
+                "UIScene2: Получено событие healHuman с heal =",
+                heal,
+              );
+              console.log("humanHealth до лечения:", gameScene.humanHealth);
+              if (gameScene.isHumanDead) {
+                console.log("Человек мёртв, лечение не применяется");
+                return;
+              }
+              gameScene.humanHealth = Math.min(
+                100,
+                gameScene.humanHealth + heal,
+              );
+              console.log("humanHealth после лечения:", gameScene.humanHealth);
+              this.updateHumanHealthBar(gameScene.humanHealth);
+
+              // Визуальная обратная связь - зелёное мигание
+              gameScene.human.setTint(0x00ff00);
+              gameScene.time.delayedCall(400, () => {
+                if (gameScene.human) gameScene.human.clearTint();
+              });
+
+              // Показываем текст лечения
+              const healText = this.add
+                .text(gameScene.human.x, gameScene.human.y - 150, `+${heal}`, {
+                  fontSize: "32px",
+                  color: "#00ff00",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+
+              this.tweens.add({
+                targets: healText,
+                y: healText.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => healText.destroy(),
+              });
+            });
           }
         }
 
@@ -1528,6 +1608,7 @@
             gameScene.events.off("damageDog");
             gameScene.events.off("damageHuman");
             gameScene.events.off("healDog");
+            gameScene.events.off("healHuman");
           }
         }
       }
@@ -1540,7 +1621,7 @@
         width: 800,
         height: 600,
         backgroundColor: "#1d1d1d",
-        physics: { default: "arcade", arcade: { debug: true } },
+        physics: { default: "arcade", arcade: { debug: false } },
         scene: [
           PreloadScene,
           MainMenuScene,
