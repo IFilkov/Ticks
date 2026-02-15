@@ -541,13 +541,6 @@
         }
 
         startWave() {
-          if (this.wave > 3) {
-            this.scene.stop("GameScene");
-            this.scene.stop("UIScene");
-            this.scene.start("Scene2");
-            this.scene.launch("UIScene2");
-            return;
-          }
           if (this.isHumanDead) return;
           this.ticksSpawned = 0;
           this.events.emit("updateWave", this.wave);
@@ -560,6 +553,16 @@
                 this.tickSpawner.remove();
                 this.time.delayedCall(2000, () => {
                   this.wave++;
+
+                  // Проверка после инкремента - если завершили 3 волны, переходим на Scene2
+                  if (this.wave > 3) {
+                    this.scene.stop("GameScene");
+                    this.scene.stop("UIScene");
+                    this.scene.start("Scene2");
+                    this.scene.launch("UIScene2");
+                    return;
+                  }
+
                   this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
                   this.spawnInterval = Math.max(600, this.spawnInterval - 150);
                   this.startWave();
@@ -638,6 +641,70 @@
             if (gameScene.isHumanDead) return;
             gameScene.humanHealth -= damage;
             this.updateHealthBar(gameScene.humanHealth);
+
+            // Визуальная обратная связь
+            if (damage > 0) {
+              // Урон - красное мигание
+              gameScene.human.setTint(0xff0000);
+              gameScene.time.delayedCall(200, () => {
+                if (gameScene.human) gameScene.human.clearTint();
+              });
+
+              // Показываем текст урона
+              const damageText = this.add
+                .text(
+                  gameScene.human.x,
+                  gameScene.human.y - 150,
+                  `-${damage}`,
+                  {
+                    fontSize: "32px",
+                    color: "#ff0000",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  },
+                )
+                .setOrigin(0.5);
+
+              this.tweens.add({
+                targets: damageText,
+                y: damageText.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => damageText.destroy(),
+              });
+            } else {
+              // Лечение - зелёное мигание
+              gameScene.human.setTint(0x00ff00);
+              gameScene.time.delayedCall(400, () => {
+                if (gameScene.human) gameScene.human.clearTint();
+              });
+
+              // Показываем текст лечения
+              const healText = this.add
+                .text(
+                  gameScene.human.x,
+                  gameScene.human.y - 150,
+                  `+${Math.abs(damage)}`,
+                  {
+                    fontSize: "32px",
+                    color: "#00ff00",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  },
+                )
+                .setOrigin(0.5);
+
+              this.tweens.add({
+                targets: healText,
+                y: healText.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => healText.destroy(),
+              });
+            }
+
             if (gameScene.humanHealth <= 0) {
               gameScene.isHumanDead = true;
               const human = gameScene.human;
@@ -686,11 +753,12 @@
           this.dog.setOrigin(0.5, 1);
           this.dog.body.allowGravity = false;
           this.dog.setCollideWorldBounds(true);
+          this.dog.body.setSize(150, 100); // Увеличиваем hitbox для лучших коллизий
           this.dogHealth = 100; // *** Теперь у собаки есть здоровье ***
           this.dogDirection = "left";
           this.isDogDead = false;
 
-          this.mouth = this.add.zone(0, 0, 60, 60);
+          this.mouth = this.add.zone(0, 0, 80, 80); // Увеличили зону рта
           this.physics.world.enable(this.mouth);
           this.mouth.body.setAllowGravity(false);
 
@@ -740,6 +808,9 @@
           this.jumpKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE,
           );
+          this.debugKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.D,
+          );
           this.isJumping = false;
 
           this.ticks = this.physics.add.group();
@@ -760,6 +831,13 @@
 
         update() {
           if (this.isDogDead) return;
+
+          // Переключение debug режима по клавише D
+          if (Phaser.Input.Keyboard.JustDown(this.debugKey)) {
+            this.physics.world.debugGraphic.visible =
+              !this.physics.world.debugGraphic.visible;
+          }
+
           this.updateHumanPlayer(); // *** Игрок управляет человеком ***
           this.updateDogAI(); // *** Собака на AI ***
           this.updateCollisions();
@@ -805,31 +883,20 @@
         }
 
         updateCollisions() {
-          // *** Клещи теперь атакуют СОБАКУ ***
-          this.ticks.getChildren().forEach((tick) => {
-            if (!tick.active) return;
+          // *** ИСПРАВЛЕНИЕ: Используем physics.overlap вместо геометрических проверок ***
 
-            // *** Человек ловит клещей ртом (защищает собаку) ***
-            if (
-              !this.human.hasMushroom &&
-              tick.isFalling &&
-              Phaser.Geom.Intersects.RectangleToRectangle(
-                this.mouth.getBounds(),
-                tick.getBounds(),
-              )
-            ) {
+          // Человек ловит клещей ртом (защищает собаку)
+          this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
+            if (!this.human.hasMushroom && tick.isFalling && tick.body) {
+              console.log("Клещ пойман ртом!");
               tick.destroy();
-              return;
             }
+          });
 
-            // *** Клещи наносят урон СОБАКЕ ***
-            if (
-              tick.isFalling &&
-              Phaser.Geom.Intersects.RectangleToRectangle(
-                this.dog.getBounds(),
-                tick.getBounds(),
-              )
-            ) {
+          // Клещи наносят урон СОБАКЕ
+          this.physics.overlap(this.dog, this.ticks, (dog, tick) => {
+            if (tick.isFalling && tick.body) {
+              console.log("Клещ попал в собаку! Урон -10 HP");
               this.events.emit("damageDog", 10);
               tick.destroy();
             }
@@ -1019,11 +1086,17 @@
           const startY = 580;
           const peakY = Phaser.Math.Between(100, 300);
           const endX = startX + Phaser.Math.Between(-150, 150);
-          const tick = this.physics.add.sprite(startX, startY, "tick");
+
+          // *** ИСПРАВЛЕНИЕ: Используем ticks.create() чтобы клещ добавился в группу ***
+          const tick = this.ticks.create(startX, startY, "tick");
           if (!tick) return;
+
           tick.setScale(0.8);
           tick.body.setAllowGravity(false);
+          tick.body.setSize(tick.width * 1.2, tick.height * 1.2); // Увеличиваем hitbox клеща
           tick.isFalling = false;
+          console.log("Клещ создан на позиции", startX, startY);
+
           this.tweens.add({
             targets: tick,
             x: endX,
@@ -1033,10 +1106,16 @@
               const t = tween.progress;
               const h = startY - peakY;
               target.y = startY - 4 * h * t * (1 - t);
-              if (!target.isFalling && t > 0.5) target.isFalling = true;
+              if (!target.isFalling && t > 0.5) {
+                target.isFalling = true;
+                console.log("Клещ начал падать! Теперь активен");
+              }
             },
             onComplete: () => {
-              if (tick.active) tick.destroy();
+              if (tick.active) {
+                console.log("Клещ достиг земли и удалён");
+                tick.destroy();
+              }
             },
           });
         }
@@ -1079,6 +1158,31 @@
             if (gameScene.isDogDead) return;
             gameScene.dogHealth -= damage;
             this.updateHealthBar(gameScene.dogHealth);
+
+            // Визуальная обратная связь - красное мигание
+            gameScene.dog.setTint(0xff0000);
+            gameScene.time.delayedCall(200, () => {
+              if (gameScene.dog) gameScene.dog.clearTint();
+            });
+
+            // Показываем текст урона
+            const damageText = this.add
+              .text(gameScene.dog.x, gameScene.dog.y - 100, `-${damage}`, {
+                fontSize: "32px",
+                color: "#ff0000",
+                fontFamily: "3_Muz-TV2000.ttf",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5);
+
+            this.tweens.add({
+              targets: damageText,
+              y: damageText.y - 50,
+              alpha: 0,
+              duration: 1000,
+              onComplete: () => damageText.destroy(),
+            });
             if (gameScene.dogHealth <= 0) {
               gameScene.isDogDead = true;
               const dog = gameScene.dog;
@@ -1105,6 +1209,31 @@
             if (gameScene.isDogDead) return;
             gameScene.dogHealth = Math.min(100, gameScene.dogHealth + heal);
             this.updateHealthBar(gameScene.dogHealth);
+
+            // Визуальная обратная связь - зелёное мигание
+            gameScene.dog.setTint(0x00ff00);
+            gameScene.time.delayedCall(400, () => {
+              if (gameScene.dog) gameScene.dog.clearTint();
+            });
+
+            // Показываем текст лечения
+            const healText = this.add
+              .text(gameScene.dog.x, gameScene.dog.y - 100, `+${heal}`, {
+                fontSize: "32px",
+                color: "#00ff00",
+                fontFamily: "3_Muz-TV2000.ttf",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5);
+
+            this.tweens.add({
+              targets: healText,
+              y: healText.y - 50,
+              alpha: 0,
+              duration: 1000,
+              onComplete: () => healText.destroy(),
+            });
           });
         }
 
