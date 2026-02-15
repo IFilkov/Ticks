@@ -47,7 +47,161 @@
         }
 
         create() {
+          // Создаём ВСЕ анимации один раз при загрузке игры
+          this.createAllAnimations();
+
           this.scene.start("MainMenuScene");
+        }
+
+        createAllAnimations() {
+          // Анимации человека
+          if (!this.anims.exists("human_walk")) {
+            this.anims.create({
+              key: "human_walk",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 4,
+                end: 11,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("human_idle")) {
+            this.anims.create({
+              key: "human_idle",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("human_death")) {
+            this.anims.create({
+              key: "human_death",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: 0,
+            });
+          }
+
+          // Анимации собаки
+          if (!this.anims.exists("dog_idle")) {
+            this.anims.create({
+              key: "dog_idle",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_walk_right")) {
+            this.anims.create({
+              key: "dog_walk_right",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_walk_left")) {
+            this.anims.create({
+              key: "dog_walk_left",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 5,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_jump")) {
+            this.anims.create({
+              key: "dog_jump",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 12,
+              repeat: 0,
+            });
+          }
+          if (!this.anims.exists("dog_death")) {
+            this.anims.create({
+              key: "dog_death",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 0,
+              }),
+              frameRate: 1,
+              repeat: 0,
+            });
+          }
+
+          // Анимации для меню (с другими ключами чтобы не конфликтовать)
+          if (!this.anims.exists("menu_human_walk")) {
+            this.anims.create({
+              key: "menu_human_walk",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 4,
+                end: 11,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_human_idle")) {
+            this.anims.create({
+              key: "menu_human_idle",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_dog_idle")) {
+            this.anims.create({
+              key: "menu_dog_idle",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_dog_walk_right")) {
+            this.anims.create({
+              key: "menu_dog_walk_right",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_dog_walk_left")) {
+            this.anims.create({
+              key: "menu_dog_walk_left",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 5,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
         }
       }
 
@@ -138,8 +292,6 @@
               }
             },
           });
-
-          this.createMenuAnimations();
         }
 
         update() {
@@ -175,66 +327,6 @@
           this.human.setVelocityX(100 * this.humanDirection);
           this.human.flipX = this.human.body.velocity.x < 0;
           this.human.anims.play("menu_human_walk", true);
-        }
-
-        createMenuAnimations() {
-          // Проверяем существование анимаций перед созданием
-          if (!this.anims.exists("menu_human_walk")) {
-            this.anims.create({
-              key: "menu_human_walk",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 4,
-                end: 11,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_human_idle")) {
-            this.anims.create({
-              key: "menu_human_idle",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-
-          if (!this.anims.exists("menu_dog_idle")) {
-            this.anims.create({
-              key: "menu_dog_idle",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_dog_walk_right")) {
-            this.anims.create({
-              key: "menu_dog_walk_right",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_dog_walk_left")) {
-            this.anims.create({
-              key: "menu_dog_walk_left",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 5,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
         }
       }
 
@@ -279,8 +371,6 @@
           this.humanDirection = 1;
           this.humanPaused = false;
           this.isHumanDead = false;
-
-          this.createAnimations();
 
           this.time.addEvent({
             delay: 6000,
@@ -407,88 +497,6 @@
             this.dog.setVelocityX(0);
             this.dog.anims.play("dog_idle", true);
             this.dog.flipX = this.dogFacing === "left";
-          }
-        }
-
-        createAnimations() {
-          // Проверяем существование анимаций перед созданием
-          if (!this.anims.exists("human_walk")) {
-            this.anims.create({
-              key: "human_walk",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 4,
-                end: 11,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("human_idle")) {
-            this.anims.create({
-              key: "human_idle",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("human_death")) {
-            this.anims.create({
-              key: "human_death",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: 0,
-            });
-          }
-
-          if (!this.anims.exists("dog_idle")) {
-            this.anims.create({
-              key: "dog_idle",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_walk_right")) {
-            this.anims.create({
-              key: "dog_walk_right",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_walk_left")) {
-            this.anims.create({
-              key: "dog_walk_left",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 5,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_jump")) {
-            this.anims.create({
-              key: "dog_jump",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 12,
-              repeat: 0,
-            });
           }
         }
 
@@ -862,8 +870,6 @@
             .setScale(0.1)
             .setVisible(false);
 
-          this.createGameAnimations();
-
           // *** AI таймер для собаки (как в меню) ***
           this.time.addEvent({
             delay: Phaser.Math.Between(1000, 3000),
@@ -1082,88 +1088,6 @@
           } else {
             this.dog.anims.play("dog_idle", true);
             this.dog.flipX = this.dogDirection === "left";
-          }
-        }
-
-        createGameAnimations() {
-          // Проверяем существование анимаций перед созданием
-          // (они могут быть уже созданы в GameScene)
-          if (!this.anims.exists("human_walk")) {
-            this.anims.create({
-              key: "human_walk",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 4,
-                end: 11,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("human_idle")) {
-            this.anims.create({
-              key: "human_idle",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_idle")) {
-            this.anims.create({
-              key: "dog_idle",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_walk_right")) {
-            this.anims.create({
-              key: "dog_walk_right",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_walk_left")) {
-            this.anims.create({
-              key: "dog_walk_left",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 5,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_death")) {
-            this.anims.create({
-              key: "dog_death",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 0,
-              }),
-              frameRate: 1,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("human_death")) {
-            this.anims.create({
-              key: "human_death",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: 0,
-            });
           }
         }
 
@@ -1553,7 +1477,7 @@
         width: 800,
         height: 600,
         backgroundColor: "#1d1d1d",
-        physics: { default: "arcade", arcade: { debug: true } },
+        physics: { default: "arcade", arcade: { debug: false } },
         scene: [
           PreloadScene,
           MainMenuScene,
