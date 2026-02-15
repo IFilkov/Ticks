@@ -762,7 +762,7 @@
           this.physics.world.enable(this.mouth);
           this.mouth.body.setAllowGravity(false);
 
-          this.footZone = this.add.zone(0, 0, 80, 80); // Зона у ног - ЛОВИТ КЛЕЩЕЙ
+          this.footZone = this.add.zone(0, 0, 150, 60); // Зона у ног - ЛОВИТ КЛЕЩЕЙ (широкая и низкая)
           this.physics.world.enable(this.footZone);
           this.footZone.body.setAllowGravity(false);
 
@@ -946,8 +946,8 @@
           this.mouth.x = this.human.body.center.x; // Зона у головы
           this.mouth.y = this.human.body.center.y - 100;
 
-          this.footZone.x = this.human.body.center.x; // Зона у ног
-          this.footZone.y = this.human.body.center.y + 20;
+          this.footZone.x = this.human.body.center.x; // Зона у ног (широкая, на уровне ступней)
+          this.footZone.y = this.human.body.center.y + 60;
 
           if (this.human.hasMushroom) {
             this.carriedMushroom.setVisible(true);
