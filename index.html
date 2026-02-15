@@ -35,9 +35,6 @@
             frameHeight: 312,
           });
 
-          // =================================================================================
-          //  *** ЭТО ПРАВИЛЬНЫЕ, ТОЧНЫЕ РАЗМЕРЫ ВАШЕГО СПРАЙТА ***
-          // =================================================================================
           this.load.spritesheet("dog_sprite", `${assetPath}dog_sprite.png`, {
             frameWidth: 195,
             frameHeight: 128,
@@ -50,11 +47,10 @@
         }
 
         create() {
-          // this.scene.start("GameScene");
-          // this.scene.launch("UIScene");
           this.scene.start("MainMenuScene");
         }
       }
+
       // =================================================================
       // SCENE 2: MAIN MENU
       // =================================================================
@@ -143,7 +139,6 @@
             },
           });
 
-          // *** ИСПРАВЛЕНИЕ: ВЫЗЫВАЕМ ОТДЕЛЬНУЮ ФУНКЦИЮ ДЛЯ АНИМАЦИЙ МЕНЮ ***
           this.createMenuAnimations();
         }
 
@@ -153,7 +148,7 @@
         }
 
         updateDogAI() {
-          this.dog.flipX = false; // Сбрасываем flipX, так как у нас отдельные анимации
+          this.dog.flipX = false;
           if (this.dog.body.velocity.x < 0) {
             this.dog.anims.play("menu_dog_walk_left", true);
           } else if (this.dog.body.velocity.x > 0) {
@@ -182,7 +177,6 @@
           this.human.anims.play("menu_human_walk", true);
         }
 
-        // *** ИСПРАВЛЕНИЕ: ОТДЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СОЗДАНИЯ АНИМАЦИЙ В МЕНЮ ***
         createMenuAnimations() {
           this.anims.create({
             key: "menu_human_walk",
@@ -234,7 +228,7 @@
       }
 
       // =================================================================
-      // SCENE 2: GAME
+      // SCENE 3: GAME (Фаза 1: Игрок = Собака, AI = Человек)
       // =================================================================
       class GameScene extends Phaser.Scene {
         constructor() {
@@ -250,8 +244,7 @@
           this.dog.setOrigin(0.5, 1);
           this.dog.body.allowGravity = false;
           this.dog.setCollideWorldBounds(true);
-          this.dog.hasMushroom = false; // *** Флаг для гриба ***
-          // this.dog.body.setSize(240, 120).setOffset(24, 35);
+          this.dog.hasMushroom = false;
 
           this.mouth = this.add.zone(0, 0, 60, 60);
           this.physics.world.enable(this.mouth);
@@ -296,15 +289,14 @@
           this.isJumping = false;
 
           this.ticks = this.physics.add.group();
-          this.mushrooms = this.physics.add.group(); // *** Группа для грибов ***
+          this.mushrooms = this.physics.add.group();
           this.wave = 1;
           this.ticksToSpawn = 5;
           this.spawnInterval = 1500;
           this.startWave();
 
-          // *** Таймер для появления гриба ***
           this.time.addEvent({
-            delay: 1000,
+            delay: 10000,
             loop: true,
             callback: this.spawnMushroom,
             callbackScope: this,
@@ -313,13 +305,8 @@
 
         update() {
           if (this.isHumanDead) return;
-
-          // =================================================================
-          // *** ОСНОВНОЙ ЦИКЛ ТЕПЕРЬ ЧИСТЫЙ И ПРАВИЛЬНЫЙ ***
-          // =================================================================
           this.updateDog();
           this.updateHuman();
-          // this.updateTicks();
           this.updateCollisions();
         }
 
@@ -369,10 +356,7 @@
 
           if (this.dog.hasMushroom) {
             this.carriedMushroom.setVisible(true);
-            const mushroomOffsetX = this.dogFacing === "left" ? -60 : 60;
-            // this.carriedMushroom.x = this.dog.x + mushroomOffsetX;
-            // this.carriedMushroom.y = this.dog.y - 80;
-            const offset = this.dogFacing === "left" ? -60 : 60; // Смещение влево/вправо
+            const offset = this.dogFacing === "left" ? -60 : 60;
             this.carriedMushroom.x = this.mouth.x + offset;
             this.carriedMushroom.y = this.mouth.y;
           } else {
@@ -444,9 +428,6 @@
             repeat: 0,
           });
 
-          // =================================================================
-          // *** НОВАЯ, ПРАВИЛЬНАЯ НАСТРОЙКА АНИМАЦИЙ СОБАКИ ***
-          // =================================================================
           this.anims.create({
             key: "dog_idle",
             frames: this.anims.generateFrameNumbers("dog_sprite", {
@@ -488,7 +469,6 @@
         updateHuman() {
           if (this.isHumanDead) return;
 
-          // 1. Устанавливаем скорость (или ее отсутствие)
           if (this.humanPaused) {
             this.human.setVelocityX(0);
           } else {
@@ -502,7 +482,6 @@
             this.human.setVelocityX(this.humanSpeed * this.humanDirection);
           }
 
-          // 2. Устанавливаем анимацию и отражение на основе РЕЗУЛЬТИРУЮЩЕЙ скорости
           if (this.human.body.velocity.x > 0) {
             this.human.flipX = false;
             this.human.anims.play("human_walk", true);
@@ -514,22 +493,6 @@
           }
         }
 
-        // updateTicks() {
-        //   this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
-        //     // Съесть можно только "активного" (падающего) клеща
-        //     if (tick.isFalling) {
-        //       tick.destroy();
-        //     }
-        //   });
-
-        //   this.physics.overlap(this.human, this.ticks, (human, tick) => {
-        //     // Урон наносит только "активный" (падающий) клещ
-        //     if (tick.isFalling && tick.body && human.body) {
-        //       this.events.emit("damageHuman", 10);
-        //       tick.destroy();
-        //     }
-        //   });
-        // }
         updateCollisions() {
           this.ticks.getChildren().forEach((tick) => {
             if (!tick.active) return;
@@ -576,7 +539,15 @@
             this.deliverMushroom();
           }
         }
+
         startWave() {
+          if (this.wave > 3) {
+            this.scene.stop("GameScene");
+            this.scene.stop("UIScene");
+            this.scene.start("Scene2");
+            this.scene.launch("UIScene2");
+            return;
+          }
           if (this.isHumanDead) return;
           this.ticksSpawned = 0;
           this.events.emit("updateWave", this.wave);
@@ -600,92 +571,46 @@
             },
           });
         }
+
         spawnTick() {
           if (this.isHumanDead) return;
           const startX = Phaser.Math.Between(50, 750);
-          const startY = 580; // Появляются из "травы"
-          const peakY = Phaser.Math.Between(100, 300); // На какую высоту прыгнут
+          const startY = 580;
+          const peakY = Phaser.Math.Between(100, 300);
           const endX = startX + Phaser.Math.Between(-150, 150);
-
           const tick = this.ticks.create(startX, startY, "tick");
           if (!tick) return;
 
           tick.setScale(0.8);
-          tick.body.setAllowGravity(false); // Отключаем стандартную гравитацию
-          tick.isFalling = false; // Флаг "активности"
+          tick.body.setAllowGravity(false);
+          tick.isFalling = false;
 
-          // Создаем tween-анимацию для прыжка по дуге
           this.tweens.add({
             targets: tick,
             x: endX,
             ease: "Sine.easeInOut",
             duration: Phaser.Math.Between(1200, 1800),
             onUpdate: (tween, target) => {
-              const t = tween.progress; // Прогресс анимации от 0 до 1
-              // Формула параболы: y = 4 * h * t * (1 - t)
-              // h - высота прыжка
+              const t = tween.progress;
               const h = startY - peakY;
               target.y = startY - 4 * h * t * (1 - t);
-
-              // Активируем клеща, когда он пролетел пик дуги
-              if (!target.isFalling && t > 0.5) {
-                target.isFalling = true;
-              }
+              if (!target.isFalling && t > 0.5) target.isFalling = true;
             },
             onComplete: () => {
-              // Уничтожаем клеща, если он долетел до земли и не был съеден
-              if (tick) {
-                tick.destroy();
-              }
+              if (tick) tick.destroy();
             },
           });
         }
       }
 
-      // GameScene.prototype.updateTicks = function () {
-      //   this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
-      //     if (!this.dog.hasMushroom && tick.isFalling) {
-      //       tick.destroy();
-      //     }
-      //   });
-      //   this.physics.overlap(this.human, this.ticks, (human, tick) => {
-      //     if (tick.isFalling && tick.body && human.body) {
-      //       this.events.emit("damageHuman", 10);
-      //       tick.destroy();
-      //     }
-      //   });
-      // };
-      GameScene.prototype.startWave = function () {
-        if (this.isHumanDead) return;
-        this.ticksSpawned = 0;
-        this.events.emit("updateWave", this.wave);
-        if (this.tickSpawner) this.tickSpawner.remove();
-        this.tickSpawner = this.time.addEvent({
-          delay: this.spawnInterval,
-          loop: true,
-          callback: () => {
-            if (this.ticksSpawned >= this.ticksToSpawn) {
-              this.tickSpawner.remove();
-              this.time.delayedCall(2000, () => {
-                this.wave++;
-                this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
-                this.spawnInterval = Math.max(600, this.spawnInterval - 150);
-                this.startWave();
-              });
-              return;
-            }
-            this.spawnTick();
-            this.ticksSpawned++;
-          },
-        });
-      };
-
+      // =================================================================
+      // SCENE 4: UI для первой фазы
+      // =================================================================
       class UIScene extends Phaser.Scene {
         constructor() {
           super("UIScene");
         }
         create() {
-          // *** ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ НОВЫЙ ШРИФТ ***
           const textStyle = {
             fontFamily: "3_Muz-TV2000.ttf",
             fontSize: "16px",
@@ -721,7 +646,6 @@
                 "animationcomplete",
                 () => {
                   gameScene.scene.pause();
-                  // *** ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ НОВЫЙ ШРИФТ ***
                   this.add
                     .text(400, 300, "GAME OVER", {
                       fontFamily: "3_Muz-TV2000.ttf",
@@ -745,63 +669,454 @@
         }
       }
 
-      // Re-pasting unchanged methods for UIScene
-      // UIScene.prototype.create = function () {
-      //   this.healthBarBg = this.add
-      //     .rectangle(120, 30, 160, 20, 0x000000)
-      //     .setOrigin(0.5);
-      //   this.healthBar = this.add
-      //     .rectangle(120, 30, 160, 20, 0x00ff00)
-      //     .setOrigin(0.5);
-      //   this.healthText = this.add.text(45, 45, "HP: 100%", {
-      //     fontFamily: '"3_Muz-TV2000.ttf"',
-      //     fontSize: "14px",
-      //     fill: "#fff",
-      //   });
-      //   this.waveText = this.add
-      //     .text(400, 30, "Волна 1", {
-      //       fontFamily: '"3_Muz-TV2000.ttf"',
-      //       fontSize: "24px",
-      //       fill: "#eb8c17",
-      //     })
-      //     .setOrigin(0.5);
-      //   const gameScene = this.scene.get("GameScene");
-      //   gameScene.events.on("updateWave", (wave) =>
-      //     this.waveText.setText(`Волна ${wave}`),
-      //   );
-      //   gameScene.events.on("damageHuman", (damage) => {
-      //     if (gameScene.isHumanDead) return;
-      //     gameScene.humanHealth -= damage;
-      //     this.updateHealthBar(gameScene.humanHealth);
-      //     if (gameScene.humanHealth <= 0) {
-      //       gameScene.isHumanDead = true;
-      //       const human = gameScene.human;
-      //       human.anims.play("human_death", true);
-      //       human.on(
-      //         "animationcomplete",
-      //         () => {
-      //           gameScene.scene.pause();
-      //           this.add
-      //             .text(400, 300, "Конец", {
-      //               fontFamily: '"3_Muz-TV2000.ttf"',
-      //               fontSize: "140px",
-      //               color: "#ff0000",
-      //             })
-      //             .setOrigin(0.5);
-      //         },
-      //         this,
-      //       );
-      //     }
-      //   });
-      // };
-      // UIScene.prototype.updateHealthBar = function (health) {
-      //   const currentHealth = Math.max(0, health);
-      //   this.healthBar.width = (currentHealth / 100) * 160;
-      //   if (currentHealth > 60) this.healthBar.setFillStyle(0x00ff00);
-      //   else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
-      //   else this.healthBar.setFillStyle(0xff0000);
-      //   this.healthText.setText(`HP: ${currentHealth}%`);
-      // };
+      // =================================================================
+      // SCENE 5: GAME 2 (Фаза 2: Игрок = Человек, AI = Собака)
+      // =================================================================
+      class Scene2 extends Phaser.Scene {
+        constructor() {
+          super("Scene2");
+        }
+
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+
+          // *** СОБАКА ТЕПЕРЬ НА AI ***
+          this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
+          this.dog.setOrigin(0.5, 1);
+          this.dog.body.allowGravity = false;
+          this.dog.setCollideWorldBounds(true);
+          this.dogHealth = 100; // *** Теперь у собаки есть здоровье ***
+          this.dogDirection = "left";
+          this.isDogDead = false;
+
+          this.mouth = this.add.zone(0, 0, 60, 60);
+          this.physics.world.enable(this.mouth);
+          this.mouth.body.setAllowGravity(false);
+
+          // *** ЧЕЛОВЕК ТЕПЕРЬ УПРАВЛЯЕТСЯ ИГРОКОМ ***
+          this.human = this.physics.add.sprite(200, 580, "player");
+          this.human.setOrigin(0.5, 1);
+          this.human.body.allowGravity = false;
+          this.human.body.setSize(
+            this.human.width * 0.5,
+            this.human.height * 0.9,
+          );
+          this.human.setCollideWorldBounds(true);
+          this.human.hasMushroom = false;
+          this.humanFacing = "right";
+
+          this.carriedMushroom = this.add
+            .sprite(0, 0, "mushroom")
+            .setScale(0.1)
+            .setVisible(false);
+
+          this.createGameAnimations();
+
+          // *** AI таймер для собаки (как в меню) ***
+          this.time.addEvent({
+            delay: Phaser.Math.Between(1000, 3000),
+            loop: true,
+            callback: () => {
+              if (this.isDogDead) return;
+              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              switch (action) {
+                case "left":
+                  this.dog.setVelocityX(-100);
+                  this.dogDirection = "left";
+                  break;
+                case "right":
+                  this.dog.setVelocityX(100);
+                  this.dogDirection = "right";
+                  break;
+                case "idle":
+                  this.dog.setVelocityX(0);
+                  break;
+              }
+            },
+          });
+
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
+          this.isJumping = false;
+
+          this.ticks = this.physics.add.group();
+          this.mushrooms = this.add.group();
+
+          this.wave = 1;
+          this.ticksToSpawn = 5;
+          this.spawnInterval = 1500;
+          this.startWave();
+
+          this.time.addEvent({
+            delay: 10000,
+            loop: true,
+            callback: this.spawnMushroom,
+            callbackScope: this,
+          });
+        }
+
+        update() {
+          if (this.isDogDead) return;
+          this.updateHumanPlayer(); // *** Игрок управляет человеком ***
+          this.updateDogAI(); // *** Собака на AI ***
+          this.updateCollisions();
+        }
+
+        spawnMushroom() {
+          if (this.mushrooms.countActive(true) > 0) return;
+          const x = Phaser.Math.Between(100, 700);
+          const mushroom = this.mushrooms.create(x, 580, "mushroom");
+          mushroom.setOrigin(0.5, 1).setScale(0.1);
+          this.time.delayedCall(
+            8000,
+            () => {
+              if (mushroom.active) mushroom.destroy();
+            },
+            [],
+            this,
+          );
+        }
+
+        collectMushroom(human, mushroom) {
+          if (this.human.hasMushroom) return;
+          mushroom.destroy();
+          this.human.hasMushroom = true;
+          this.human.setTint(0x00ff00);
+          this.mushroomCarryTimer = this.time.delayedCall(
+            8000,
+            () => {
+              this.human.hasMushroom = false;
+              this.human.clearTint();
+            },
+            [],
+            this,
+          );
+        }
+
+        deliverMushroom() {
+          if (!this.human.hasMushroom) return;
+          this.human.hasMushroom = false;
+          this.human.clearTint();
+          this.events.emit("healDog", 20); // *** Собака получает HP ***
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+        }
+
+        updateCollisions() {
+          // *** Клещи теперь атакуют СОБАКУ ***
+          this.ticks.getChildren().forEach((tick) => {
+            if (!tick.active) return;
+
+            // *** Человек ловит клещей ртом (защищает собаку) ***
+            if (
+              !this.human.hasMushroom &&
+              tick.isFalling &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.mouth.getBounds(),
+                tick.getBounds(),
+              )
+            ) {
+              tick.destroy();
+              return;
+            }
+
+            // *** Клещи наносят урон СОБАКЕ ***
+            if (
+              tick.isFalling &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.dog.getBounds(),
+                tick.getBounds(),
+              )
+            ) {
+              this.events.emit("damageDog", 10);
+              tick.destroy();
+            }
+          });
+
+          // *** Человек собирает грибы ***
+          this.mushrooms.getChildren().forEach((mushroom) => {
+            if (!mushroom.active) return;
+            if (
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.human.getBounds(),
+                mushroom.getBounds(),
+              )
+            ) {
+              this.collectMushroom(this.human, mushroom);
+            }
+          });
+
+          // *** Человек передаёт гриб собаке ***
+          if (
+            this.human.hasMushroom &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.dog.getBounds(),
+              this.human.getBounds(),
+            )
+          ) {
+            this.deliverMushroom();
+          }
+        }
+
+        // *** ИГРОК УПРАВЛЯЕТ ЧЕЛОВЕКОМ ***
+        updateHumanPlayer() {
+          // Обновляем позицию "рта" человека
+          this.mouth.x = this.human.body.center.x;
+          this.mouth.y = this.human.body.center.y - 100;
+
+          if (this.human.hasMushroom) {
+            this.carriedMushroom.setVisible(true);
+            const offset = this.humanFacing === "left" ? -60 : 60;
+            this.carriedMushroom.x = this.human.x + offset;
+            this.carriedMushroom.y = this.human.y - 150;
+          } else {
+            this.carriedMushroom.setVisible(false);
+          }
+
+          if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
+            this.isJumping = true;
+            if (this.cursors.left.isDown) this.human.setVelocityX(-200);
+            else if (this.cursors.right.isDown) this.human.setVelocityX(200);
+            else this.human.setVelocityX(0);
+
+            this.tweens.add({
+              targets: this.human,
+              y: this.human.y - 280,
+              duration: 400,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.human.setVelocityX(0);
+              },
+            });
+          }
+
+          if (this.isJumping) return;
+
+          if (this.cursors.left.isDown) {
+            this.human.setVelocityX(-200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = true;
+            this.humanFacing = "left";
+          } else if (this.cursors.right.isDown) {
+            this.human.setVelocityX(200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = false;
+            this.humanFacing = "right";
+          } else {
+            this.human.setVelocityX(0);
+            this.human.anims.play("human_idle", true);
+          }
+        }
+
+        // *** СОБАКА НА AI (как в меню) ***
+        updateDogAI() {
+          this.dog.flipX = false;
+          if (this.dog.body.velocity.x < 0) {
+            this.dog.anims.play("dog_walk_left", true);
+          } else if (this.dog.body.velocity.x > 0) {
+            this.dog.anims.play("dog_walk_right", true);
+          } else {
+            this.dog.anims.play("dog_idle", true);
+            this.dog.flipX = this.dogDirection === "left";
+          }
+        }
+
+        createGameAnimations() {
+          this.anims.create({
+            key: "human_walk",
+            frames: this.anims.generateFrameNumbers("player", {
+              start: 4,
+              end: 11,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "human_idle",
+            frames: this.anims.generateFrameNumbers("player", {
+              start: 0,
+              end: 3,
+            }),
+            frameRate: 5,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "dog_idle",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 0,
+              end: 3,
+            }),
+            frameRate: 5,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "dog_walk_right",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 12,
+              end: 15,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "dog_walk_left",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 5,
+              end: 7,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
+          this.anims.create({
+            key: "dog_death",
+            frames: this.anims.generateFrameNumbers("dog_sprite", {
+              start: 0,
+              end: 0,
+            }),
+            frameRate: 1,
+            repeat: 0,
+          });
+        }
+
+        startWave() {
+          if (this.wave > 12) {
+            this.scene.stop("Scene2");
+            this.scene.stop("UIScene2");
+            this.scene.start("MainMenuScene");
+            return;
+          }
+          if (this.isDogDead) return;
+          this.ticksSpawned = 0;
+          this.events.emit("updateWave", this.wave);
+          if (this.tickSpawner) this.tickSpawner.remove();
+          this.tickSpawner = this.time.addEvent({
+            delay: this.spawnInterval,
+            loop: true,
+            callback: () => {
+              if (this.ticksSpawned >= this.ticksToSpawn) {
+                this.tickSpawner.remove();
+                this.time.delayedCall(2000, () => {
+                  this.wave++;
+                  this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
+                  this.spawnInterval = Math.max(600, this.spawnInterval - 150);
+                  this.startWave();
+                });
+                return;
+              }
+              this.spawnTick();
+              this.ticksSpawned++;
+            },
+          });
+        }
+
+        spawnTick() {
+          if (this.isDogDead) return;
+          const startX = Phaser.Math.Between(50, 750);
+          const startY = 580;
+          const peakY = Phaser.Math.Between(100, 300);
+          const endX = startX + Phaser.Math.Between(-150, 150);
+          const tick = this.physics.add.sprite(startX, startY, "tick");
+          if (!tick) return;
+          tick.setScale(0.8);
+          tick.body.setAllowGravity(false);
+          tick.isFalling = false;
+          this.tweens.add({
+            targets: tick,
+            x: endX,
+            ease: "Sine.easeInOut",
+            duration: Phaser.Math.Between(1200, 1800),
+            onUpdate: (tween, target) => {
+              const t = tween.progress;
+              const h = startY - peakY;
+              target.y = startY - 4 * h * t * (1 - t);
+              if (!target.isFalling && t > 0.5) target.isFalling = true;
+            },
+            onComplete: () => {
+              if (tick.active) tick.destroy();
+            },
+          });
+        }
+      }
+
+      // =================================================================
+      // SCENE 6: UI для второй фазы
+      // =================================================================
+      class UIScene2 extends Phaser.Scene {
+        constructor() {
+          super("UIScene2");
+        }
+        create() {
+          const textStyle = {
+            fontFamily: "3_Muz-TV2000.ttf",
+            fontSize: "16px",
+            fill: "#fff",
+          };
+          this.healthBarBg = this.add
+            .rectangle(120, 30, 160, 20, 0x000000)
+            .setOrigin(0.5);
+          this.healthBar = this.add
+            .rectangle(120, 30, 160, 20, 0x00ff00)
+            .setOrigin(0.5);
+          this.healthText = this.add.text(45, 45, "HP: 100%", textStyle);
+          this.waveText = this.add
+            .text(400, 30, "Волна 1", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "24px",
+              fill: "#eb8c17",
+            })
+            .setOrigin(0.5);
+          const gameScene = this.scene.get("Scene2");
+          gameScene.events.on("updateWave", (wave) =>
+            this.waveText.setText(`Волна ${wave}`),
+          );
+
+          // *** Теперь слушаем урон СОБАКИ ***
+          gameScene.events.on("damageDog", (damage) => {
+            if (gameScene.isDogDead) return;
+            gameScene.dogHealth -= damage;
+            this.updateHealthBar(gameScene.dogHealth);
+            if (gameScene.dogHealth <= 0) {
+              gameScene.isDogDead = true;
+              const dog = gameScene.dog;
+              dog.anims.play("dog_death", true);
+              dog.on(
+                "animationcomplete",
+                () => {
+                  gameScene.scene.pause();
+                  this.add
+                    .text(400, 300, "GAME OVER", {
+                      fontFamily: "3_Muz-TV2000.ttf",
+                      fontSize: "48px",
+                      color: "#ff0000",
+                    })
+                    .setOrigin(0.5);
+                },
+                this,
+              );
+            }
+          });
+
+          // *** Восстановление здоровья собаки ***
+          gameScene.events.on("healDog", (heal) => {
+            if (gameScene.isDogDead) return;
+            gameScene.dogHealth = Math.min(100, gameScene.dogHealth + heal);
+            this.updateHealthBar(gameScene.dogHealth);
+          });
+        }
+
+        updateHealthBar(health) {
+          const currentHealth = Math.max(0, health);
+          this.healthBar.width = (currentHealth / 100) * 160;
+          if (currentHealth > 60) this.healthBar.setFillStyle(0x00ff00);
+          else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
+          else this.healthBar.setFillStyle(0xff0000);
+          this.healthText.setText(`HP: ${currentHealth}%`);
+        }
+      }
 
       // =================================================================
       // GAME CONFIGURATION
@@ -811,14 +1126,15 @@
         width: 800,
         height: 600,
         backgroundColor: "#1d1d1d",
-        physics: {
-          default: "arcade",
-          arcade: {
-            debug: true, // Отладчик выключен
-          },
-        },
-        // scene: [PreloadScene, GameScene, UIScene],
-        scene: [PreloadScene, MainMenuScene, GameScene, UIScene],
+        physics: { default: "arcade", arcade: { debug: false } },
+        scene: [
+          PreloadScene,
+          MainMenuScene,
+          GameScene,
+          UIScene,
+          Scene2,
+          UIScene2,
+        ],
       };
 
       window.onload = () => new Phaser.Game(config);
