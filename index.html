@@ -758,9 +758,13 @@
           this.dogDirection = "left";
           this.isDogDead = false;
 
-          this.mouth = this.add.zone(0, 0, 80, 80); // Увеличили зону рта
+          this.mouth = this.add.zone(0, 0, 80, 80); // Зона у головы - ПОЛУЧАЕТ УРОН
           this.physics.world.enable(this.mouth);
           this.mouth.body.setAllowGravity(false);
+
+          this.footZone = this.add.zone(0, 0, 80, 80); // Зона у ног - ЛОВИТ КЛЕЩЕЙ
+          this.physics.world.enable(this.footZone);
+          this.footZone.body.setAllowGravity(false);
 
           // *** ЧЕЛОВЕК ТЕПЕРЬ УПРАВЛЯЕТСЯ ИГРОКОМ ***
           this.human = this.physics.add.sprite(200, 580, "player");
@@ -773,6 +777,8 @@
           this.human.setCollideWorldBounds(true);
           this.human.hasMushroom = false;
           this.humanFacing = "right";
+          this.humanHealth = 100; // *** Добавляем здоровье человеку ***
+          this.isHumanDead = false; // *** Флаг смерти человека ***
 
           this.carriedMushroom = this.add
             .sprite(0, 0, "mushroom")
@@ -830,7 +836,7 @@
         }
 
         update() {
-          if (this.isDogDead) return;
+          if (this.isDogDead || this.isHumanDead) return;
 
           // Переключение debug режима по клавише D
           if (Phaser.Input.Keyboard.JustDown(this.debugKey)) {
@@ -883,17 +889,24 @@
         }
 
         updateCollisions() {
-          // *** ИСПРАВЛЕНИЕ: Используем physics.overlap вместо геометрических проверок ***
-
-          // Человек ловит клещей ртом (защищает собаку)
-          this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
+          // *** НОВАЯ ЛОГИКА: Зона у ног ЛОВИТ клещей ***
+          this.physics.overlap(this.footZone, this.ticks, (footZone, tick) => {
             if (!this.human.hasMushroom && tick.isFalling && tick.body) {
-              console.log("Клещ пойман ртом!");
+              console.log("Клещ пойман зоной у ног!");
               tick.destroy();
             }
           });
 
-          // Клещи наносят урон СОБАКЕ
+          // *** НОВАЯ ЛОГИКА: Зона у головы ПОЛУЧАЕТ УРОН ***
+          this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
+            if (tick.isFalling && tick.body) {
+              console.log("Клещ попал в голову человека! Урон -10 HP");
+              this.events.emit("damageHuman", 10);
+              tick.destroy();
+            }
+          });
+
+          // *** Клещи наносят урон СОБАКЕ ***
           this.physics.overlap(this.dog, this.ticks, (dog, tick) => {
             if (tick.isFalling && tick.body) {
               console.log("Клещ попал в собаку! Урон -10 HP");
@@ -929,9 +942,12 @@
 
         // *** ИГРОК УПРАВЛЯЕТ ЧЕЛОВЕКОМ ***
         updateHumanPlayer() {
-          // Обновляем позицию "рта" человека
-          this.mouth.x = this.human.body.center.x;
+          // Обновляем позиции зон
+          this.mouth.x = this.human.body.center.x; // Зона у головы
           this.mouth.y = this.human.body.center.y - 100;
+
+          this.footZone.x = this.human.body.center.x; // Зона у ног
+          this.footZone.y = this.human.body.center.y + 20;
 
           if (this.human.hasMushroom) {
             this.carriedMushroom.setVisible(true);
@@ -1047,6 +1063,15 @@
             frameRate: 1,
             repeat: 0,
           });
+          this.anims.create({
+            key: "human_death",
+            frames: this.anims.generateFrameNumbers("player", {
+              start: 12,
+              end: 15,
+            }),
+            frameRate: 10,
+            repeat: 0,
+          });
         }
 
         startWave() {
@@ -1056,7 +1081,7 @@
             this.scene.start("MainMenuScene");
             return;
           }
-          if (this.isDogDead) return;
+          if (this.isDogDead || this.isHumanDead) return;
           this.ticksSpawned = 0;
           this.events.emit("updateWave", this.wave);
           if (this.tickSpawner) this.tickSpawner.remove();
@@ -1081,7 +1106,7 @@
         }
 
         spawnTick() {
-          if (this.isDogDead) return;
+          if (this.isDogDead || this.isHumanDead) return;
           const startX = Phaser.Math.Between(50, 750);
           const startY = 580;
           const peakY = Phaser.Math.Between(100, 300);
@@ -1134,13 +1159,28 @@
             fontSize: "16px",
             fill: "#fff",
           };
-          this.healthBarBg = this.add
+
+          // *** ШКАЛА ЗДОРОВЬЯ СОБАКИ (слева) ***
+          this.add.text(40, 15, "Собака:", textStyle);
+          this.dogHealthBarBg = this.add
             .rectangle(120, 30, 160, 20, 0x000000)
             .setOrigin(0.5);
-          this.healthBar = this.add
+          this.dogHealthBar = this.add
             .rectangle(120, 30, 160, 20, 0x00ff00)
             .setOrigin(0.5);
-          this.healthText = this.add.text(45, 45, "HP: 100%", textStyle);
+          this.dogHealthText = this.add.text(45, 45, "HP: 100%", textStyle);
+
+          // *** ШКАЛА ЗДОРОВЬЯ ЧЕЛОВЕКА (справа) ***
+          this.add.text(600, 15, "Человек:", textStyle);
+          this.humanHealthBarBg = this.add
+            .rectangle(680, 30, 160, 20, 0x000000)
+            .setOrigin(0.5);
+          this.humanHealthBar = this.add
+            .rectangle(680, 30, 160, 20, 0x00ff00)
+            .setOrigin(0.5);
+          this.humanHealthText = this.add.text(605, 45, "HP: 100%", textStyle);
+
+          // *** ИНДИКАТОР ВОЛНЫ (по центру) ***
           this.waveText = this.add
             .text(400, 30, "Волна 1", {
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -1148,6 +1188,7 @@
               fill: "#eb8c17",
             })
             .setOrigin(0.5);
+
           const gameScene = this.scene.get("Scene2");
           gameScene.events.on("updateWave", (wave) =>
             this.waveText.setText(`Волна ${wave}`),
@@ -1157,7 +1198,7 @@
           gameScene.events.on("damageDog", (damage) => {
             if (gameScene.isDogDead) return;
             gameScene.dogHealth -= damage;
-            this.updateHealthBar(gameScene.dogHealth);
+            this.updateDogHealthBar(gameScene.dogHealth);
 
             // Визуальная обратная связь - красное мигание
             gameScene.dog.setTint(0xff0000);
@@ -1192,7 +1233,59 @@
                 () => {
                   gameScene.scene.pause();
                   this.add
-                    .text(400, 300, "GAME OVER", {
+                    .text(400, 300, "GAME OVER - Собака погибла", {
+                      fontFamily: "3_Muz-TV2000.ttf",
+                      fontSize: "48px",
+                      color: "#ff0000",
+                    })
+                    .setOrigin(0.5);
+                },
+                this,
+              );
+            }
+          });
+
+          // *** НОВОЕ: Слушаем урон ЧЕЛОВЕКА ***
+          gameScene.events.on("damageHuman", (damage) => {
+            if (gameScene.isHumanDead) return;
+            gameScene.humanHealth -= damage;
+            this.updateHumanHealthBar(gameScene.humanHealth);
+
+            // Визуальная обратная связь - красное мигание
+            gameScene.human.setTint(0xff0000);
+            gameScene.time.delayedCall(200, () => {
+              if (gameScene.human) gameScene.human.clearTint();
+            });
+
+            // Показываем текст урона
+            const damageText = this.add
+              .text(gameScene.human.x, gameScene.human.y - 150, `-${damage}`, {
+                fontSize: "32px",
+                color: "#ff0000",
+                fontFamily: "3_Muz-TV2000.ttf",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5);
+
+            this.tweens.add({
+              targets: damageText,
+              y: damageText.y - 50,
+              alpha: 0,
+              duration: 1000,
+              onComplete: () => damageText.destroy(),
+            });
+
+            if (gameScene.humanHealth <= 0) {
+              gameScene.isHumanDead = true;
+              const human = gameScene.human;
+              human.anims.play("human_death", true);
+              human.on(
+                "animationcomplete",
+                () => {
+                  gameScene.scene.pause();
+                  this.add
+                    .text(400, 300, "GAME OVER - Человек погиб", {
                       fontFamily: "3_Muz-TV2000.ttf",
                       fontSize: "48px",
                       color: "#ff0000",
@@ -1208,7 +1301,7 @@
           gameScene.events.on("healDog", (heal) => {
             if (gameScene.isDogDead) return;
             gameScene.dogHealth = Math.min(100, gameScene.dogHealth + heal);
-            this.updateHealthBar(gameScene.dogHealth);
+            this.updateDogHealthBar(gameScene.dogHealth);
 
             // Визуальная обратная связь - зелёное мигание
             gameScene.dog.setTint(0x00ff00);
@@ -1237,13 +1330,23 @@
           });
         }
 
-        updateHealthBar(health) {
+        updateDogHealthBar(health) {
           const currentHealth = Math.max(0, health);
-          this.healthBar.width = (currentHealth / 100) * 160;
-          if (currentHealth > 60) this.healthBar.setFillStyle(0x00ff00);
-          else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
-          else this.healthBar.setFillStyle(0xff0000);
-          this.healthText.setText(`HP: ${currentHealth}%`);
+          this.dogHealthBar.width = (currentHealth / 100) * 160;
+          if (currentHealth > 60) this.dogHealthBar.setFillStyle(0x00ff00);
+          else if (currentHealth > 30) this.dogHealthBar.setFillStyle(0xffff00);
+          else this.dogHealthBar.setFillStyle(0xff0000);
+          this.dogHealthText.setText(`HP: ${currentHealth}%`);
+        }
+
+        updateHumanHealthBar(health) {
+          const currentHealth = Math.max(0, health);
+          this.humanHealthBar.width = (currentHealth / 100) * 160;
+          if (currentHealth > 60) this.humanHealthBar.setFillStyle(0x00ff00);
+          else if (currentHealth > 30)
+            this.humanHealthBar.setFillStyle(0xffff00);
+          else this.humanHealthBar.setFillStyle(0xff0000);
+          this.humanHealthText.setText(`HP: ${currentHealth}%`);
         }
       }
 
@@ -1255,7 +1358,7 @@
         width: 800,
         height: 600,
         backgroundColor: "#1d1d1d",
-        physics: { default: "arcade", arcade: { debug: false } },
+        physics: { default: "arcade", arcade: { debug: true } },
         scene: [
           PreloadScene,
           MainMenuScene,
