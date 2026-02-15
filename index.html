@@ -178,52 +178,63 @@
         }
 
         createMenuAnimations() {
-          this.anims.create({
-            key: "menu_human_walk",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 4,
-              end: 11,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "menu_human_idle",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 5,
-            repeat: -1,
-          });
+          // Проверяем существование анимаций перед созданием
+          if (!this.anims.exists("menu_human_walk")) {
+            this.anims.create({
+              key: "menu_human_walk",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 4,
+                end: 11,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_human_idle")) {
+            this.anims.create({
+              key: "menu_human_idle",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
 
-          this.anims.create({
-            key: "menu_dog_idle",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 5,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "menu_dog_walk_right",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 12,
-              end: 15,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "menu_dog_walk_left",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 5,
-              end: 7,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
+          if (!this.anims.exists("menu_dog_idle")) {
+            this.anims.create({
+              key: "menu_dog_idle",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_dog_walk_right")) {
+            this.anims.create({
+              key: "menu_dog_walk_right",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("menu_dog_walk_left")) {
+            this.anims.create({
+              key: "menu_dog_walk_left",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 5,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
         }
       }
 
@@ -400,70 +411,85 @@
         }
 
         createAnimations() {
-          this.anims.create({
-            key: "human_walk",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 4,
-              end: 11,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "human_idle",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 5,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "human_death",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 12,
-              end: 15,
-            }),
-            frameRate: 10,
-            repeat: 0,
-          });
+          // Проверяем существование анимаций перед созданием
+          if (!this.anims.exists("human_walk")) {
+            this.anims.create({
+              key: "human_walk",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 4,
+                end: 11,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("human_idle")) {
+            this.anims.create({
+              key: "human_idle",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("human_death")) {
+            this.anims.create({
+              key: "human_death",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: 0,
+            });
+          }
 
-          this.anims.create({
-            key: "dog_idle",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 5,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_walk_right",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 12,
-              end: 15,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_walk_left",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 5,
-              end: 7,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_jump",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 12,
-              end: 15,
-            }),
-            frameRate: 12,
-            repeat: 0,
-          });
+          if (!this.anims.exists("dog_idle")) {
+            this.anims.create({
+              key: "dog_idle",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_walk_right")) {
+            this.anims.create({
+              key: "dog_walk_right",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_walk_left")) {
+            this.anims.create({
+              key: "dog_walk_left",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 5,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_jump")) {
+            this.anims.create({
+              key: "dog_jump",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 12,
+              repeat: 0,
+            });
+          }
         }
 
         updateHuman() {
@@ -712,14 +738,65 @@
               human.on(
                 "animationcomplete",
                 () => {
+                  // Прячем человека
+                  human.setVisible(false);
+
+                  // Создаём могилку на месте человека
+                  const graveX = human.x;
+                  const graveY = human.y;
+
+                  // Основание могилы (прямоугольник)
+                  const graveBase = this.add.rectangle(
+                    graveX,
+                    graveY - 50,
+                    50,
+                    80,
+                    0x222222,
+                  );
+                  graveBase.setStrokeStyle(2, 0x000000);
+
+                  // Верхняя часть (закругленная)
+                  const graveTop = this.add.ellipse(
+                    graveX,
+                    graveY - 90,
+                    50,
+                    40,
+                    0x222222,
+                  );
+                  graveTop.setStrokeStyle(2, 0x000000);
+
+                  // Крест
+                  const crossVertical = this.add.rectangle(
+                    graveX,
+                    graveY - 75,
+                    5,
+                    30,
+                    0x888888,
+                  );
+                  const crossHorizontal = this.add.rectangle(
+                    graveX,
+                    graveY - 83,
+                    20,
+                    5,
+                    0x888888,
+                  );
+
                   gameScene.scene.pause();
-                  this.add
+
+                  const gameOverText = this.add
                     .text(400, 300, "GAME OVER", {
                       fontFamily: "3_Muz-TV2000.ttf",
                       fontSize: "48px",
                       color: "#ff0000",
                     })
                     .setOrigin(0.5);
+
+                  // Через 5 секунд возврат в меню
+                  this.time.delayedCall(5000, () => {
+                    gameScene.scene.stop("GameScene");
+                    this.scene.stop("UIScene");
+                    this.scene.start("MainMenuScene");
+                  });
                 },
                 this,
               );
@@ -762,7 +839,7 @@
           this.physics.world.enable(this.mouth);
           this.mouth.body.setAllowGravity(false);
 
-          this.footZone = this.add.zone(0, 0, 150, 60); // Зона у ног - ЛОВИТ КЛЕЩЕЙ (широкая и низкая)
+          this.footZone = this.add.zone(0, 0, 200, 60); // Зона у ног - ЛОВИТ КЛЕЩЕЙ (очень широкая и низкая)
           this.physics.world.enable(this.footZone);
           this.footZone.body.setAllowGravity(false);
 
@@ -946,8 +1023,8 @@
           this.mouth.x = this.human.body.center.x; // Зона у головы
           this.mouth.y = this.human.body.center.y - 100;
 
-          this.footZone.x = this.human.body.center.x; // Зона у ног (широкая, на уровне ступней)
-          this.footZone.y = this.human.body.center.y + 60;
+          this.footZone.x = this.human.body.center.x; // Зона у ног (очень широкая, почти на земле)
+          this.footZone.y = this.human.body.center.y + 120;
 
           if (this.human.hasMushroom) {
             this.carriedMushroom.setVisible(true);
@@ -1009,69 +1086,85 @@
         }
 
         createGameAnimations() {
-          this.anims.create({
-            key: "human_walk",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 4,
-              end: 11,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "human_idle",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 5,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_idle",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 5,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_walk_right",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 12,
-              end: 15,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_walk_left",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 5,
-              end: 7,
-            }),
-            frameRate: 10,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "dog_death",
-            frames: this.anims.generateFrameNumbers("dog_sprite", {
-              start: 0,
-              end: 0,
-            }),
-            frameRate: 1,
-            repeat: 0,
-          });
-          this.anims.create({
-            key: "human_death",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 12,
-              end: 15,
-            }),
-            frameRate: 10,
-            repeat: 0,
-          });
+          // Проверяем существование анимаций перед созданием
+          // (они могут быть уже созданы в GameScene)
+          if (!this.anims.exists("human_walk")) {
+            this.anims.create({
+              key: "human_walk",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 4,
+                end: 11,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("human_idle")) {
+            this.anims.create({
+              key: "human_idle",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_idle")) {
+            this.anims.create({
+              key: "dog_idle",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_walk_right")) {
+            this.anims.create({
+              key: "dog_walk_right",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_walk_left")) {
+            this.anims.create({
+              key: "dog_walk_left",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 5,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("dog_death")) {
+            this.anims.create({
+              key: "dog_death",
+              frames: this.anims.generateFrameNumbers("dog_sprite", {
+                start: 0,
+                end: 0,
+              }),
+              frameRate: 1,
+              repeat: 0,
+            });
+          }
+          if (!this.anims.exists("human_death")) {
+            this.anims.create({
+              key: "human_death",
+              frames: this.anims.generateFrameNumbers("player", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 10,
+              repeat: 0,
+            });
+          }
         }
 
         startWave() {
@@ -1231,14 +1324,65 @@
               dog.on(
                 "animationcomplete",
                 () => {
+                  // Прячем собаку
+                  dog.setVisible(false);
+
+                  // Создаём могилку на месте собаки
+                  const graveX = dog.x;
+                  const graveY = dog.y;
+
+                  // Основание могилы (прямоугольник)
+                  const graveBase = this.add.rectangle(
+                    graveX,
+                    graveY - 30,
+                    40,
+                    60,
+                    0x222222,
+                  );
+                  graveBase.setStrokeStyle(2, 0x000000);
+
+                  // Верхняя часть (закругленная)
+                  const graveTop = this.add.ellipse(
+                    graveX,
+                    graveY - 60,
+                    40,
+                    30,
+                    0x222222,
+                  );
+                  graveTop.setStrokeStyle(2, 0x000000);
+
+                  // Крест
+                  const crossVertical = this.add.rectangle(
+                    graveX,
+                    graveY - 50,
+                    4,
+                    24,
+                    0x888888,
+                  );
+                  const crossHorizontal = this.add.rectangle(
+                    graveX,
+                    graveY - 56,
+                    16,
+                    4,
+                    0x888888,
+                  );
+
                   gameScene.scene.pause();
-                  this.add
-                    .text(400, 300, "GAME OVER - Собака погибла", {
+
+                  const gameOverText = this.add
+                    .text(400, 300, "GAME OVER", {
                       fontFamily: "3_Muz-TV2000.ttf",
                       fontSize: "48px",
                       color: "#ff0000",
                     })
                     .setOrigin(0.5);
+
+                  // Через 5 секунд возврат в меню
+                  this.time.delayedCall(5000, () => {
+                    gameScene.scene.stop("Scene2");
+                    this.scene.stop("UIScene2");
+                    this.scene.start("MainMenuScene");
+                  });
                 },
                 this,
               );
@@ -1283,14 +1427,65 @@
               human.on(
                 "animationcomplete",
                 () => {
+                  // Прячем человека
+                  human.setVisible(false);
+
+                  // Создаём могилку на месте человека
+                  const graveX = human.x;
+                  const graveY = human.y;
+
+                  // Основание могилы (прямоугольник)
+                  const graveBase = this.add.rectangle(
+                    graveX,
+                    graveY - 50,
+                    50,
+                    80,
+                    0x222222,
+                  );
+                  graveBase.setStrokeStyle(2, 0x000000);
+
+                  // Верхняя часть (закругленная)
+                  const graveTop = this.add.ellipse(
+                    graveX,
+                    graveY - 90,
+                    50,
+                    40,
+                    0x222222,
+                  );
+                  graveTop.setStrokeStyle(2, 0x000000);
+
+                  // Крест
+                  const crossVertical = this.add.rectangle(
+                    graveX,
+                    graveY - 75,
+                    5,
+                    30,
+                    0x888888,
+                  );
+                  const crossHorizontal = this.add.rectangle(
+                    graveX,
+                    graveY - 83,
+                    20,
+                    5,
+                    0x888888,
+                  );
+
                   gameScene.scene.pause();
-                  this.add
-                    .text(400, 300, "GAME OVER - Человек погиб", {
+
+                  const gameOverText = this.add
+                    .text(400, 300, "GAME OVER", {
                       fontFamily: "3_Muz-TV2000.ttf",
                       fontSize: "48px",
                       color: "#ff0000",
                     })
                     .setOrigin(0.5);
+
+                  // Через 5 секунд возврат в меню
+                  this.time.delayedCall(5000, () => {
+                    gameScene.scene.stop("Scene2");
+                    this.scene.stop("UIScene2");
+                    this.scene.start("MainMenuScene");
+                  });
                 },
                 this,
               );
