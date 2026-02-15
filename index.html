@@ -638,6 +638,19 @@
             },
           });
         }
+
+        shutdown() {
+          // Очищаем таймеры при остановке сцены
+          if (this.tickSpawner) {
+            this.tickSpawner.remove();
+          }
+          if (this.mushroomCarryTimer) {
+            this.mushroomCarryTimer.remove();
+          }
+          // Очищаем все события
+          this.events.off("updateWave");
+          this.events.off("damageHuman");
+        }
       }
 
       // =================================================================
@@ -667,149 +680,155 @@
               fill: "#eb8c17",
             })
             .setOrigin(0.5);
+
           const gameScene = this.scene.get("GameScene");
-          gameScene.events.on("updateWave", (wave) =>
-            this.waveText.setText(`Волна ${wave}`),
-          );
-          gameScene.events.on("damageHuman", (damage) => {
-            if (gameScene.isHumanDead) return;
-            gameScene.humanHealth -= damage;
-            this.updateHealthBar(gameScene.humanHealth);
+          if (gameScene && gameScene.scene.isActive()) {
+            gameScene.events.on("updateWave", (wave) => {
+              if (this.waveText && this.waveText.active) {
+                this.waveText.setText(`Волна ${wave}`);
+              }
+            });
 
-            // Визуальная обратная связь
-            if (damage > 0) {
-              // Урон - красное мигание
-              gameScene.human.setTint(0xff0000);
-              gameScene.time.delayedCall(200, () => {
-                if (gameScene.human) gameScene.human.clearTint();
-              });
+            gameScene.events.on("damageHuman", (damage) => {
+              if (gameScene.isHumanDead) return;
+              gameScene.humanHealth -= damage;
+              this.updateHealthBar(gameScene.humanHealth);
 
-              // Показываем текст урона
-              const damageText = this.add
-                .text(
-                  gameScene.human.x,
-                  gameScene.human.y - 150,
-                  `-${damage}`,
-                  {
-                    fontSize: "32px",
-                    color: "#ff0000",
-                    fontFamily: "3_Muz-TV2000.ttf",
-                    stroke: "#000",
-                    strokeThickness: 4,
-                  },
-                )
-                .setOrigin(0.5);
+              // Визуальная обратная связь
+              if (damage > 0) {
+                // Урон - красное мигание
+                gameScene.human.setTint(0xff0000);
+                gameScene.time.delayedCall(200, () => {
+                  if (gameScene.human) gameScene.human.clearTint();
+                });
 
-              this.tweens.add({
-                targets: damageText,
-                y: damageText.y - 50,
-                alpha: 0,
-                duration: 1000,
-                onComplete: () => damageText.destroy(),
-              });
-            } else {
-              // Лечение - зелёное мигание
-              gameScene.human.setTint(0x00ff00);
-              gameScene.time.delayedCall(400, () => {
-                if (gameScene.human) gameScene.human.clearTint();
-              });
-
-              // Показываем текст лечения
-              const healText = this.add
-                .text(
-                  gameScene.human.x,
-                  gameScene.human.y - 150,
-                  `+${Math.abs(damage)}`,
-                  {
-                    fontSize: "32px",
-                    color: "#00ff00",
-                    fontFamily: "3_Muz-TV2000.ttf",
-                    stroke: "#000",
-                    strokeThickness: 4,
-                  },
-                )
-                .setOrigin(0.5);
-
-              this.tweens.add({
-                targets: healText,
-                y: healText.y - 50,
-                alpha: 0,
-                duration: 1000,
-                onComplete: () => healText.destroy(),
-              });
-            }
-
-            if (gameScene.humanHealth <= 0) {
-              gameScene.isHumanDead = true;
-              const human = gameScene.human;
-              human.anims.play("human_death", true);
-              human.on(
-                "animationcomplete",
-                () => {
-                  // Прячем человека
-                  human.setVisible(false);
-
-                  // Создаём могилку на месте человека
-                  const graveX = human.x;
-                  const graveY = human.y;
-
-                  // Основание могилы (прямоугольник)
-                  const graveBase = this.add.rectangle(
-                    graveX,
-                    graveY - 50,
-                    50,
-                    80,
-                    0x222222,
-                  );
-                  graveBase.setStrokeStyle(2, 0x000000);
-
-                  // Верхняя часть (закругленная)
-                  const graveTop = this.add.ellipse(
-                    graveX,
-                    graveY - 90,
-                    50,
-                    40,
-                    0x222222,
-                  );
-                  graveTop.setStrokeStyle(2, 0x000000);
-
-                  // Крест
-                  const crossVertical = this.add.rectangle(
-                    graveX,
-                    graveY - 75,
-                    5,
-                    30,
-                    0x888888,
-                  );
-                  const crossHorizontal = this.add.rectangle(
-                    graveX,
-                    graveY - 83,
-                    20,
-                    5,
-                    0x888888,
-                  );
-
-                  gameScene.scene.pause();
-
-                  const gameOverText = this.add
-                    .text(400, 300, "GAME OVER", {
-                      fontFamily: "3_Muz-TV2000.ttf",
-                      fontSize: "48px",
+                // Показываем текст урона
+                const damageText = this.add
+                  .text(
+                    gameScene.human.x,
+                    gameScene.human.y - 150,
+                    `-${damage}`,
+                    {
+                      fontSize: "32px",
                       color: "#ff0000",
-                    })
-                    .setOrigin(0.5);
+                      fontFamily: "3_Muz-TV2000.ttf",
+                      stroke: "#000",
+                      strokeThickness: 4,
+                    },
+                  )
+                  .setOrigin(0.5);
 
-                  // Через 5 секунд возврат в меню
-                  this.time.delayedCall(5000, () => {
-                    gameScene.scene.stop("GameScene");
-                    this.scene.stop("UIScene");
-                    this.scene.start("MainMenuScene");
-                  });
-                },
-                this,
-              );
-            }
-          });
+                this.tweens.add({
+                  targets: damageText,
+                  y: damageText.y - 50,
+                  alpha: 0,
+                  duration: 1000,
+                  onComplete: () => damageText.destroy(),
+                });
+              } else {
+                // Лечение - зелёное мигание
+                gameScene.human.setTint(0x00ff00);
+                gameScene.time.delayedCall(400, () => {
+                  if (gameScene.human) gameScene.human.clearTint();
+                });
+
+                // Показываем текст лечения
+                const healText = this.add
+                  .text(
+                    gameScene.human.x,
+                    gameScene.human.y - 150,
+                    `+${Math.abs(damage)}`,
+                    {
+                      fontSize: "32px",
+                      color: "#00ff00",
+                      fontFamily: "3_Muz-TV2000.ttf",
+                      stroke: "#000",
+                      strokeThickness: 4,
+                    },
+                  )
+                  .setOrigin(0.5);
+
+                this.tweens.add({
+                  targets: healText,
+                  y: healText.y - 50,
+                  alpha: 0,
+                  duration: 1000,
+                  onComplete: () => healText.destroy(),
+                });
+              }
+
+              if (gameScene.humanHealth <= 0) {
+                gameScene.isHumanDead = true;
+                const human = gameScene.human;
+                human.anims.play("human_death", true);
+                human.on(
+                  "animationcomplete",
+                  () => {
+                    // Прячем человека
+                    human.setVisible(false);
+
+                    // Создаём могилку на месте человека
+                    const graveX = human.x;
+                    const graveY = human.y;
+
+                    // Основание могилы (прямоугольник)
+                    const graveBase = this.add.rectangle(
+                      graveX,
+                      graveY - 50,
+                      50,
+                      80,
+                      0x222222,
+                    );
+                    graveBase.setStrokeStyle(2, 0x000000);
+
+                    // Верхняя часть (закругленная)
+                    const graveTop = this.add.ellipse(
+                      graveX,
+                      graveY - 90,
+                      50,
+                      40,
+                      0x222222,
+                    );
+                    graveTop.setStrokeStyle(2, 0x000000);
+
+                    // Крест
+                    const crossVertical = this.add.rectangle(
+                      graveX,
+                      graveY - 75,
+                      5,
+                      30,
+                      0x888888,
+                    );
+                    const crossHorizontal = this.add.rectangle(
+                      graveX,
+                      graveY - 83,
+                      20,
+                      5,
+                      0x888888,
+                    );
+
+                    gameScene.scene.pause();
+
+                    const gameOverText = this.add
+                      .text(400, 300, "GAME OVER", {
+                        fontFamily: "3_Muz-TV2000.ttf",
+                        fontSize: "48px",
+                        color: "#ff0000",
+                      })
+                      .setOrigin(0.5);
+
+                    // Через 5 секунд возврат в меню
+                    this.time.delayedCall(5000, () => {
+                      gameScene.scene.stop("GameScene");
+                      this.scene.stop("UIScene");
+                      this.scene.start("MainMenuScene");
+                    });
+                  },
+                  this,
+                );
+              }
+            });
+          }
         }
         updateHealthBar(health) {
           const currentHealth = Math.max(0, health);
@@ -818,6 +837,15 @@
           else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
           else this.healthBar.setFillStyle(0xff0000);
           this.healthText.setText(`HP: ${currentHealth}%`);
+        }
+
+        shutdown() {
+          // Очищаем все события при остановке сцены
+          const gameScene = this.scene.get("GameScene");
+          if (gameScene) {
+            gameScene.events.off("updateWave");
+            gameScene.events.off("damageHuman");
+          }
         }
       }
 
@@ -1161,6 +1189,21 @@
             },
           });
         }
+
+        shutdown() {
+          // Очищаем таймеры при остановке сцены
+          if (this.tickSpawner) {
+            this.tickSpawner.remove();
+          }
+          if (this.mushroomCarryTimer) {
+            this.mushroomCarryTimer.remove();
+          }
+          // Очищаем все события
+          this.events.off("updateWave");
+          this.events.off("damageDog");
+          this.events.off("damageHuman");
+          this.events.off("healDog");
+        }
       }
 
       // =================================================================
@@ -1207,246 +1250,255 @@
             .setOrigin(0.5);
 
           const gameScene = this.scene.get("Scene2");
-          gameScene.events.on("updateWave", (wave) =>
-            this.waveText.setText(`Волна ${wave}`),
-          );
-
-          // *** Теперь слушаем урон СОБАКИ ***
-          gameScene.events.on("damageDog", (damage) => {
-            if (gameScene.isDogDead) return;
-            gameScene.dogHealth -= damage;
-            this.updateDogHealthBar(gameScene.dogHealth);
-
-            // Визуальная обратная связь - красное мигание
-            gameScene.dog.setTint(0xff0000);
-            gameScene.time.delayedCall(200, () => {
-              if (gameScene.dog) gameScene.dog.clearTint();
+          if (gameScene && gameScene.scene.isActive()) {
+            gameScene.events.on("updateWave", (wave) => {
+              if (this.waveText && this.waveText.active) {
+                this.waveText.setText(`Волна ${wave}`);
+              }
             });
 
-            // Показываем текст урона
-            const damageText = this.add
-              .text(gameScene.dog.x, gameScene.dog.y - 100, `-${damage}`, {
-                fontSize: "32px",
-                color: "#ff0000",
-                fontFamily: "3_Muz-TV2000.ttf",
-                stroke: "#000",
-                strokeThickness: 4,
-              })
-              .setOrigin(0.5);
+            // *** Теперь слушаем урон СОБАКИ ***
+            gameScene.events.on("damageDog", (damage) => {
+              if (gameScene.isDogDead) return;
+              gameScene.dogHealth -= damage;
+              this.updateDogHealthBar(gameScene.dogHealth);
 
-            this.tweens.add({
-              targets: damageText,
-              y: damageText.y - 50,
-              alpha: 0,
-              duration: 1000,
-              onComplete: () => damageText.destroy(),
-            });
-            if (gameScene.dogHealth <= 0) {
-              gameScene.isDogDead = true;
-              const dog = gameScene.dog;
-              dog.anims.play("dog_death", true);
-              dog.on(
-                "animationcomplete",
-                () => {
-                  // Прячем собаку
-                  dog.setVisible(false);
+              // Визуальная обратная связь - красное мигание
+              gameScene.dog.setTint(0xff0000);
+              gameScene.time.delayedCall(200, () => {
+                if (gameScene.dog) gameScene.dog.clearTint();
+              });
 
-                  // Создаём могилку на месте собаки
-                  const graveX = dog.x;
-                  const graveY = dog.y;
+              // Показываем текст урона
+              const damageText = this.add
+                .text(gameScene.dog.x, gameScene.dog.y - 100, `-${damage}`, {
+                  fontSize: "32px",
+                  color: "#ff0000",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
 
-                  // Основание могилы (прямоугольник)
-                  const graveBase = this.add.rectangle(
-                    graveX,
-                    graveY - 30,
-                    40,
-                    60,
-                    0x222222,
-                  );
-                  graveBase.setStrokeStyle(2, 0x000000);
+              this.tweens.add({
+                targets: damageText,
+                y: damageText.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => damageText.destroy(),
+              });
+              if (gameScene.dogHealth <= 0) {
+                gameScene.isDogDead = true;
+                const dog = gameScene.dog;
+                dog.anims.play("dog_death", true);
+                dog.on(
+                  "animationcomplete",
+                  () => {
+                    // Прячем собаку
+                    dog.setVisible(false);
 
-                  // Верхняя часть (закругленная)
-                  const graveTop = this.add.ellipse(
-                    graveX,
-                    graveY - 60,
-                    40,
-                    30,
-                    0x222222,
-                  );
-                  graveTop.setStrokeStyle(2, 0x000000);
+                    // Создаём могилку на месте собаки
+                    const graveX = dog.x;
+                    const graveY = dog.y;
 
-                  // Крест
-                  const crossVertical = this.add.rectangle(
-                    graveX,
-                    graveY - 50,
-                    4,
-                    24,
-                    0x888888,
-                  );
-                  const crossHorizontal = this.add.rectangle(
-                    graveX,
-                    graveY - 56,
-                    16,
-                    4,
-                    0x888888,
-                  );
+                    // Основание могилы (прямоугольник)
+                    const graveBase = this.add.rectangle(
+                      graveX,
+                      graveY - 30,
+                      40,
+                      60,
+                      0x222222,
+                    );
+                    graveBase.setStrokeStyle(2, 0x000000);
 
-                  gameScene.scene.pause();
+                    // Верхняя часть (закругленная)
+                    const graveTop = this.add.ellipse(
+                      graveX,
+                      graveY - 60,
+                      40,
+                      30,
+                      0x222222,
+                    );
+                    graveTop.setStrokeStyle(2, 0x000000);
 
-                  const gameOverText = this.add
-                    .text(400, 300, "GAME OVER", {
-                      fontFamily: "3_Muz-TV2000.ttf",
-                      fontSize: "48px",
-                      color: "#ff0000",
-                    })
-                    .setOrigin(0.5);
+                    // Крест
+                    const crossVertical = this.add.rectangle(
+                      graveX,
+                      graveY - 50,
+                      4,
+                      24,
+                      0x888888,
+                    );
+                    const crossHorizontal = this.add.rectangle(
+                      graveX,
+                      graveY - 56,
+                      16,
+                      4,
+                      0x888888,
+                    );
 
-                  // Через 5 секунд возврат в меню
-                  this.time.delayedCall(5000, () => {
-                    gameScene.scene.stop("Scene2");
-                    this.scene.stop("UIScene2");
-                    this.scene.start("MainMenuScene");
-                  });
-                },
-                this,
-              );
-            }
-          });
+                    gameScene.scene.pause();
 
-          // *** НОВОЕ: Слушаем урон ЧЕЛОВЕКА ***
-          gameScene.events.on("damageHuman", (damage) => {
-            if (gameScene.isHumanDead) return;
-            gameScene.humanHealth -= damage;
-            this.updateHumanHealthBar(gameScene.humanHealth);
+                    const gameOverText = this.add
+                      .text(400, 300, "GAME OVER", {
+                        fontFamily: "3_Muz-TV2000.ttf",
+                        fontSize: "48px",
+                        color: "#ff0000",
+                      })
+                      .setOrigin(0.5);
 
-            // Визуальная обратная связь - красное мигание
-            gameScene.human.setTint(0xff0000);
-            gameScene.time.delayedCall(200, () => {
-              if (gameScene.human) gameScene.human.clearTint();
-            });
-
-            // Показываем текст урона
-            const damageText = this.add
-              .text(gameScene.human.x, gameScene.human.y - 150, `-${damage}`, {
-                fontSize: "32px",
-                color: "#ff0000",
-                fontFamily: "3_Muz-TV2000.ttf",
-                stroke: "#000",
-                strokeThickness: 4,
-              })
-              .setOrigin(0.5);
-
-            this.tweens.add({
-              targets: damageText,
-              y: damageText.y - 50,
-              alpha: 0,
-              duration: 1000,
-              onComplete: () => damageText.destroy(),
+                    // Через 5 секунд возврат в меню
+                    this.time.delayedCall(5000, () => {
+                      gameScene.scene.stop("Scene2");
+                      this.scene.stop("UIScene2");
+                      this.scene.start("MainMenuScene");
+                    });
+                  },
+                  this,
+                );
+              }
             });
 
-            if (gameScene.humanHealth <= 0) {
-              gameScene.isHumanDead = true;
-              const human = gameScene.human;
-              human.anims.play("human_death", true);
-              human.on(
-                "animationcomplete",
-                () => {
-                  // Прячем человека
-                  human.setVisible(false);
+            // *** НОВОЕ: Слушаем урон ЧЕЛОВЕКА ***
+            gameScene.events.on("damageHuman", (damage) => {
+              if (gameScene.isHumanDead) return;
+              gameScene.humanHealth -= damage;
+              this.updateHumanHealthBar(gameScene.humanHealth);
 
-                  // Создаём могилку на месте человека
-                  const graveX = human.x;
-                  const graveY = human.y;
+              // Визуальная обратная связь - красное мигание
+              gameScene.human.setTint(0xff0000);
+              gameScene.time.delayedCall(200, () => {
+                if (gameScene.human) gameScene.human.clearTint();
+              });
 
-                  // Основание могилы (прямоугольник)
-                  const graveBase = this.add.rectangle(
-                    graveX,
-                    graveY - 50,
-                    50,
-                    80,
-                    0x222222,
-                  );
-                  graveBase.setStrokeStyle(2, 0x000000);
+              // Показываем текст урона
+              const damageText = this.add
+                .text(
+                  gameScene.human.x,
+                  gameScene.human.y - 150,
+                  `-${damage}`,
+                  {
+                    fontSize: "32px",
+                    color: "#ff0000",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  },
+                )
+                .setOrigin(0.5);
 
-                  // Верхняя часть (закругленная)
-                  const graveTop = this.add.ellipse(
-                    graveX,
-                    graveY - 90,
-                    50,
-                    40,
-                    0x222222,
-                  );
-                  graveTop.setStrokeStyle(2, 0x000000);
+              this.tweens.add({
+                targets: damageText,
+                y: damageText.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => damageText.destroy(),
+              });
 
-                  // Крест
-                  const crossVertical = this.add.rectangle(
-                    graveX,
-                    graveY - 75,
-                    5,
-                    30,
-                    0x888888,
-                  );
-                  const crossHorizontal = this.add.rectangle(
-                    graveX,
-                    graveY - 83,
-                    20,
-                    5,
-                    0x888888,
-                  );
+              if (gameScene.humanHealth <= 0) {
+                gameScene.isHumanDead = true;
+                const human = gameScene.human;
+                human.anims.play("human_death", true);
+                human.on(
+                  "animationcomplete",
+                  () => {
+                    // Прячем человека
+                    human.setVisible(false);
 
-                  gameScene.scene.pause();
+                    // Создаём могилку на месте человека
+                    const graveX = human.x;
+                    const graveY = human.y;
 
-                  const gameOverText = this.add
-                    .text(400, 300, "GAME OVER", {
-                      fontFamily: "3_Muz-TV2000.ttf",
-                      fontSize: "48px",
-                      color: "#ff0000",
-                    })
-                    .setOrigin(0.5);
+                    // Основание могилы (прямоугольник)
+                    const graveBase = this.add.rectangle(
+                      graveX,
+                      graveY - 50,
+                      50,
+                      80,
+                      0x222222,
+                    );
+                    graveBase.setStrokeStyle(2, 0x000000);
 
-                  // Через 5 секунд возврат в меню
-                  this.time.delayedCall(5000, () => {
-                    gameScene.scene.stop("Scene2");
-                    this.scene.stop("UIScene2");
-                    this.scene.start("MainMenuScene");
-                  });
-                },
-                this,
-              );
-            }
-          });
+                    // Верхняя часть (закругленная)
+                    const graveTop = this.add.ellipse(
+                      graveX,
+                      graveY - 90,
+                      50,
+                      40,
+                      0x222222,
+                    );
+                    graveTop.setStrokeStyle(2, 0x000000);
 
-          // *** Восстановление здоровья собаки ***
-          gameScene.events.on("healDog", (heal) => {
-            if (gameScene.isDogDead) return;
-            gameScene.dogHealth = Math.min(100, gameScene.dogHealth + heal);
-            this.updateDogHealthBar(gameScene.dogHealth);
+                    // Крест
+                    const crossVertical = this.add.rectangle(
+                      graveX,
+                      graveY - 75,
+                      5,
+                      30,
+                      0x888888,
+                    );
+                    const crossHorizontal = this.add.rectangle(
+                      graveX,
+                      graveY - 83,
+                      20,
+                      5,
+                      0x888888,
+                    );
 
-            // Визуальная обратная связь - зелёное мигание
-            gameScene.dog.setTint(0x00ff00);
-            gameScene.time.delayedCall(400, () => {
-              if (gameScene.dog) gameScene.dog.clearTint();
+                    gameScene.scene.pause();
+
+                    const gameOverText = this.add
+                      .text(400, 300, "GAME OVER", {
+                        fontFamily: "3_Muz-TV2000.ttf",
+                        fontSize: "48px",
+                        color: "#ff0000",
+                      })
+                      .setOrigin(0.5);
+
+                    // Через 5 секунд возврат в меню
+                    this.time.delayedCall(5000, () => {
+                      gameScene.scene.stop("Scene2");
+                      this.scene.stop("UIScene2");
+                      this.scene.start("MainMenuScene");
+                    });
+                  },
+                  this,
+                );
+              }
             });
 
-            // Показываем текст лечения
-            const healText = this.add
-              .text(gameScene.dog.x, gameScene.dog.y - 100, `+${heal}`, {
-                fontSize: "32px",
-                color: "#00ff00",
-                fontFamily: "3_Muz-TV2000.ttf",
-                stroke: "#000",
-                strokeThickness: 4,
-              })
-              .setOrigin(0.5);
+            // *** Восстановление здоровья собаки ***
+            gameScene.events.on("healDog", (heal) => {
+              if (gameScene.isDogDead) return;
+              gameScene.dogHealth = Math.min(100, gameScene.dogHealth + heal);
+              this.updateDogHealthBar(gameScene.dogHealth);
 
-            this.tweens.add({
-              targets: healText,
-              y: healText.y - 50,
-              alpha: 0,
-              duration: 1000,
-              onComplete: () => healText.destroy(),
+              // Визуальная обратная связь - зелёное мигание
+              gameScene.dog.setTint(0x00ff00);
+              gameScene.time.delayedCall(400, () => {
+                if (gameScene.dog) gameScene.dog.clearTint();
+              });
+
+              // Показываем текст лечения
+              const healText = this.add
+                .text(gameScene.dog.x, gameScene.dog.y - 100, `+${heal}`, {
+                  fontSize: "32px",
+                  color: "#00ff00",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+
+              this.tweens.add({
+                targets: healText,
+                y: healText.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => healText.destroy(),
+              });
             });
-          });
+          }
         }
 
         updateDogHealthBar(health) {
@@ -1467,6 +1519,17 @@
           else this.humanHealthBar.setFillStyle(0xff0000);
           this.humanHealthText.setText(`HP: ${currentHealth}%`);
         }
+
+        shutdown() {
+          // Очищаем все события при остановке сцены
+          const gameScene = this.scene.get("Scene2");
+          if (gameScene) {
+            gameScene.events.off("updateWave");
+            gameScene.events.off("damageDog");
+            gameScene.events.off("damageHuman");
+            gameScene.events.off("healDog");
+          }
+        }
       }
 
       // =================================================================
@@ -1477,7 +1540,7 @@
         width: 800,
         height: 600,
         backgroundColor: "#1d1d1d",
-        physics: { default: "arcade", arcade: { debug: false } },
+        physics: { default: "arcade", arcade: { debug: true } },
         scene: [
           PreloadScene,
           MainMenuScene,
