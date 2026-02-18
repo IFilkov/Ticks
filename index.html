@@ -5,6 +5,14 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <link rel="stylesheet" href="style.css" />
     <style>
+      @font-face {
+        font-family: "3_Muz-TV2000.ttf";
+        src: url("assets/fonts/3_Muz-TV2000.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+      }
+
       body {
         display: flex;
         justify-content: center;
@@ -814,20 +822,8 @@
 
                     gameScene.scene.pause();
 
-                    const gameOverText = this.add
-                      .text(400, 300, "ИГРА ОКОНЧЕНА", {
-                        fontFamily: "3_Muz-TV2000.ttf",
-                        fontSize: "248px",
-                        color: "#ff0000",
-                      })
-                      .setOrigin(0.5);
-
-                    // Через 5 секунд возврат в меню
-                    this.time.delayedCall(5000, () => {
-                      gameScene.scene.stop("GameScene");
-                      this.scene.stop("UIScene");
-                      this.scene.start("MainMenuScene");
-                    });
+                    // Показываем Game Over экран
+                    this.showGameOver("GameScene", "UIScene");
                   },
                   this,
                 );
@@ -842,6 +838,38 @@
           else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
           else this.healthBar.setFillStyle(0xff0000);
           this.healthText.setText(`HP: ${currentHealth}%`);
+        }
+
+        showGameOver(sceneName, uiSceneName) {
+          console.log("=== ПОКАЗЫВАЕМ GAME OVER ===");
+          const gameOverText = this.add
+            .text(400, 300, "ИГРА ОКОНЧЕНА", {
+              fontSize: "100px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ff0000",
+              stroke: "#000000",
+              strokeThickness: 12,
+            })
+            .setOrigin(0.5)
+            .setShadow(10, 10, "#000000", 20, true, true);
+
+          console.log("Создан текст ИГРА ОКОНЧЕНА с fontSize: 200px");
+
+          // Анимация появления
+          this.tweens.add({
+            targets: gameOverText,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.5, to: 1.0 },
+            duration: 600,
+            ease: "Back.easeOut",
+          });
+
+          // Через 5 секунд возврат в меню
+          this.time.delayedCall(5000, () => {
+            this.scene.stop(sceneName);
+            this.scene.stop(uiSceneName);
+            this.scene.start("MainMenuScene");
+          });
         }
 
         shutdown() {
@@ -1422,20 +1450,8 @@
 
                     gameScene.scene.pause();
 
-                    const gameOverText = this.add
-                      .text(400, 300, "ИГРА ОКОНЧЕНА", {
-                        fontFamily: "3_Muz-TV2000.ttf",
-                        fontSize: "248px",
-                        color: "#ff0000",
-                      })
-                      .setOrigin(0.5);
-
-                    // Через 5 секунд возврат в меню
-                    this.time.delayedCall(5000, () => {
-                      gameScene.scene.stop("Scene2");
-                      this.scene.stop("UIScene2");
-                      this.scene.start("MainMenuScene");
-                    });
+                    // Показываем Game Over экран
+                    this.showGameOver();
                   },
                   this,
                 );
@@ -1530,20 +1546,8 @@
 
                     gameScene.scene.pause();
 
-                    const gameOverText = this.add
-                      .text(400, 300, "ИГРА ОКОНЧЕНА", {
-                        fontFamily: "3_Muz-TV2000.ttf",
-                        fontSize: "248px",
-                        color: "#ff0000",
-                      })
-                      .setOrigin(0.5);
-
-                    // Через 5 секунд возврат в меню
-                    this.time.delayedCall(5000, () => {
-                      gameScene.scene.stop("Scene2");
-                      this.scene.stop("UIScene2");
-                      this.scene.start("MainMenuScene");
-                    });
+                    // Показываем Game Over экран
+                    this.showGameOver();
                   },
                   this,
                 );
@@ -1647,6 +1651,38 @@
           this.humanHealthText.setText(`HP: ${currentHealth}%`);
         }
 
+        showGameOver() {
+          console.log("=== ПОКАЗЫВАЕМ GAME OVER (Scene2) ===");
+          const gameOverText = this.add
+            .text(400, 300, "ИГРА ОКОНЧЕНА", {
+              fontSize: "100px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ff0000",
+              stroke: "#000000",
+              strokeThickness: 12,
+            })
+            .setOrigin(0.5)
+            .setShadow(10, 10, "#000000", 20, true, true);
+
+          console.log("Создан текст ИГРА ОКОНЧЕНА с fontSize: 200px");
+
+          // Анимация появления
+          this.tweens.add({
+            targets: gameOverText,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.5, to: 1.0 },
+            duration: 600,
+            ease: "Back.easeOut",
+          });
+
+          // Через 5 секунд возврат в меню
+          this.time.delayedCall(5000, () => {
+            this.scene.stop("Scene2");
+            this.scene.stop("UIScene2");
+            this.scene.start("MainMenuScene");
+          });
+        }
+
         shutdown() {
           // Очищаем все события при остановке сцены
           const gameScene = this.scene.get("Scene2");
@@ -1679,7 +1715,17 @@
         ],
       };
 
-      window.onload = () => new Phaser.Game(config);
+      window.onload = async () => {
+        // Ждём загрузки шрифта перед запуском игры
+        try {
+          await document.fonts.ready;
+          console.log("Шрифты загружены!");
+        } catch (error) {
+          console.log("Ошибка загрузки шрифтов, запускаем игру в любом случае");
+        }
+
+        new Phaser.Game(config);
+      };
     </script>
   </body>
 </html>
