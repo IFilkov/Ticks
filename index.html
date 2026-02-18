@@ -48,6 +48,11 @@
             frameHeight: 128,
           });
 
+          this.load.spritesheet("homeless", `${assetPath}homeless_sprite.png`, {
+            frameWidth: 216,
+            frameHeight: 312,
+          });
+
           this.load.image("tick", `${assetPath}tick.png`);
           this.load.image("sky", `${assetPath}sky.jpg`);
           this.load.image("background", `${assetPath}background.png`);
@@ -208,6 +213,52 @@
               }),
               frameRate: 10,
               repeat: -1,
+            });
+          }
+
+          // Анимации бомжа
+          if (!this.anims.exists("homeless_idle")) {
+            this.anims.create({
+              key: "homeless_idle",
+              frames: this.anims.generateFrameNumbers("homeless", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("homeless_walk")) {
+            this.anims.create({
+              key: "homeless_walk",
+              frames: this.anims.generateFrameNumbers("homeless", {
+                start: 4,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("homeless_run")) {
+            this.anims.create({
+              key: "homeless_run",
+              frames: this.anims.generateFrameNumbers("homeless", {
+                start: 8,
+                end: 11,
+              }),
+              frameRate: 12,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("homeless_death")) {
+            this.anims.create({
+              key: "homeless_death",
+              frames: this.anims.generateFrameNumbers("homeless", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 8,
+              repeat: 0,
             });
           }
         }
@@ -844,7 +895,7 @@
           console.log("=== ПОКАЗЫВАЕМ GAME OVER ===");
           const gameOverText = this.add
             .text(400, 300, "ИГРА ОКОНЧЕНА", {
-              fontSize: "100px",
+              fontSize: "200px",
               fontFamily: '"3_Muz-TV2000.ttf"',
               color: "#ff0000",
               stroke: "#000000",
@@ -931,6 +982,21 @@
             .setScale(0.1)
             .setVisible(false);
 
+          // *** БОМЖ - появляется после 6-й волны ***
+          this.homeless = this.physics.add.sprite(600, 580, "homeless");
+          this.homeless.setOrigin(0.5, 1);
+          this.homeless.body.allowGravity = false;
+          this.homeless.setCollideWorldBounds(true);
+          this.homeless.body.setSize(
+            this.homeless.width * 0.5,
+            this.homeless.height * 0.9,
+          );
+          this.homeless.setVisible(false); // Скрыт до 6-й волны
+          this.homeless.active = false;
+          this.homelessActive = false;
+          this.homelessFacing = "left";
+          this.homelessTargetMushroom = null; // Гриб к которому бежит бомж
+
           // *** AI таймер для собаки (как в меню) ***
           this.time.addEvent({
             delay: Phaser.Math.Between(1000, 3000),
@@ -990,6 +1056,7 @@
 
           this.updateHumanPlayer(); // *** Игрок управляет человеком ***
           this.updateDogAI(); // *** Собака на AI ***
+          this.updateHomeless(); // *** Бомж на AI ***
           this.updateCollisions();
         }
 
@@ -1229,6 +1296,102 @@
           }
         }
 
+        // *** БОМЖ НА AI - бегает за грибами ***
+        updateHomeless() {
+          if (!this.homelessActive) return;
+
+          // Ищем ближайший гриб
+          const mushrooms = this.mushrooms
+            .getChildren()
+            .filter((m) => m.active);
+
+          if (mushrooms.length > 0) {
+            // Находим ближайший гриб
+            let closestMushroom = null;
+            let closestDistance = Infinity;
+
+            mushrooms.forEach((mushroom) => {
+              const distance = Phaser.Math.Distance.Between(
+                this.homeless.x,
+                this.homeless.y,
+                mushroom.x,
+                mushroom.y,
+              );
+              if (distance < closestDistance) {
+                closestDistance = distance;
+                closestMushroom = mushroom;
+              }
+            });
+
+            // Бежим к ближайшему грибу
+            if (closestMushroom) {
+              const speed = 150; // Скорость бомжа
+              const diff = closestMushroom.x - this.homeless.x;
+
+              if (Math.abs(diff) > 10) {
+                // Двигаемся к грибу
+                if (diff > 0) {
+                  this.homeless.setVelocityX(speed);
+                  this.homeless.flipX = false;
+                  this.homelessFacing = "right";
+                } else {
+                  this.homeless.setVelocityX(-speed);
+                  this.homeless.flipX = true;
+                  this.homelessFacing = "left";
+                }
+                this.homeless.anims.play("homeless_run", true);
+              } else {
+                // Достигли гриба - пытаемся подобрать
+                this.homeless.setVelocityX(0);
+                this.homeless.anims.play("homeless_idle", true);
+              }
+
+              // Проверяем коллизию с грибом
+              if (
+                Phaser.Geom.Intersects.RectangleToRectangle(
+                  this.homeless.getBounds(),
+                  closestMushroom.getBounds(),
+                )
+              ) {
+                console.log("🧔 Бомж подобрал гриб!");
+                closestMushroom.destroy();
+              }
+            }
+          } else {
+            // Нет грибов - просто ходим случайно
+            if (
+              !this.homelessWalkTimer ||
+              this.time.now > this.homelessWalkTimer
+            ) {
+              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              switch (action) {
+                case "left":
+                  this.homeless.setVelocityX(-80);
+                  this.homeless.flipX = true;
+                  this.homelessFacing = "left";
+                  break;
+                case "right":
+                  this.homeless.setVelocityX(80);
+                  this.homeless.flipX = false;
+                  this.homelessFacing = "right";
+                  break;
+                case "idle":
+                  this.homeless.setVelocityX(0);
+                  break;
+              }
+              this.homelessWalkTimer =
+                this.time.now + Phaser.Math.Between(2000, 4000);
+            }
+
+            // Анимация в зависимости от скорости
+            if (Math.abs(this.homeless.body.velocity.x) > 0) {
+              this.homeless.anims.play("homeless_walk", true);
+            } else {
+              this.homeless.anims.play("homeless_idle", true);
+            }
+          }
+        }
+
         startWave() {
           if (this.wave > 12) {
             this.scene.stop("Scene2");
@@ -1239,6 +1402,15 @@
           if (this.isDogDead || this.isHumanDead) return;
           this.ticksSpawned = 0;
           this.events.emit("updateWave", this.wave);
+
+          // *** Активируем бомжа после 6-й волны ***
+          if (this.wave >= 6 && !this.homelessActive) {
+            this.homelessActive = true;
+            this.homeless.setVisible(true);
+            this.homeless.active = true;
+            console.log("🧔 БОМЖ ПОЯВИЛСЯ! Теперь он будет собирать грибы!");
+          }
+
           if (this.tickSpawner) this.tickSpawner.remove();
           this.tickSpawner = this.time.addEvent({
             delay: this.spawnInterval,
@@ -1655,7 +1827,7 @@
           console.log("=== ПОКАЗЫВАЕМ GAME OVER (Scene2) ===");
           const gameOverText = this.add
             .text(400, 300, "ИГРА ОКОНЧЕНА", {
-              fontSize: "100px",
+              fontSize: "200px",
               fontFamily: '"3_Muz-TV2000.ttf"',
               color: "#ff0000",
               stroke: "#000000",
