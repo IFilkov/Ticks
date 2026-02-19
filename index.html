@@ -243,10 +243,10 @@
             this.anims.create({
               key: "homeless_run",
               frames: this.anims.generateFrameNumbers("homeless", {
-                start: 8,
-                end: 11,
+                start: 4,
+                end: 7,
               }),
-              frameRate: 12,
+              frameRate: 14,
               repeat: -1,
             });
           }
@@ -254,11 +254,22 @@
             this.anims.create({
               key: "homeless_death",
               frames: this.anims.generateFrameNumbers("homeless", {
+                start: 8,
+                end: 11,
+              }),
+              frameRate: 8,
+              repeat: 0,
+            });
+          }
+          if (!this.anims.exists("homeless_victory")) {
+            this.anims.create({
+              key: "homeless_victory",
+              frames: this.anims.generateFrameNumbers("homeless", {
                 start: 12,
                 end: 15,
               }),
               frameRate: 8,
-              repeat: 0,
+              repeat: -1,
             });
           }
         }
@@ -993,6 +1004,8 @@
           );
           this.homeless.setVisible(false); // Скрыт до 6-й волны
           this.homeless.active = false;
+          this.homeless.isFallen = false; // Флаг состояния падения
+          this.homeless.isVictory = false; // Флаг анимации победы
           this.homelessActive = false;
           this.homelessFacing = "left";
           this.homelessTargetMushroom = null; // Гриб к которому бежит бомж
@@ -1185,6 +1198,44 @@
             }
           });
 
+          // *** НОВАЯ ЛОГИКА: Пинаем бомжа ногами во время прыжка ***
+          if (
+            this.homelessActive &&
+            !this.homeless.isFallen &&
+            !this.homeless.isVictory &&
+            this.isJumping
+          ) {
+            this.physics.overlap(
+              this.footZone,
+              this.homeless,
+              (footZone, homeless) => {
+                if (
+                  this.isJumping &&
+                  !homeless.isFallen &&
+                  !homeless.isVictory
+                ) {
+                  console.log("👟 Игрок пнул бомжа в прыжке!");
+
+                  // Помечаем что бомж упал
+                  homeless.isFallen = true;
+                  homeless.isVictory = false; // Прерываем анимацию победы
+                  homeless.setVelocityX(0);
+
+                  // Проигрываем анимацию падения
+                  homeless.anims.play("homeless_death", true);
+
+                  // После анимации падения (2 секунды) бомж встаёт
+                  this.time.delayedCall(3000, () => {
+                    if (homeless && homeless.active) {
+                      homeless.isFallen = false;
+                      console.log("🧔 Бомж встал и снова бегает!");
+                    }
+                  });
+                }
+              },
+            );
+          }
+
           // *** НОВАЯ ЛОГИКА: Зона у головы ПОЛУЧАЕТ УРОН ***
           this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
             if (tick.isFalling && tick.body && !tick.isKicked) {
@@ -1300,6 +1351,18 @@
         updateHomeless() {
           if (!this.homelessActive) return;
 
+          // Если бомж упал - он лежит и не двигается
+          if (this.homeless.isFallen) {
+            this.homeless.setVelocityX(0);
+            return;
+          }
+
+          // Если бомж празднует победу - не двигается
+          if (this.homeless.isVictory) {
+            this.homeless.setVelocityX(0);
+            return;
+          }
+
           // Ищем ближайший гриб
           const mushrooms = this.mushrooms
             .getChildren()
@@ -1355,6 +1418,17 @@
               ) {
                 console.log("🧔 Бомж подобрал гриб!");
                 closestMushroom.destroy();
+
+                // Анимация победы на 1 секунду
+                this.homeless.setVelocityX(0);
+                this.homeless.anims.play("homeless_victory", true);
+                this.homeless.isVictory = true;
+
+                this.time.delayedCall(1000, () => {
+                  if (this.homeless && this.homeless.active) {
+                    this.homeless.isVictory = false;
+                  }
+                });
               }
             }
           } else {
@@ -1404,7 +1478,7 @@
           this.events.emit("updateWave", this.wave);
 
           // *** Активируем бомжа после 6-й волны ***
-          if (this.wave >= 6 && !this.homelessActive) {
+          if (this.wave >= 2 && !this.homelessActive) {
             this.homelessActive = true;
             this.homeless.setVisible(true);
             this.homeless.active = true;
