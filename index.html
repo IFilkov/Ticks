@@ -633,6 +633,17 @@
             const offset = this.dogFacing === "left" ? -60 : 60;
             this.carriedMushroom.x = this.mouth.x + offset;
             this.carriedMushroom.y = this.mouth.y;
+
+            // *** НОВОЕ: Нажатие стрелки вниз - собака съедает гриб сама ***
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+              console.log("🐕 Собака съела гриб! (нажата стрелка вниз)");
+              this.dog.hasMushroom = false;
+              this.dog.clearTint();
+              if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+              // Лечим собаку (в этой фазе у собаки нет HP, но добавим для симметрии)
+              // В GameScene собака не получает урон, поэтому просто убираем гриб
+              console.log("🐕 Гриб использован собакой на себя!");
+            }
           } else {
             this.carriedMushroom.setVisible(false);
           }
@@ -1446,6 +1457,18 @@
             const offset = this.humanFacing === "left" ? -60 : 60;
             this.carriedMushroom.x = this.human.x + offset;
             this.carriedMushroom.y = this.human.y - 150;
+
+            // *** НОВОЕ: Нажатие стрелки вниз - человек съедает гриб сам ***
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+              console.log("🧑 Человек съел гриб! (нажата стрелка вниз)");
+              this.human.hasMushroom = false;
+              this.human.clearTint();
+              if (this.mushroomCarryTimer) {
+                this.mushroomCarryTimer.remove();
+              }
+              // Лечим человека
+              this.events.emit("healHuman", 20);
+            }
           } else {
             this.carriedMushroom.setVisible(false);
           }
