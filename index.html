@@ -284,6 +284,11 @@
         }
 
         create() {
+          // *** СБРОС НАСТРОЕК СЛОЖНОСТИ ***
+          this.registry.set("difficulty", null);
+          this.registry.set("damageMultiplier", 1);
+          console.log("🔄 Настройки сложности сброшены");
+
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background");
 
@@ -318,8 +323,7 @@
             startButton.setStyle({ fill: "#00ff00" });
           });
           startButton.on("pointerdown", () => {
-            this.scene.start("GameScene");
-            this.scene.launch("UIScene");
+            this.scene.start("DifficultySelectScene");
           });
 
           this.human = this.physics.add.sprite(100, 580, "player");
@@ -397,6 +401,100 @@
           this.human.setVelocityX(100 * this.humanDirection);
           this.human.flipX = this.human.body.velocity.x < 0;
           this.human.anims.play("menu_human_walk", true);
+        }
+      }
+
+      // =================================================================
+      // SCENE 2.5: ВЫБОР СЛОЖНОСТИ
+      // =================================================================
+      class DifficultySelectScene extends Phaser.Scene {
+        constructor() {
+          super("DifficultySelectScene");
+        }
+
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+
+          // Заголовок
+          this.add
+            .text(400, 150, "Выберите сложность", {
+              fontSize: "64px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ffffff",
+            })
+            .setOrigin(0.5)
+            .setShadow(3, 3, "#000000", 5, true, true);
+
+          // Кнопка "Нормальный"
+          const normalButton = this.add
+            .text(400, 280, "Нормальный", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "60px",
+              color: "#00ff00",
+              fontStyle: "bold",
+            })
+            .setOrigin(0.5)
+            .setInteractive();
+
+          normalButton.on("pointerover", () => {
+            normalButton.setStyle({ fill: "#ff0" });
+          });
+          normalButton.on("pointerout", () => {
+            normalButton.setStyle({ fill: "#00ff00" });
+          });
+          normalButton.on("pointerdown", () => {
+            // Устанавливаем нормальную сложность
+            this.registry.set("difficulty", "normal");
+            this.registry.set("damageMultiplier", 1);
+            console.log("💚 Выбрана сложность: Нормальный (урон x1)");
+            this.scene.start("GameScene");
+            this.scene.launch("UIScene");
+          });
+
+          // Подсказка под нормальной кнопкой
+          this.add
+            .text(400, 340, "Обычный урон от клещей", {
+              fontSize: "24px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#aaaaaa",
+            })
+            .setOrigin(0.5);
+
+          // Кнопка "Хардкор"
+          const hardcoreButton = this.add
+            .text(400, 420, "Хардкор", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "60px",
+              color: "#ff0000",
+              fontStyle: "bold",
+            })
+            .setOrigin(0.5)
+            .setInteractive();
+
+          hardcoreButton.on("pointerover", () => {
+            hardcoreButton.setStyle({ fill: "#ff00ff" });
+          });
+          hardcoreButton.on("pointerout", () => {
+            hardcoreButton.setStyle({ fill: "#ff0000" });
+          });
+          hardcoreButton.on("pointerdown", () => {
+            // Устанавливаем хардкорную сложность
+            this.registry.set("difficulty", "hardcore");
+            this.registry.set("damageMultiplier", 2);
+            console.log("💀 Выбрана сложность: Хардкор (урон x2)");
+            this.scene.start("GameScene");
+            this.scene.launch("UIScene");
+          });
+
+          // Подсказка под хардкорной кнопкой
+          this.add
+            .text(400, 480, "Урон от клещей x2!", {
+              fontSize: "24px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ff6666",
+            })
+            .setOrigin(0.5);
         }
       }
 
@@ -623,7 +721,10 @@
                 tick.getBounds(),
               )
             ) {
-              this.events.emit("damageHuman", 10);
+              const damageMultiplier =
+                this.registry.get("damageMultiplier") || 1;
+              const damage = 10 * damageMultiplier;
+              this.events.emit("damageHuman", damage);
               tick.destroy();
             }
           });
@@ -756,8 +857,26 @@
             })
             .setOrigin(0.5);
 
+          // Индикатор сложности
+          const difficulty = this.registry.get("difficulty");
+          const difficultyText =
+            difficulty === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
+          const difficultyColor =
+            difficulty === "hardcore" ? "#ff0000" : "#00ff00";
+          this.add
+            .text(750, 15, difficultyText, {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "16px",
+              fill: difficultyColor,
+            })
+            .setOrigin(1, 0);
+
           const gameScene = this.scene.get("GameScene");
           if (gameScene && gameScene.scene.isActive()) {
+            // КРИТИЧНО: Отписываемся от старых событий перед новой подпиской
+            gameScene.events.off("updateWave");
+            gameScene.events.off("damageHuman");
+
             gameScene.events.on("updateWave", (wave) => {
               if (this.waveText && this.waveText.active) {
                 this.waveText.setText(`Волна ${wave}`);
@@ -766,6 +885,9 @@
 
             gameScene.events.on("damageHuman", (damage) => {
               if (gameScene.isHumanDead) return;
+              console.log(
+                `💥 UIScene: damageHuman вызван! Урон: ${damage}, HP до: ${gameScene.humanHealth}, HP после: ${gameScene.humanHealth - damage}`,
+              );
               gameScene.humanHealth -= damage;
               this.updateHealthBar(gameScene.humanHealth);
 
@@ -1215,19 +1337,44 @@
                   !homeless.isVictory
                 ) {
                   console.log("👟 Игрок пнул бомжа в прыжке!");
+                  console.log(
+                    `📍 ПАДЕНИЕ: До - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY})`,
+                  );
 
                   // Помечаем что бомж упал
                   homeless.isFallen = true;
                   homeless.isVictory = false; // Прерываем анимацию победы
                   homeless.setVelocityX(0);
 
+                  // Сохраняем оригинальную Y позицию
+                  homeless.originalY = homeless.y;
+
+                  // Меняем origin чтобы спрайт не обрезался при падении
+                  // Origin (0.5, 1) = низ по центру, (0.5, 0.5) = центр спрайта
+                  // При смене origin спрайт визуально сместится, компенсируем это
+                  const spriteHeight = 312; // Высота спрайта бомжа
+                  homeless.setOrigin(0.5, 0.5);
+                  homeless.y = homeless.y - spriteHeight / 2; // Компенсация: поднимаем на половину высоты
+
+                  console.log(
+                    `📍 ПАДЕНИЕ: После - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY}), originalY=${homeless.originalY}`,
+                  );
+
                   // Проигрываем анимацию падения
                   homeless.anims.play("homeless_death", true);
 
-                  // После анимации падения (2 секунды) бомж встаёт
+                  // После анимации падения (3 секунды) бомж встаёт
                   this.time.delayedCall(3000, () => {
                     if (homeless && homeless.active) {
+                      console.log(
+                        `📍 ВСТАЁТ: До - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY})`,
+                      );
                       homeless.isFallen = false;
+                      homeless.setOrigin(0.5, 1); // Сначала возвращаем origin
+                      homeless.y = homeless.originalY; // Потом возвращаем позицию
+                      console.log(
+                        `📍 ВСТАЁТ: После - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY})`,
+                      );
                       console.log("🧔 Бомж встал и снова бегает!");
                     }
                   });
@@ -1239,8 +1386,11 @@
           // *** НОВАЯ ЛОГИКА: Зона у головы ПОЛУЧАЕТ УРОН ***
           this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
             if (tick.isFalling && tick.body && !tick.isKicked) {
-              console.log("Клещ попал в голову человека! Урон -10 HP");
-              this.events.emit("damageHuman", 10);
+              const damageMultiplier =
+                this.registry.get("damageMultiplier") || 1;
+              const damage = 10 * damageMultiplier;
+              console.log(`Клещ попал в голову человека! Урон -${damage} HP`);
+              this.events.emit("damageHuman", damage);
               tick.destroy();
             }
           });
@@ -1248,8 +1398,11 @@
           // *** Клещи наносят урон СОБАКЕ ***
           this.physics.overlap(this.dog, this.ticks, (dog, tick) => {
             if (tick.isFalling && tick.body && !tick.isKicked) {
-              console.log("Клещ попал в собаку! Урон -10 HP");
-              this.events.emit("damageDog", 10);
+              const damageMultiplier =
+                this.registry.get("damageMultiplier") || 1;
+              const damage = 10 * damageMultiplier;
+              console.log(`Клещ попал в собаку! Урон -${damage} HP`);
+              this.events.emit("damageDog", damage);
               tick.destroy();
             }
           });
@@ -1606,8 +1759,29 @@
             })
             .setOrigin(0.5);
 
+          // Индикатор сложности
+          const difficulty = this.registry.get("difficulty");
+          const difficultyText =
+            difficulty === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
+          const difficultyColor =
+            difficulty === "hardcore" ? "#ff0000" : "#00ff00";
+          this.add
+            .text(750, 15, difficultyText, {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "16px",
+              fill: difficultyColor,
+            })
+            .setOrigin(1, 0);
+
           const gameScene = this.scene.get("Scene2");
           if (gameScene && gameScene.scene.isActive()) {
+            // КРИТИЧНО: Отписываемся от старых событий перед новой подпиской
+            gameScene.events.off("updateWave");
+            gameScene.events.off("damageDog");
+            gameScene.events.off("damageHuman");
+            gameScene.events.off("healDog");
+            gameScene.events.off("healHuman");
+
             gameScene.events.on("updateWave", (wave) => {
               if (this.waveText && this.waveText.active) {
                 this.waveText.setText(`Волна ${wave}`);
@@ -1617,6 +1791,9 @@
             // *** Теперь слушаем урон СОБАКИ ***
             gameScene.events.on("damageDog", (damage) => {
               if (gameScene.isDogDead) return;
+              console.log(
+                `💥 UIScene2: damageDog вызван! Урон: ${damage}, HP до: ${gameScene.dogHealth}, HP после: ${gameScene.dogHealth - damage}`,
+              );
               gameScene.dogHealth -= damage;
               this.updateDogHealthBar(gameScene.dogHealth);
 
@@ -1707,6 +1884,9 @@
             // *** НОВОЕ: Слушаем урон ЧЕЛОВЕКА ***
             gameScene.events.on("damageHuman", (damage) => {
               if (gameScene.isHumanDead) return;
+              console.log(
+                `💥 UIScene2: damageHuman вызван! Урон: ${damage}, HP до: ${gameScene.humanHealth}, HP после: ${gameScene.humanHealth - damage}`,
+              );
               gameScene.humanHealth -= damage;
               this.updateHumanHealthBar(gameScene.humanHealth);
 
@@ -1954,6 +2134,7 @@
         scene: [
           PreloadScene,
           MainMenuScene,
+          DifficultySelectScene,
           GameScene,
           UIScene,
           Scene2,
