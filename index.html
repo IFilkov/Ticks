@@ -1,6 +1,13 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>Tick Defender</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <link rel="stylesheet" href="style.css" />
@@ -13,16 +20,42 @@
         font-display: block;
       }
 
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        touch-action: none;
+      }
+
       body {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        margin: 0;
         background-color: #1d1d1d;
       }
+
       canvas {
-        border: 2px solid #333;
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      /* Убираем границу на мобильных */
+      @media (max-width: 768px) {
+        canvas {
+          border: none;
+        }
       }
     </style>
   </head>
@@ -450,6 +483,7 @@
             console.log("💚 Выбрана сложность: Нормальный (урон x1)");
             this.scene.start("GameScene");
             this.scene.launch("UIScene");
+            this.scene.launch("VirtualControlsScene");
           });
 
           // Подсказка под нормальной кнопкой
@@ -485,6 +519,7 @@
             console.log("💀 Выбрана сложность: Хардкор (урон x2)");
             this.scene.start("GameScene");
             this.scene.launch("UIScene");
+            this.scene.launch("VirtualControlsScene");
           });
 
           // Подсказка под хардкорной кнопкой
@@ -625,6 +660,10 @@
         }
 
         updateDog() {
+          // Получаем джойстик для мобильных
+          const joystickState = this.registry.get("joystickState") || {};
+          const isMobile = this.registry.get("isMobile") || false;
+
           this.mouth.x = this.dog.body.center.x;
           this.mouth.y = this.dog.body.center.y - 40;
 
@@ -634,27 +673,58 @@
             this.carriedMushroom.x = this.mouth.x + offset;
             this.carriedMushroom.y = this.mouth.y;
 
-            // *** НОВОЕ: Нажатие стрелки вниз - собака съедает гриб сама ***
-            if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
-              console.log("🐕 Собака съела гриб! (нажата стрелка вниз)");
+            // *** НОВОЕ: Джойстик вниз - собака съедает гриб сама ***
+            const downPressed =
+              Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+              (isMobile && joystickState.down);
+            if (downPressed) {
+              console.log("🐕 Собака съела гриб! (джойстик вниз)");
               this.dog.hasMushroom = false;
               this.dog.clearTint();
               if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
-              // Лечим собаку (в этой фазе у собаки нет HP, но добавим для симметрии)
-              // В GameScene собака не получает урон, поэтому просто убираем гриб
               console.log("🐕 Гриб использован собакой на себя!");
             }
           } else {
             this.carriedMushroom.setVisible(false);
           }
 
-          if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
+          // Прыжок - клавиатура или свайп вверх
+          const jumpPressed =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (isMobile && joystickState.isJumping);
+          if (jumpPressed && !this.isJumping) {
             this.isJumping = true;
             this.dog.anims.play("dog_jump");
+
+            // Определяем направление прыжка
+            let jumpVelocityX = 0;
+
+            if (isMobile && joystickState.jumpDirection) {
+              // Прыжок по диагонали на мобильном (свайп вверх-влево/вправо)
+              if (joystickState.jumpDirection === "left") {
+                jumpVelocityX = -200;
+                this.dogFacing = "left";
+              } else if (joystickState.jumpDirection === "right") {
+                jumpVelocityX = 200;
+                this.dogFacing = "right";
+              }
+            } else {
+              // Клавиатура или прыжок на месте
+              const leftPressed = this.cursors.left.isDown;
+              const rightPressed = this.cursors.right.isDown;
+
+              if (leftPressed) {
+                jumpVelocityX = -200;
+                this.dogFacing = "left";
+              } else if (rightPressed) {
+                jumpVelocityX = 200;
+                this.dogFacing = "right";
+              }
+            }
+
             this.dog.flipX = this.dogFacing === "left";
-            if (this.cursors.left.isDown) this.dog.setVelocityX(-200);
-            else if (this.cursors.right.isDown) this.dog.setVelocityX(200);
-            else this.dog.setVelocityX(0);
+            this.dog.setVelocityX(jumpVelocityX);
+
             this.tweens.add({
               targets: this.dog,
               y: this.dog.y - 280,
@@ -668,12 +738,19 @@
             });
           }
           if (this.isJumping) return;
+
+          // Горизонтальное движение - клавиатура или свайп влево/вправо
+          const leftPressed =
+            this.cursors.left.isDown || (isMobile && joystickState.left);
+          const rightPressed =
+            this.cursors.right.isDown || (isMobile && joystickState.right);
+
           this.dog.flipX = false;
-          if (this.cursors.left.isDown) {
+          if (leftPressed) {
             this.dog.setVelocityX(-200);
             this.dog.anims.play("dog_walk_left", true);
             this.dogFacing = "left";
-          } else if (this.cursors.right.isDown) {
+          } else if (rightPressed) {
             this.dog.setVelocityX(200);
             this.dog.anims.play("dog_walk_right", true);
             this.dogFacing = "right";
@@ -779,8 +856,10 @@
                   if (this.wave > 3) {
                     this.scene.stop("GameScene");
                     this.scene.stop("UIScene");
+                    this.scene.stop("VirtualControlsScene");
                     this.scene.start("Scene2");
                     this.scene.launch("UIScene2");
+                    this.scene.launch("VirtualControlsScene");
                     return;
                   }
 
@@ -1445,6 +1524,10 @@
 
         // *** ИГРОК УПРАВЛЯЕТ ЧЕЛОВЕКОМ ***
         updateHumanPlayer() {
+          // Получаем джойстик для мобильных
+          const joystickState = this.registry.get("joystickState") || {};
+          const isMobile = this.registry.get("isMobile") || false;
+
           // Обновляем позиции зон
           this.mouth.x = this.human.body.center.x; // Зона у головы
           this.mouth.y = this.human.body.center.y - 100;
@@ -1458,9 +1541,12 @@
             this.carriedMushroom.x = this.human.x + offset;
             this.carriedMushroom.y = this.human.y - 150;
 
-            // *** НОВОЕ: Нажатие стрелки вниз - человек съедает гриб сам ***
-            if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
-              console.log("🧑 Человек съел гриб! (нажата стрелка вниз)");
+            // *** НОВОЕ: Джойстик вниз - человек съедает гриб сам ***
+            const downPressed =
+              Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+              (isMobile && joystickState.down);
+            if (downPressed) {
+              console.log("🧑 Человек съел гриб! (джойстик вниз)");
               this.human.hasMushroom = false;
               this.human.clearTint();
               if (this.mushroomCarryTimer) {
@@ -1473,11 +1559,44 @@
             this.carriedMushroom.setVisible(false);
           }
 
-          if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && !this.isJumping) {
+          // Прыжок - клавиатура или свайп вверх
+          const jumpPressed =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (isMobile && joystickState.isJumping);
+          if (jumpPressed && !this.isJumping) {
             this.isJumping = true;
-            if (this.cursors.left.isDown) this.human.setVelocityX(-200);
-            else if (this.cursors.right.isDown) this.human.setVelocityX(200);
-            else this.human.setVelocityX(0);
+
+            // Определяем направление прыжка
+            let jumpVelocityX = 0;
+
+            if (isMobile && joystickState.jumpDirection) {
+              // Прыжок по диагонали на мобильном (свайп вверх-влево/вправо)
+              if (joystickState.jumpDirection === "left") {
+                jumpVelocityX = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (joystickState.jumpDirection === "right") {
+                jumpVelocityX = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            } else {
+              // Клавиатура или прыжок на месте
+              const leftPressed = this.cursors.left.isDown;
+              const rightPressed = this.cursors.right.isDown;
+
+              if (leftPressed) {
+                jumpVelocityX = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (rightPressed) {
+                jumpVelocityX = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            }
+
+            this.human.setVelocityX(jumpVelocityX);
 
             this.tweens.add({
               targets: this.human,
@@ -1494,12 +1613,18 @@
 
           if (this.isJumping) return;
 
-          if (this.cursors.left.isDown) {
+          // Горизонтальное движение - клавиатура или свайп влево/вправо
+          const leftPressed =
+            this.cursors.left.isDown || (isMobile && joystickState.left);
+          const rightPressed =
+            this.cursors.right.isDown || (isMobile && joystickState.right);
+
+          if (leftPressed) {
             this.human.setVelocityX(-200);
             this.human.anims.play("human_walk", true);
             this.human.flipX = true;
             this.humanFacing = "left";
-          } else if (this.cursors.right.isDown) {
+          } else if (rightPressed) {
             this.human.setVelocityX(200);
             this.human.anims.play("human_walk", true);
             this.human.flipX = false;
@@ -1654,7 +1779,7 @@
           this.events.emit("updateWave", this.wave);
 
           // *** Активируем бомжа после 6-й волны ***
-          if (this.wave >= 2 && !this.homelessActive) {
+          if (this.wave >= 6 && !this.homelessActive) {
             this.homelessActive = true;
             this.homeless.setVisible(true);
             this.homeless.active = true;
@@ -2146,6 +2271,312 @@
       }
 
       // =================================================================
+      // SCENE 7: ВИРТУАЛЬНЫЙ ДЖОЙСТИК ДЛЯ МОБИЛЬНЫХ
+      // =================================================================
+      class VirtualControlsScene extends Phaser.Scene {
+        constructor() {
+          super({ key: "VirtualControlsScene", active: false });
+        }
+
+        create() {
+          // Проверяем, мобильное ли устройство
+          const isMobile =
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+              navigator.userAgent,
+            ) || window.innerWidth < 768;
+
+          if (!isMobile) {
+            console.log("💻 Десктоп - джойстик отключён");
+            this.registry.set("isMobile", false);
+            return;
+          }
+
+          console.log("🕹️ Мобильное устройство - создаём виртуальный джойстик");
+          this.registry.set("isMobile", true);
+
+          // Состояние джойстика
+          this.joystickState = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            isJumping: false,
+            jumpDirection: null, // 'left', 'right', или null для прыжка на месте
+          };
+
+          // Параметры джойстика
+          const joystickX = 680; // Позиция в правом нижнем углу
+          const joystickY = 500;
+          const baseRadius = 60; // Радиус базы джойстика
+          const stickRadius = 30; // Радиус стика
+          const maxDistance = 40; // Максимальное расстояние стика от центра
+
+          // База джойстика (неподвижный круг)
+          this.joystickBase = this.add.circle(
+            joystickX,
+            joystickY,
+            baseRadius,
+            0x333333,
+            0.3,
+          );
+          this.joystickBase.setStrokeStyle(3, 0x666666, 0.5);
+          this.joystickBase.setScrollFactor(0);
+
+          // Стик джойстика (подвижный круг)
+          this.joystickStick = this.add.circle(
+            joystickX,
+            joystickY,
+            stickRadius,
+            0x00ff00,
+            0.6,
+          );
+          this.joystickStick.setStrokeStyle(3, 0x00cc00, 0.8);
+          this.joystickStick.setScrollFactor(0);
+
+          // Стрелки для визуальной подсказки (8 направлений)
+          const arrowStyle = { fontSize: "16px", color: "#666666" };
+          this.add
+            .text(joystickX, joystickY - baseRadius - 15, "⬆", arrowStyle)
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setAlpha(0.5);
+          this.add
+            .text(joystickX + baseRadius + 15, joystickY, "➡", arrowStyle)
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setAlpha(0.5);
+          this.add
+            .text(joystickX, joystickY + baseRadius + 15, "⬇", arrowStyle)
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setAlpha(0.5);
+          this.add
+            .text(joystickX - baseRadius - 15, joystickY, "⬅", arrowStyle)
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setAlpha(0.5);
+
+          // Переменные для отслеживания
+          this.joystickActive = false;
+          this.lastJumpTime = 0;
+          const minJumpInterval = 500; // Минимальный интервал между прыжками (мс)
+
+          // Создаём интерактивную зону вокруг джойстика
+          const joystickZone = this.add.zone(
+            joystickX,
+            joystickY,
+            baseRadius * 3,
+            baseRadius * 3,
+          );
+          joystickZone.setInteractive();
+          joystickZone.setScrollFactor(0);
+
+          // Начало касания
+          joystickZone.on("pointerdown", (pointer) => {
+            this.joystickActive = true;
+            this.updateJoystick(
+              pointer.x,
+              pointer.y,
+              joystickX,
+              joystickY,
+              maxDistance,
+            );
+          });
+
+          // Движение пальца
+          joystickZone.on("pointermove", (pointer) => {
+            if (!this.joystickActive) return;
+            this.updateJoystick(
+              pointer.x,
+              pointer.y,
+              joystickX,
+              joystickY,
+              maxDistance,
+            );
+          });
+
+          // Глобальное движение (если палец уходит за пределы зоны)
+          this.input.on("pointermove", (pointer) => {
+            if (!this.joystickActive) return;
+            this.updateJoystick(
+              pointer.x,
+              pointer.y,
+              joystickX,
+              joystickY,
+              maxDistance,
+            );
+          });
+
+          // Отпускание пальца
+          const resetJoystick = () => {
+            if (!this.joystickActive) return;
+
+            this.joystickActive = false;
+
+            // Возвращаем стик в центр с анимацией
+            this.tweens.add({
+              targets: this.joystickStick,
+              x: joystickX,
+              y: joystickY,
+              duration: 100,
+              ease: "Power2",
+            });
+
+            // Сбрасываем состояния
+            this.joystickState.left = false;
+            this.joystickState.right = false;
+            this.joystickState.up = false;
+            this.joystickState.down = false;
+          };
+
+          joystickZone.on("pointerup", resetJoystick);
+          joystickZone.on("pointerout", resetJoystick);
+          this.input.on("pointerup", resetJoystick);
+
+          // Сохраняем в registry для доступа из других сцен
+          this.registry.set("joystickState", this.joystickState);
+
+          // Визуальная подсказка
+          const hint = this.add
+            .text(joystickX, joystickY - 100, "Джойстик\nдля управления", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "18px",
+              color: "#888888",
+              align: "center",
+            })
+            .setOrigin(0.5)
+            .setAlpha(0.6)
+            .setScrollFactor(0);
+
+          // Убираем подсказку через 3 секунды
+          this.tweens.add({
+            targets: hint,
+            alpha: 0,
+            duration: 1000,
+            delay: 3000,
+            onComplete: () => hint.destroy(),
+          });
+        }
+
+        updateJoystick(pointerX, pointerY, centerX, centerY, maxDistance) {
+          const deltaX = pointerX - centerX;
+          const deltaY = pointerY - centerY;
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const angle = Math.atan2(deltaY, deltaX);
+
+          // Ограничиваем стик максимальной дистанцией
+          let stickX, stickY;
+          if (distance > maxDistance) {
+            stickX = centerX + Math.cos(angle) * maxDistance;
+            stickY = centerY + Math.sin(angle) * maxDistance;
+          } else {
+            stickX = pointerX;
+            stickY = pointerY;
+          }
+
+          // Обновляем позицию стика
+          this.joystickStick.x = stickX;
+          this.joystickStick.y = stickY;
+
+          // Определяем направление (нужна минимальная дистанция для срабатывания)
+          const deadZone = 10; // Мёртвая зона в центре
+
+          if (distance > deadZone) {
+            // Определяем угол в градусах
+            const degrees = angle * (180 / Math.PI);
+
+            // Сбрасываем все направления
+            this.joystickState.left = false;
+            this.joystickState.right = false;
+            this.joystickState.up = false;
+            this.joystickState.down = false;
+
+            // Определяем направление по углу (8 направлений)
+            // Вправо: -22.5° до 22.5°
+            if (degrees >= -22.5 && degrees <= 22.5) {
+              this.joystickState.right = true;
+            }
+            // Вправо-вниз: 22.5° до 67.5°
+            else if (degrees > 22.5 && degrees <= 67.5) {
+              this.joystickState.right = true;
+              this.joystickState.down = true;
+            }
+            // Вниз: 67.5° до 112.5°
+            else if (degrees > 67.5 && degrees <= 112.5) {
+              this.joystickState.down = true;
+            }
+            // Влево-вниз: 112.5° до 157.5°
+            else if (degrees > 112.5 && degrees <= 157.5) {
+              this.joystickState.left = true;
+              this.joystickState.down = true;
+            }
+            // Влево: 157.5° до 180° или -180° до -157.5°
+            else if (degrees > 157.5 || degrees <= -157.5) {
+              this.joystickState.left = true;
+            }
+            // Влево-вверх: -157.5° до -112.5°
+            else if (degrees > -157.5 && degrees <= -112.5) {
+              this.joystickState.left = true;
+              this.joystickState.up = true;
+            }
+            // Вверх: -112.5° до -67.5°
+            else if (degrees > -112.5 && degrees <= -67.5) {
+              this.joystickState.up = true;
+            }
+            // Вправо-вверх: -67.5° до -22.5°
+            else if (degrees > -67.5 && degrees <= -22.5) {
+              this.joystickState.right = true;
+              this.joystickState.up = true;
+            }
+
+            // ПРЫЖОК: если джойстик наклонён вверх
+            if (this.joystickState.up && !this.joystickState.isJumping) {
+              const now = this.time.now;
+              if (now - this.lastJumpTime > 500) {
+                // Анти-спам прыжков
+                this.joystickState.isJumping = true;
+                this.lastJumpTime = now;
+
+                // Определяем направление прыжка
+                if (this.joystickState.left) {
+                  this.joystickState.jumpDirection = "left";
+                  console.log("🕹️ Прыжок ВЛЕВО-ВВЕРХ");
+                } else if (this.joystickState.right) {
+                  this.joystickState.jumpDirection = "right";
+                  console.log("🕹️ Прыжок ВПРАВО-ВВЕРХ");
+                } else {
+                  this.joystickState.jumpDirection = null;
+                  console.log("🕹️ Прыжок ВВЕРХ");
+                }
+
+                // Сбрасываем прыжок через 100мс
+                this.time.delayedCall(100, () => {
+                  this.joystickState.isJumping = false;
+                  this.joystickState.jumpDirection = null;
+                });
+              }
+            }
+
+            // Визуальная обратная связь - меняем цвет стика
+            if (this.joystickState.up) {
+              this.joystickStick.setFillStyle(0x00ffff, 0.8); // Голубой для прыжка
+            } else if (this.joystickState.down) {
+              this.joystickStick.setFillStyle(0xffff00, 0.8); // Жёлтый для "вниз"
+            } else {
+              this.joystickStick.setFillStyle(0x00ff00, 0.6); // Зелёный для обычного движения
+            }
+          } else {
+            // В мёртвой зоне - сбрасываем всё
+            this.joystickState.left = false;
+            this.joystickState.right = false;
+            this.joystickState.up = false;
+            this.joystickState.down = false;
+            this.joystickStick.setFillStyle(0x00ff00, 0.6);
+          }
+        }
+      }
+
+      // =================================================================
       // GAME CONFIGURATION
       // =================================================================
       const config = {
@@ -2153,6 +2584,12 @@
         width: 800,
         height: 600,
         backgroundColor: "#1d1d1d",
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: 800,
+          height: 600,
+        },
         physics: { default: "arcade", arcade: { debug: false } },
         scene: [
           PreloadScene,
@@ -2162,6 +2599,7 @@
           UIScene,
           Scene2,
           UIScene2,
+          VirtualControlsScene,
         ],
       };
 
