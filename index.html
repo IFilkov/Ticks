@@ -1186,6 +1186,10 @@
           this.physics.world.enable(this.footZone);
           this.footZone.body.setAllowGravity(false);
 
+          // *** СЧЁТЧИК ПНУТЫХ КЛЕЩЕЙ ДЛЯ НАГРАДЫ ***
+          this.kickedTicksCount = 0; // Счётчик пнутых клещей
+          this.kicksNeededForReward = 3; // Сколько пинков нужно для награды
+
           // *** ЧЕЛОВЕК ТЕПЕРЬ УПРАВЛЯЕТСЯ ИГРОКОМ ***
           this.human = this.physics.add.sprite(200, 580, "player");
           this.human.setOrigin(0.5, 1);
@@ -1368,6 +1372,67 @@
               // *** ЭФФЕКТ ПИНКА ***
               tick.isKicked = true; // Помечаем что клещ был пнут
               tick.isFalling = false; // Больше не может наносить урон
+
+              // *** УВЕЛИЧИВАЕМ СЧЁТЧИК ПИНКОВ ***
+              this.kickedTicksCount++;
+              console.log(
+                `⚡ Пнуто клещей: ${this.kickedTicksCount}/${this.kicksNeededForReward}`,
+              );
+
+              // Обновляем UI
+              this.events.emit(
+                "updateKickCount",
+                this.kickedTicksCount,
+                this.kicksNeededForReward,
+              );
+
+              // Проверяем достижение награды
+              if (this.kickedTicksCount >= this.kicksNeededForReward) {
+                this.kickedTicksCount = 0; // Сбрасываем счётчик
+
+                // Обновляем UI (сброс счётчика)
+                this.events.emit(
+                  "updateKickCount",
+                  this.kickedTicksCount,
+                  this.kicksNeededForReward,
+                );
+
+                // *** НАГРАДА: +20 HP ОБОИМ! ***
+                console.log(
+                  "🎁 НАГРАДА! За 3 пинка клещей: +20 HP человеку и собаке!",
+                );
+
+                // Лечим человека
+                if (!this.isHumanDead) {
+                  this.events.emit("healHuman", 20);
+                }
+
+                // Лечим собаку
+                if (!this.isDogDead) {
+                  this.events.emit("healDog", 20);
+                }
+
+                // Визуальный эффект награды
+                const rewardText = this.add
+                  .text(400, 200, "+20 HP!", {
+                    fontSize: "48px",
+                    fontFamily: '"3_Muz-TV2000.ttf"',
+                    color: "#00ff00",
+                    stroke: "#000",
+                    strokeThickness: 6,
+                  })
+                  .setOrigin(0.5);
+
+                this.tweens.add({
+                  targets: rewardText,
+                  y: rewardText.y - 50,
+                  alpha: 0,
+                  scale: 1.5,
+                  duration: 1500,
+                  ease: "Power2",
+                  onComplete: () => rewardText.destroy(),
+                });
+              }
 
               // Определяем направление пинка (противоположное направлению человека)
               const kickDirection = this.humanFacing === "right" ? 1 : -1;
@@ -1861,6 +1926,7 @@
           this.events.off("damageHuman");
           this.events.off("healDog");
           this.events.off("healHuman");
+          this.events.off("updateKickCount");
         }
       }
 
@@ -1921,6 +1987,15 @@
             })
             .setOrigin(1, 0);
 
+          // *** ИНДИКАТОР СЧЁТЧИКА ПИНКОВ ***
+          this.kickCountText = this.add
+            .text(750, 35, "⚡ Пинков: 0/3", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: "#ffaa00",
+            })
+            .setOrigin(1, 0);
+
           const gameScene = this.scene.get("Scene2");
           if (gameScene && gameScene.scene.isActive()) {
             // КРИТИЧНО: Отписываемся от старых событий перед новой подпиской
@@ -1929,10 +2004,27 @@
             gameScene.events.off("damageHuman");
             gameScene.events.off("healDog");
             gameScene.events.off("healHuman");
+            gameScene.events.off("updateKickCount");
 
             gameScene.events.on("updateWave", (wave) => {
               if (this.waveText && this.waveText.active) {
                 this.waveText.setText(`Волна ${wave}`);
+              }
+            });
+
+            // *** Событие обновления счётчика пинков ***
+            gameScene.events.on("updateKickCount", (count, needed) => {
+              if (this.kickCountText && this.kickCountText.active) {
+                this.kickCountText.setText(`⚡ Пинков: ${count}/${needed}`);
+
+                // Визуальный эффект при увеличении счётчика
+                this.tweens.add({
+                  targets: this.kickCountText,
+                  scale: 1.3,
+                  duration: 100,
+                  yoyo: true,
+                  ease: "Power2",
+                });
               }
             });
 
