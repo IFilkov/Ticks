@@ -89,6 +89,7 @@
           this.load.image("tick", `${assetPath}tick.png`);
           this.load.image("sky", `${assetPath}sky.jpg`);
           this.load.image("background", `${assetPath}background.png`);
+          this.load.image("background2", `${assetPath}background2.png`);
           this.load.image("mushroom", `${assetPath}mushroom.png`);
         }
 
@@ -1851,16 +1852,29 @@
         }
 
         homelessDied(homeless) {
-          console.log("💀 БОМЖ УМЕР! Рисуем лужу...");
+          console.log("💀 БОМЖ УМЕР! Проигрываем анимацию смерти...");
 
           // Останавливаем бомжа
           homeless.setVelocityX(0);
           homeless.isFallen = true;
 
-          // Рисуем растекающуюся жёлтую лужу
-          const puddleX = homeless.x;
-          const puddleY = homeless.y;
+          // *** АНИМАЦИЯ ПАДЕНИЯ (как при обычном пинке) ***
+          // Сохраняем позицию
+          const fallPositionX = homeless.x;
+          const fallPositionY = homeless.y;
 
+          // Меняем origin чтобы спрайт не обрезался при падении
+          const spriteHeight = 312; // Высота спрайта бомжа
+          homeless.setOrigin(0.5, 0.5);
+          homeless.y = homeless.y - spriteHeight / 2; // Компенсация: поднимаем на половину высоты
+
+          // Проигрываем анимацию падения
+          homeless.anims.play("homeless_death", true);
+          console.log(
+            `💀 Анимация падения запущена на позиции (${fallPositionX}, ${fallPositionY})`,
+          );
+
+          // Рисуем растекающуюся жёлтую лужу
           // Создаём графику для лужи
           const puddle = this.add.graphics();
           puddle.fillStyle(0xffff00, 0.6); // Жёлтый цвет
@@ -1880,8 +1894,8 @@
 
               // Рисуем овальную лужу (эллипс)
               puddle.fillEllipse(
-                puddleX,
-                puddleY,
+                fallPositionX,
+                fallPositionY,
                 puddleRadius * 1.5,
                 puddleRadius,
               );
@@ -1890,8 +1904,8 @@
               for (let i = 0; i < 5; i++) {
                 const angle = Math.random() * Math.PI * 2;
                 const distance = puddleRadius * (0.8 + Math.random() * 0.4);
-                const blobX = puddleX + Math.cos(angle) * distance;
-                const blobY = puddleY + Math.sin(angle) * distance * 0.7;
+                const blobX = fallPositionX + Math.cos(angle) * distance;
+                const blobY = fallPositionY + Math.sin(angle) * distance * 0.7;
                 const blobSize = 5 + Math.random() * 10;
                 puddle.fillCircle(blobX, blobY, blobSize);
               }
@@ -2593,7 +2607,7 @@
 
         create() {
           this.add.image(400, 300, "sky");
-          this.add.image(400, 300, "background");
+          this.add.image(400, 300, "background2");
 
           // Заголовок
           this.add
