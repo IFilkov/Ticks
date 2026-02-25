@@ -1500,7 +1500,7 @@
                   );
 
                   // *** НАНОСИМ УРОН БОМЖУ ***
-                  this.events.emit("damageHomeless", 20); // -5 HP за пинок
+                  this.events.emit("damageHomeless", 50); // -5 HP за пинок
 
                   // Проверяем смерть бомжа
                   if (this.homelessHealth <= 0 && !this.isHomelessDead) {
@@ -1919,6 +1919,8 @@
             this.scene.stop("UIScene2");
             this.scene.stop("VirtualControlsScene");
             this.scene.start("Scene4");
+            this.scene.launch("UIScene4");
+            this.scene.launch("VirtualControlsScene");
           });
         }
 
@@ -2598,7 +2600,7 @@
       }
 
       // =================================================================
-      // SCENE 4: ЗАГЛУШКА - ПОБЕДА НАД БОМЖОМ
+      // SCENE 4: ИССЛЕДОВАНИЕ - После победы над бомжом
       // =================================================================
       class Scene4 extends Phaser.Scene {
         constructor() {
@@ -2609,70 +2611,226 @@
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background2");
 
-          // Заголовок
-          this.add
-            .text(400, 200, "СЦЕНА 4", {
-              fontSize: "120px",
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              color: "#00ff00",
-              stroke: "#000000",
-              strokeThickness: 8,
-            })
-            .setOrigin(0.5)
-            .setShadow(5, 5, "#000000", 10, true, true);
+          // *** ИГРОК (ЧЕЛОВЕК) - УПРАВЛЯЕТСЯ ***
+          this.human = this.physics.add.sprite(200, 580, "player");
+          this.human.setOrigin(0.5, 1);
+          this.human.body.allowGravity = false;
+          this.human.body.setSize(
+            this.human.width * 0.5,
+            this.human.height * 0.9,
+          );
+          this.human.setCollideWorldBounds(true);
+          this.humanFacing = "right";
+          this.isJumping = false;
 
-          // Подзаголовок
-          this.add
-            .text(400, 320, "🎉 ПОБЕДА! 🎉", {
-              fontSize: "48px",
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              color: "#ffff00",
-            })
-            .setOrigin(0.5);
+          // *** СОБАКА - НА AI ***
+          this.dog = this.physics.add.sprite(600, 580, "dog_sprite");
+          this.dog.setOrigin(0.5, 1);
+          this.dog.body.allowGravity = false;
+          this.dog.setCollideWorldBounds(true);
+          this.dog.body.setSize(150, 100);
+          this.dogDirection = "left";
 
-          // Текст о том что произошло
-          this.add
-            .text(
-              400,
-              400,
-              "Вы победили бомжа!\nОн больше не будет собирать грибы!",
-              {
-                fontSize: "24px",
-                fontFamily: '"3_Muz-TV2000.ttf"',
-                color: "#ffffff",
-                align: "center",
+          // *** УПРАВЛЕНИЕ ***
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
+
+          // *** AI ТАЙМЕР ДЛЯ СОБАКИ ***
+          this.time.addEvent({
+            delay: Phaser.Math.Between(1500, 3000),
+            loop: true,
+            callback: () => {
+              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              switch (action) {
+                case "left":
+                  this.dog.setVelocityX(-80);
+                  this.dogDirection = "left";
+                  break;
+                case "right":
+                  this.dog.setVelocityX(80);
+                  this.dogDirection = "right";
+                  break;
+                case "idle":
+                  this.dog.setVelocityX(0);
+                  break;
+              }
+            },
+          });
+
+          console.log("🎮 Scene4: Игрок и собака созданы");
+        }
+
+        update() {
+          this.updateHumanPlayer();
+          this.updateDogAI();
+        }
+
+        updateHumanPlayer() {
+          // Получаем джойстик для мобильных
+          const joystickState = this.registry.get("joystickState") || {};
+          const isMobile = this.registry.get("isMobile") || false;
+
+          // Прыжок - клавиатура или джойстик вверх
+          const jumpPressed =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (isMobile && joystickState.isJumping);
+          if (jumpPressed && !this.isJumping) {
+            this.isJumping = true;
+
+            // Определяем направление прыжка
+            let jumpVelocityX = 0;
+
+            if (isMobile && joystickState.jumpDirection) {
+              // Прыжок по диагонали на мобильном
+              if (joystickState.jumpDirection === "left") {
+                jumpVelocityX = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (joystickState.jumpDirection === "right") {
+                jumpVelocityX = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            } else {
+              // Клавиатура
+              const leftPressed = this.cursors.left.isDown;
+              const rightPressed = this.cursors.right.isDown;
+
+              if (leftPressed) {
+                jumpVelocityX = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (rightPressed) {
+                jumpVelocityX = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            }
+
+            this.human.setVelocityX(jumpVelocityX);
+
+            this.tweens.add({
+              targets: this.human,
+              y: this.human.y - 280,
+              duration: 400,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.human.setVelocityX(0);
               },
-            )
+            });
+          }
+
+          if (this.isJumping) return;
+
+          // Горизонтальное движение
+          const leftPressed =
+            this.cursors.left.isDown || (isMobile && joystickState.left);
+          const rightPressed =
+            this.cursors.right.isDown || (isMobile && joystickState.right);
+
+          if (leftPressed) {
+            this.human.setVelocityX(-200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = true;
+            this.humanFacing = "left";
+          } else if (rightPressed) {
+            this.human.setVelocityX(200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = false;
+            this.humanFacing = "right";
+          } else {
+            this.human.setVelocityX(0);
+            this.human.anims.play("human_idle", true);
+          }
+        }
+
+        updateDogAI() {
+          this.dog.flipX = false;
+          if (this.dog.body.velocity.x < 0) {
+            this.dog.anims.play("dog_walk_left", true);
+          } else if (this.dog.body.velocity.x > 0) {
+            this.dog.anims.play("dog_walk_right", true);
+          } else {
+            this.dog.anims.play("dog_idle", true);
+            this.dog.flipX = this.dogDirection === "left";
+          }
+        }
+      }
+
+      // =================================================================
+      // SCENE 8: UI для Scene4
+      // =================================================================
+      class UIScene4 extends Phaser.Scene {
+        constructor() {
+          super("UIScene4");
+        }
+
+        create() {
+          const textStyle = {
+            fontFamily: "3_Muz-TV2000.ttf",
+            fontSize: "20px",
+            fill: "#fff",
+          };
+
+          // Заголовок сцены
+          this.add
+            .text(400, 30, "СЦЕНА 4 - ИССЛЕДОВАНИЕ", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "32px",
+              fill: "#00ff00",
+            })
             .setOrigin(0.5);
 
-          // Кнопка возврата в меню
-          const menuButton = this.add
-            .text(400, 500, "Вернуться в меню", {
+          // Подсказка управления
+          const controlsText = this.add
+            .text(400, 70, "Исследуй новую локацию!", {
               fontFamily: '"3_Muz-TV2000.ttf"',
-              fontSize: "36px",
-              color: "#00ff00",
+              fontSize: "18px",
+              fill: "#ffff00",
             })
-            .setOrigin(0.5)
+            .setOrigin(0.5);
+
+          // Мерцающая анимация подсказки
+          this.tweens.add({
+            targets: controlsText,
+            alpha: 0.3,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+
+          // Кнопка возврата в меню (справа вверху)
+          const menuButton = this.add
+            .text(750, 20, "📋 Меню", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "20px",
+              fill: "#ffffff",
+              backgroundColor: "#333333",
+              padding: { x: 10, y: 5 },
+            })
+            .setOrigin(1, 0)
             .setInteractive();
 
           menuButton.on("pointerover", () => {
-            menuButton.setStyle({ fill: "#ff0" });
+            menuButton.setStyle({ fill: "#ffff00" });
           });
           menuButton.on("pointerout", () => {
-            menuButton.setStyle({ fill: "#00ff00" });
+            menuButton.setStyle({ fill: "#ffffff" });
           });
           menuButton.on("pointerdown", () => {
+            const gameScene = this.scene.get("Scene4");
+            this.scene.stop("Scene4");
+            this.scene.stop("UIScene4");
+            this.scene.stop("VirtualControlsScene");
             this.scene.start("MainMenuScene");
           });
 
-          // Анимация появления
-          this.tweens.add({
-            targets: [menuButton],
-            alpha: { from: 0, to: 1 },
-            duration: 1000,
-            delay: 1000,
-            ease: "Power2",
-          });
+          console.log("✅ UIScene4 создан");
         }
       }
 
@@ -3006,6 +3164,7 @@
           Scene2,
           UIScene2,
           Scene4,
+          UIScene4,
           VirtualControlsScene,
         ],
       };
