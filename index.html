@@ -91,6 +91,10 @@
           this.load.image("background", `${assetPath}background.png`);
           this.load.image("background2", `${assetPath}background2.png`);
           this.load.image("mushroom", `${assetPath}mushroom.png`);
+          this.load.spritesheet("socket", `${assetPath}socket.png`, {
+            frameWidth: 512,
+            frameHeight: 512,
+          });
         }
 
         create() {
@@ -303,6 +307,17 @@
                 end: 15,
               }),
               frameRate: 8,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("socket_fly")) {
+            this.anims.create({
+              key: "socket_fly",
+              frames: this.anims.generateFrameNumbers("socket", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 6,
               repeat: -1,
             });
           }
@@ -2659,12 +2674,62 @@
             },
           });
 
-          console.log("🎮 Scene4: Игрок и собака созданы");
+          // *** SOCKET — Летающая розетка ***
+          this.socket = this.physics.add.sprite(
+            Phaser.Math.Between(150, 650),
+            Phaser.Math.Between(100, 350),
+            "socket",
+          );
+          this.socket.setOrigin(0.5, 0.5);
+          this.socket.body.allowGravity = false;
+          this.socket.setCollideWorldBounds(true);
+          this.socket.body.setBounce(1, 1);
+          this.socket.setScale(0.25); // 512px -> ~128px на экране
+          this.socket.body.setSize(400, 400); // hitbox под scale
+          this.socket.anims.play("socket_fly", true);
+
+          // Случайная начальная скорость
+          const socketAngle = Phaser.Math.Between(0, 359);
+          const socketSpeed = Phaser.Math.Between(150, 220);
+          this.socket.setVelocity(
+            Math.cos(Phaser.Math.DegToRad(socketAngle)) * socketSpeed,
+            Math.sin(Phaser.Math.DegToRad(socketAngle)) * socketSpeed,
+          );
+
+          // Таймер смены направления каждые 2-4 секунды
+          this.socketDirTimer = this.time.addEvent({
+            delay: Phaser.Math.Between(2000, 4000),
+            loop: true,
+            callback: () => {
+              if (!this.socket || !this.socket.active) return;
+              const newAngle = Phaser.Math.Between(0, 359);
+              const newSpeed = Phaser.Math.Between(130, 250);
+              this.socket.setVelocity(
+                Math.cos(Phaser.Math.DegToRad(newAngle)) * newSpeed,
+                Math.sin(Phaser.Math.DegToRad(newAngle)) * newSpeed,
+              );
+            },
+          });
+
+          console.log("🎮 Scene4: Игрок, собака и розетка созданы");
         }
 
         update() {
           this.updateHumanPlayer();
           this.updateDogAI();
+
+          // Вращение розетки + защита от зависания
+          if (this.socket && this.socket.active) {
+            this.socket.rotation += 0.025;
+            const vel = this.socket.body.velocity;
+            if (Math.abs(vel.x) < 15 && Math.abs(vel.y) < 15) {
+              const rescueAngle = Phaser.Math.Between(0, 359);
+              this.socket.setVelocity(
+                Math.cos(Phaser.Math.DegToRad(rescueAngle)) * 180,
+                Math.sin(Phaser.Math.DegToRad(rescueAngle)) * 180,
+              );
+            }
+          }
         }
 
         updateHumanPlayer() {
