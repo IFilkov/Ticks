@@ -2688,25 +2688,36 @@
           this.socket.body.setSize(400, 400); // hitbox под scale
           this.socket.anims.play("socket_fly", true);
 
-          // Случайная начальная скорость
-          const socketAngle = Phaser.Math.Between(0, 359);
-          const socketSpeed = Phaser.Math.Between(150, 220);
-          this.socket.setVelocity(
-            Math.cos(Phaser.Math.DegToRad(socketAngle)) * socketSpeed,
-            Math.sin(Phaser.Math.DegToRad(socketAngle)) * socketSpeed,
-          );
+          // 4 направления: лево, право, вверх, вниз
+          const socketDirs = [
+            [200, 0], // вправо
+            [-200, 0], // влево
+            [0, 180], // вниз
+            [0, -180], // вверх
+          ];
+          const startDir = Phaser.Math.RND.pick(socketDirs);
+          this.socket.setVelocity(startDir[0], startDir[1]);
 
-          // Таймер смены направления каждые 2-4 секунды
+          // Таймер смены направления каждые 1.5-3 секунды
           this.socketDirTimer = this.time.addEvent({
-            delay: Phaser.Math.Between(2000, 4000),
+            delay: Phaser.Math.Between(1500, 3000),
             loop: true,
             callback: () => {
               if (!this.socket || !this.socket.active) return;
-              const newAngle = Phaser.Math.Between(0, 359);
-              const newSpeed = Phaser.Math.Between(130, 250);
+              // Выбираем новое направление, отличное от текущего
+              const vel = this.socket.body.velocity;
+              const allDirs = [
+                [210, 0],
+                [-210, 0],
+                [0, 190],
+                [0, -190],
+              ];
+              let newDir = Phaser.Math.RND.pick(allDirs);
+              // Небольшая скоростная вариация
+              const speedMult = Phaser.Math.FloatBetween(0.85, 1.3);
               this.socket.setVelocity(
-                Math.cos(Phaser.Math.DegToRad(newAngle)) * newSpeed,
-                Math.sin(Phaser.Math.DegToRad(newAngle)) * newSpeed,
+                newDir[0] * speedMult,
+                newDir[1] * speedMult,
               );
             },
           });
@@ -2718,16 +2729,25 @@
           this.updateHumanPlayer();
           this.updateDogAI();
 
-          // Вращение розетки + защита от зависания
+          // Флип розетки в зависимости от направления
           if (this.socket && this.socket.active) {
-            this.socket.rotation += 0.025;
             const vel = this.socket.body.velocity;
+            // Флипаем горизонтально если летит влево
+            if (vel.x < -10) {
+              this.socket.flipX = true;
+            } else if (vel.x > 10) {
+              this.socket.flipX = false;
+            }
+            // Защита от зависания у стен
             if (Math.abs(vel.x) < 15 && Math.abs(vel.y) < 15) {
-              const rescueAngle = Phaser.Math.Between(0, 359);
-              this.socket.setVelocity(
-                Math.cos(Phaser.Math.DegToRad(rescueAngle)) * 180,
-                Math.sin(Phaser.Math.DegToRad(rescueAngle)) * 180,
-              );
+              const dirs = [
+                [180, 0],
+                [-180, 0],
+                [0, 180],
+                [0, -180],
+              ];
+              const d = Phaser.Math.RND.pick(dirs);
+              this.socket.setVelocity(d[0], d[1]);
             }
           }
         }
