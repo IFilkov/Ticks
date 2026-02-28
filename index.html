@@ -96,6 +96,11 @@
             frameHeight: 512,
           });
           this.load.image("conecter", `${assetPath}conecter.png`);
+          this.load.spritesheet("flash", `${assetPath}flash.png`, {
+            frameWidth: 281,
+            frameHeight: 307,
+          });
+          this.load.image("boom", `${assetPath}boom.png`);
         }
 
         create() {
@@ -351,11 +356,17 @@
             .setOrigin(0.5)
             .setShadow(2, 2, "#000000", 2, true, true);
 
-          this.add.text(50, 570, "@IFilkov", {
-            fontSize: "20px",
-            fontFamily: '"3_Muz-TV2000.ttf"',
-            color: "#000",
-          });
+          if (!this.anims.exists("flash_anim")) {
+            this.anims.create({
+              key: "flash_anim",
+              frames: this.anims.generateFrameNumbers("flash", {
+                start: 0,
+                end: 7,
+              }),
+              frameRate: 16,
+              repeat: 0,
+            });
+          }
 
           const startButton = this.add
             .text(400, 350, "Старт", {
@@ -2741,6 +2752,20 @@
           // Первый спавн через 5 секунд
           this.time.delayedCall(5000, this.spawnConnecter, [], this);
 
+          // *** SOCKET MOUTH — рот в центре socket ***
+          this.socketMouth = this.add.zone(0, 0, 80, 80);
+          this.physics.world.enable(this.socketMouth);
+          this.socketMouth.body.setAllowGravity(false);
+          this.socketMouth.x = -999;
+          this.flashCooldown = false;
+
+          // *** CONECTER MOUTH — рот в центре conecter ***
+          this.conecterMouth = this.add.zone(0, 0, 60, 60);
+          this.physics.world.enable(this.conecterMouth);
+          this.conecterMouth.body.setAllowGravity(false);
+          this.conecterMouth.x = -999;
+          this.boomCooldown = false;
+
           console.log("🎮 Scene4: Игрок, собака и розетка созданы");
         }
 
@@ -2749,16 +2774,14 @@
           this.updateDogAI();
           this.updateConnecter();
 
-          // Флип розетки в зависимости от направления
+          // Флип розетки + рот + flash на игроке
           if (this.socket && this.socket.active) {
             const vel = this.socket.body.velocity;
-            // Флипаем горизонтально если летит влево
             if (vel.x < -10) {
               this.socket.flipX = true;
             } else if (vel.x > 10) {
               this.socket.flipX = false;
             }
-            // Защита от зависания у стен
             if (Math.abs(vel.x) < 15 && Math.abs(vel.y) < 15) {
               const dirs = [
                 [180, 0],
@@ -2769,6 +2792,39 @@
               const d = Phaser.Math.RND.pick(dirs);
               this.socket.setVelocity(d[0], d[1]);
             }
+            // Рот socket всегда в центре спрайта
+            this.socketMouth.x = this.socket.x;
+            this.socketMouth.y = this.socket.y;
+
+            // Flash при касании игрока ртом socket
+            if (
+              !this.flashCooldown &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.socketMouth.getBounds(),
+                this.human.getBounds(),
+              )
+            ) {
+              this.flashCooldown = true;
+              const fx = this.add.sprite(
+                this.human.x,
+                this.human.y - 150,
+                "flash",
+              );
+              fx.setScale(1.2);
+              fx.setBlendMode(Phaser.BlendModes.ADD);
+              fx.setDepth(10);
+              fx.anims.play("flash_anim");
+              fx.once("animationcomplete", () => fx.destroy());
+              this.human.setTint(0x44aaff);
+              this.time.delayedCall(300, () => {
+                if (this.human) this.human.clearTint();
+              });
+              this.time.delayedCall(1500, () => {
+                this.flashCooldown = false;
+              });
+            }
+          } else {
+            this.socketMouth.x = -999;
           }
         }
 
@@ -2886,12 +2942,14 @@
                 this.conecterTimer = this.time.delayedCall(8000, () => {
                   this.human.hasConnecter = false;
                   this.carriedConnecter.setVisible(false);
+                  this.conecterMouth.x = -999;
+                  this.conecterMouth.y = -999;
                 });
               }
             });
           }
 
-          // Conecter следует за игроком и поворачивается по направлению
+          // ── Conecter следует за игроком ──────────────────────────────
           if (this.human.hasConnecter) {
             const vel = this.human.body.velocity;
 
@@ -2899,21 +2957,67 @@
             this.carriedConnecter.x = this.human.x;
             this.carriedConnecter.y = this.human.y - 200;
 
-            // Целевой угол по направлению движения
-            let targetAngle = 0; // стоит — штырьки вверх
+            // Мгновенный поворот по направлению движения
             if (vel.x > 10) {
-              targetAngle = 90; // вправо
+              this.carriedConnecter.angle = 90; // вправо
             } else if (vel.x < -10) {
-              targetAngle = -90; // влево
+              this.carriedConnecter.angle = -90; // влево
             } else if (this.isJumping) {
-              targetAngle = 180; // прыжок — вниз
+              this.carriedConnecter.angle = 180; // прыжок
+            } else {
+              this.carriedConnecter.angle = 0; // стоит — исходное
             }
 
-            // Плавный поворот
-            let diff = targetAngle - this.carriedConnecter.angle;
-            while (diff > 180) diff -= 360;
-            while (diff < -180) diff += 360;
-            this.carriedConnecter.angle += diff * 0.15;
+            // Рот conecter — в центре carriedConnecter
+            this.conecterMouth.x = this.carriedConnecter.x;
+            this.conecterMouth.y = this.carriedConnecter.y;
+
+            // Boom при касании рта conecter с ртом socket
+            if (
+              !this.boomCooldown &&
+              this.socket &&
+              this.socket.active &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.conecterMouth.getBounds(),
+                this.socketMouth.getBounds(),
+              )
+            ) {
+              this.boomCooldown = true;
+
+              // Boom в точке столкновения
+              const boomX = (this.conecterMouth.x + this.socketMouth.x) / 2;
+              const boomY = (this.conecterMouth.y + this.socketMouth.y) / 2;
+              const boom = this.add.image(boomX, boomY, "boom");
+              boom.setScale(0.6);
+              boom.setBlendMode(Phaser.BlendModes.ADD);
+              boom.setDepth(15);
+              this.tweens.add({
+                targets: boom,
+                scale: { from: 0.2, to: 1.0 },
+                alpha: { from: 1, to: 0 },
+                duration: 600,
+                ease: "Power2",
+                onComplete: () => boom.destroy(),
+              });
+
+              // Отбрасываем socket в случайном направлении
+              const kicks = [
+                [300, 0],
+                [-300, 0],
+                [0, 260],
+                [0, -260],
+              ];
+              const kick = Phaser.Math.RND.pick(kicks);
+              this.socket.setVelocity(kick[0], kick[1]);
+
+              this.time.delayedCall(800, () => {
+                this.boomCooldown = false;
+              });
+            }
+          } else {
+            // Conecter не несут — убираем рот за экран
+            this.conecterMouth.x = -999;
+            this.conecterMouth.y = -999;
           }
         }
 
