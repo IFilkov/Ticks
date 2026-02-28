@@ -2949,17 +2949,16 @@
           const speed = 600;
           let vx = 0,
             vy = 0;
-          if (angle === 90 || (this.humanFacing === "right" && angle === 0)) {
+          if (angle === 0) {
+            vy = -speed; // стоит — бросок вверх
+          } else if (angle === 90) {
             vx = speed; // вправо
-          } else if (
-            angle === -90 ||
-            (this.humanFacing === "left" && angle === 0)
-          ) {
+          } else if (angle === -90) {
             vx = -speed; // влево
           } else if (angle === 180) {
             vx = this.humanFacing === "right" ? speed : -speed;
           } else {
-            // По умолчанию — по направлению взгляда игрока
+            // По умолчанию — по направлению взгляда
             vx = this.humanFacing === "right" ? speed : -speed;
           }
           proj.setVelocity(vx, vy);
