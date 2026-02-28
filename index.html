@@ -356,11 +356,6 @@
             .setOrigin(0.5)
             .setShadow(2, 2, "#000000", 2, true, true);
 
-          // this.add.text(50, 570, "@IFilkov", {
-          //   fontSize: "20px",
-          //   fontFamily: '"3_Muz-TV2000.ttf"',
-          //   color: "#000",
-          // }
           if (!this.anims.exists("flash_anim")) {
             this.anims.create({
               key: "flash_anim",
@@ -3025,9 +3020,10 @@
           if (this.human.hasConnecter) {
             const vel = this.human.body.velocity;
 
-            // Позиция над головой игрока
-            this.carriedConnecter.x = this.human.x;
-            this.carriedConnecter.y = this.human.y - 200;
+            // Позиция со смещением по стороне движения (как гриб)
+            const cOffset = this.humanFacing === "left" ? -60 : 60;
+            this.carriedConnecter.x = this.human.x + cOffset;
+            this.carriedConnecter.y = this.human.y - 130;
 
             // Мгновенный поворот по направлению движения
             if (vel.x > 10) {
@@ -3253,7 +3249,7 @@
                 g.socket.anims.stop();
                 g.socket.setTint(0x333333);
                 g.scene.pause();
-                this.showResult("ПОБЕДА!", "#00ff00");
+                this.showResult("ПОБЕДА!", "#00ff00", true);
               }
             });
           }
@@ -3279,7 +3275,7 @@
           this.socketHpTxt.setText("HP: " + h + "%");
         }
 
-        showResult(msg, color) {
+        showResult(msg, color, victory) {
           const txt = this.add
             .text(400, 300, msg, {
               fontSize: "120px",
@@ -3296,10 +3292,14 @@
             duration: 600,
             ease: "Back.easeOut",
           });
-          this.time.delayedCall(4000, () => {
+          this.time.delayedCall(3000, () => {
             this.scene.stop("Scene4");
             this.scene.stop("UIScene4");
-            this.scene.start("MainMenuScene");
+            if (victory) {
+              this.scene.start("Scene5");
+            } else {
+              this.scene.start("MainMenuScene");
+            }
           });
         }
 
@@ -3309,6 +3309,24 @@
             g.events.off("damageHuman4");
             g.events.off("damageSocket4");
           }
+        }
+      }
+
+      // =================================================================
+      // SCENE 5: Ринг — после победы над Socket
+      // =================================================================
+      class Scene5 extends Phaser.Scene {
+        constructor() {
+          super("Scene5");
+        }
+
+        preload() {
+          this.load.image("ring", "assets/images/ring.jpg");
+        }
+
+        create() {
+          this.add.image(400, 300, "ring").setDisplaySize(800, 600);
+          console.log("🥊 Scene5: Ринг загружен");
         }
       }
 
@@ -3643,6 +3661,7 @@
           UIScene2,
           Scene4,
           UIScene4,
+          Scene5,
           VirtualControlsScene,
         ],
       };
