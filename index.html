@@ -3389,7 +3389,11 @@
 
           // *** УПРАВЛЕНИЕ ***
           this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
           this.prevDown = false;
+          this.isJumping = false;
 
           console.log("🥊 Scene5: Ринг готов!");
         }
@@ -3406,6 +3410,46 @@
             this.cursors.down.isDown || (isMobile && joystickState.down);
           const downJust = downNow && !this.prevDown;
           this.prevDown = downNow;
+
+          // ── Прыжок ────────────────────────────────────────────────────
+          const jumpPressed =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (isMobile && joystickState.isJumping);
+          if (jumpPressed && !this.isJumping && !this.isAttacking) {
+            this.isJumping = true;
+            let jumpVelocityX = 0;
+            if (isMobile && joystickState.jumpDirection === "left") {
+              jumpVelocityX = -200;
+              this.fighter.flipX = true;
+              this.fighterFacing = "left";
+            } else if (isMobile && joystickState.jumpDirection === "right") {
+              jumpVelocityX = 200;
+              this.fighter.flipX = false;
+              this.fighterFacing = "right";
+            } else if (this.cursors.left.isDown) {
+              jumpVelocityX = -200;
+              this.fighter.flipX = true;
+              this.fighterFacing = "left";
+            } else if (this.cursors.right.isDown) {
+              jumpVelocityX = 200;
+              this.fighter.flipX = false;
+              this.fighterFacing = "right";
+            }
+            this.fighter.setVelocityX(jumpVelocityX);
+            this.tweens.add({
+              targets: this.fighter,
+              y: this.fighter.y - 220,
+              duration: 380,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.fighter.setVelocityX(0);
+              },
+            });
+          }
+
+          if (this.isJumping) return;
 
           // ── Удар ──────────────────────────────────────────────────────
           if (downJust && !this.isAttacking) {
