@@ -356,6 +356,11 @@
             .setOrigin(0.5)
             .setShadow(2, 2, "#000000", 2, true, true);
 
+          // this.add.text(50, 570, "@IFilkov", {
+          //   fontSize: "20px",
+          //   fontFamily: '"3_Muz-TV2000.ttf"',
+          //   color: "#000",
+          // }
           if (!this.anims.exists("flash_anim")) {
             this.anims.create({
               key: "flash_anim",
@@ -2649,6 +2654,8 @@
           this.human.setCollideWorldBounds(true);
           this.humanFacing = "right";
           this.isJumping = false;
+          this.humanHealth = 100;
+          this.isHumanDead = false;
 
           // *** СОБАКА - НА AI ***
           this.dog = this.physics.add.sprite(600, 580, "dog_sprite");
@@ -2699,6 +2706,8 @@
           this.socket.setScale(0.5); // 512px -> ~256px на экране
           this.socket.body.setSize(400, 400); // hitbox под scale
           this.socket.anims.play("socket_fly", true);
+          this.socketHealth = 100;
+          this.isSocketDead = false;
 
           // 4 направления: лево, право, вверх, вниз
           const socketDirs = [
@@ -2825,6 +2834,8 @@
               this.time.delayedCall(1500, () => {
                 this.flashCooldown = false;
               });
+              // -5 HP игроку
+              this.events.emit("damageHuman4", 5);
             }
           } else {
             this.socketMouth.x = -999;
@@ -3086,6 +3097,8 @@
               this.time.delayedCall(800, () => {
                 this.boomCooldown = false;
               });
+              // -20 HP socket
+              this.events.emit("damageSocket4", 20);
 
               // Уничтожаем снаряд
               p.destroy();
@@ -3129,67 +3142,173 @@
         }
 
         create() {
-          const textStyle = {
-            fontFamily: "3_Muz-TV2000.ttf",
-            fontSize: "20px",
+          const ts = {
+            fontFamily: '"3_Muz-TV2000.ttf"',
+            fontSize: "16px",
             fill: "#fff",
           };
 
-          // Заголовок сцены
-          this.add
-            .text(400, 30, "СЦЕНА 4 - ИССЛЕДОВАНИЕ", {
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              fontSize: "32px",
-              fill: "#00ff00",
-            })
+          // ── Шкала HP игрока (слева) ─────────────────────────────────
+          this.add.text(10, 12, "Игрок:", ts);
+          this.humanHpBg = this.add
+            .rectangle(130, 22, 160, 18, 0x000000)
             .setOrigin(0.5);
+          this.humanHpBar = this.add
+            .rectangle(130, 22, 160, 18, 0x00ff00)
+            .setOrigin(0.5);
+          this.humanHpTxt = this.add.text(10, 35, "HP: 100%", ts);
 
-          // Подсказка управления
-          const controlsText = this.add
-            .text(400, 70, "Исследуй новую локацию!", {
+          // ── Шкала HP socket (справа) ─────────────────────────────────
+          this.add.text(570, 12, "Socket:", ts);
+          this.socketHpBg = this.add
+            .rectangle(680, 22, 160, 18, 0x000000)
+            .setOrigin(0.5);
+          this.socketHpBar = this.add
+            .rectangle(680, 22, 160, 18, 0x00ff00)
+            .setOrigin(0.5);
+          this.socketHpTxt = this.add.text(610, 35, "HP: 100%", ts);
+
+          // ── Кнопка меню ────────────────────────────────────────────
+          const menuButton = this.add
+            .text(750, 55, "📋 Меню", {
               fontFamily: '"3_Muz-TV2000.ttf"',
               fontSize: "18px",
-              fill: "#ffff00",
-            })
-            .setOrigin(0.5);
-
-          // Мерцающая анимация подсказки
-          this.tweens.add({
-            targets: controlsText,
-            alpha: 0.3,
-            duration: 1000,
-            yoyo: true,
-            repeat: -1,
-            ease: "Sine.easeInOut",
-          });
-
-          // Кнопка возврата в меню (справа вверху)
-          const menuButton = this.add
-            .text(750, 20, "📋 Меню", {
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              fontSize: "20px",
               fill: "#ffffff",
               backgroundColor: "#333333",
-              padding: { x: 10, y: 5 },
+              padding: { x: 8, y: 4 },
             })
             .setOrigin(1, 0)
             .setInteractive();
-
-          menuButton.on("pointerover", () => {
-            menuButton.setStyle({ fill: "#ffff00" });
-          });
-          menuButton.on("pointerout", () => {
-            menuButton.setStyle({ fill: "#ffffff" });
-          });
+          menuButton.on("pointerover", () =>
+            menuButton.setStyle({ fill: "#ffff00" }),
+          );
+          menuButton.on("pointerout", () =>
+            menuButton.setStyle({ fill: "#ffffff" }),
+          );
           menuButton.on("pointerdown", () => {
-            const gameScene = this.scene.get("Scene4");
             this.scene.stop("Scene4");
             this.scene.stop("UIScene4");
             this.scene.stop("VirtualControlsScene");
             this.scene.start("MainMenuScene");
           });
 
+          // ── Слушаем события от Scene4 ───────────────────────────────
+          const g = this.scene.get("Scene4");
+          if (g && g.scene.isActive()) {
+            g.events.off("damageHuman4");
+            g.events.off("damageSocket4");
+
+            g.events.on("damageHuman4", (dmg) => {
+              if (g.isHumanDead) return;
+              g.humanHealth = Math.max(0, g.humanHealth - dmg);
+              this.updateHumanBar(g.humanHealth);
+              // Плавающий текст урона
+              const t = this.add
+                .text(g.human.x, g.human.y - 160, "-" + dmg, {
+                  fontSize: "28px",
+                  fontFamily: '"3_Muz-TV2000.ttf"',
+                  color: "#ff4444",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 900,
+                onComplete: () => t.destroy(),
+              });
+              if (g.humanHealth <= 0 && !g.isHumanDead) {
+                g.isHumanDead = true;
+                g.scene.pause();
+                this.showResult("ИГРА ОКОНЧЕНА", "#ff0000");
+              }
+            });
+
+            g.events.on("damageSocket4", (dmg) => {
+              if (g.isSocketDead) return;
+              g.socketHealth = Math.max(0, g.socketHealth - dmg);
+              this.updateSocketBar(g.socketHealth);
+              // Плавающий текст урона
+              const t = this.add
+                .text(g.socket.x, g.socket.y - 80, "-" + dmg, {
+                  fontSize: "28px",
+                  fontFamily: '"3_Muz-TV2000.ttf"',
+                  color: "#ff8800",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 900,
+                onComplete: () => t.destroy(),
+              });
+              if (g.socketHealth <= 0 && !g.isSocketDead) {
+                g.isSocketDead = true;
+                g.socket.setVelocity(0, 0);
+                g.socket.anims.stop();
+                g.socket.setTint(0x333333);
+                g.scene.pause();
+                this.showResult("ПОБЕДА!", "#00ff00");
+              }
+            });
+          }
+
           console.log("✅ UIScene4 создан");
+        }
+
+        updateHumanBar(hp) {
+          const h = Math.max(0, hp);
+          this.humanHpBar.width = (h / 100) * 160;
+          this.humanHpBar.setFillStyle(
+            h > 60 ? 0x00ff00 : h > 30 ? 0xffff00 : 0xff0000,
+          );
+          this.humanHpTxt.setText("HP: " + h + "%");
+        }
+
+        updateSocketBar(hp) {
+          const h = Math.max(0, hp);
+          this.socketHpBar.width = (h / 100) * 160;
+          this.socketHpBar.setFillStyle(
+            h > 60 ? 0x00ff00 : h > 30 ? 0xffff00 : 0xff0000,
+          );
+          this.socketHpTxt.setText("HP: " + h + "%");
+        }
+
+        showResult(msg, color) {
+          const txt = this.add
+            .text(400, 300, msg, {
+              fontSize: "120px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: color,
+              stroke: "#000000",
+              strokeThickness: 10,
+            })
+            .setOrigin(0.5);
+          this.tweens.add({
+            targets: txt,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.5, to: 1.0 },
+            duration: 600,
+            ease: "Back.easeOut",
+          });
+          this.time.delayedCall(4000, () => {
+            this.scene.stop("Scene4");
+            this.scene.stop("UIScene4");
+            this.scene.start("MainMenuScene");
+          });
+        }
+
+        shutdown() {
+          const g = this.scene.get("Scene4");
+          if (g) {
+            g.events.off("damageHuman4");
+            g.events.off("damageSocket4");
+          }
         }
       }
 
