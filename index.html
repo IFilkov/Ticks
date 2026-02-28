@@ -101,6 +101,10 @@
             frameHeight: 307,
           });
           this.load.image("boom", `${assetPath}boom.png`);
+          this.load.spritesheet("humanFight", `${assetPath}humanFight.png`, {
+            frameWidth: 172,
+            frameHeight: 249,
+          });
         }
 
         create() {
@@ -356,6 +360,51 @@
             .setOrigin(0.5)
             .setShadow(2, 2, "#000000", 2, true, true);
 
+          // Анимации бойца (Scene5)
+          if (!this.anims.exists("fight_idle")) {
+            this.anims.create({
+              key: "fight_idle",
+              frames: this.anims.generateFrameNumbers("humanFight", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 5,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("fight_walk")) {
+            this.anims.create({
+              key: "fight_walk",
+              frames: this.anims.generateFrameNumbers("humanFight", {
+                start: 4,
+                end: 7,
+              }),
+              frameRate: 10,
+              repeat: -1,
+            });
+          }
+          if (!this.anims.exists("fight_kick")) {
+            this.anims.create({
+              key: "fight_kick",
+              frames: this.anims.generateFrameNumbers("humanFight", {
+                start: 8,
+                end: 11,
+              }),
+              frameRate: 12,
+              repeat: 0,
+            });
+          }
+          if (!this.anims.exists("fight_punch")) {
+            this.anims.create({
+              key: "fight_punch",
+              frames: this.anims.generateFrameNumbers("humanFight", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 12,
+              repeat: 0,
+            });
+          }
           if (!this.anims.exists("flash_anim")) {
             this.anims.create({
               key: "flash_anim",
@@ -3325,8 +3374,69 @@
         }
 
         create() {
+          // Фон — ринг
           this.add.image(400, 300, "ring").setDisplaySize(800, 600);
-          console.log("🥊 Scene5: Ринг загружен");
+
+          // *** БОЕЦ — спрайт humanFight ***
+          this.fighter = this.physics.add.sprite(400, 520, "humanFight");
+          this.fighter.setOrigin(0.5, 1);
+          this.fighter.body.allowGravity = false;
+          this.fighter.setCollideWorldBounds(true);
+          this.fighter.setScale(1.5);
+          this.fighter.anims.play("fight_idle", true);
+          this.fighterFacing = "right";
+          this.isAttacking = false; // блокировка во время удара
+
+          // *** УПРАВЛЕНИЕ ***
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.prevDown = false;
+
+          console.log("🥊 Scene5: Ринг готов!");
+        }
+
+        update() {
+          const joystickState = this.registry.get("joystickState") || {};
+          const isMobile = this.registry.get("isMobile") || false;
+
+          const leftPressed =
+            this.cursors.left.isDown || (isMobile && joystickState.left);
+          const rightPressed =
+            this.cursors.right.isDown || (isMobile && joystickState.right);
+          const downNow =
+            this.cursors.down.isDown || (isMobile && joystickState.down);
+          const downJust = downNow && !this.prevDown;
+          this.prevDown = downNow;
+
+          // ── Удар ──────────────────────────────────────────────────────
+          if (downJust && !this.isAttacking) {
+            this.isAttacking = true;
+            this.fighter.setVelocityX(0);
+            const attack = Phaser.Math.RND.pick(["fight_kick", "fight_punch"]);
+            this.fighter.anims.play(attack, true);
+            this.fighter.once("animationcomplete", () => {
+              this.isAttacking = false;
+              this.fighter.anims.play("fight_idle", true);
+            });
+            return;
+          }
+
+          if (this.isAttacking) return;
+
+          // ── Движение ─────────────────────────────────────────────────
+          if (leftPressed) {
+            this.fighter.setVelocityX(-200);
+            this.fighter.flipX = true;
+            this.fighterFacing = "left";
+            this.fighter.anims.play("fight_walk", true);
+          } else if (rightPressed) {
+            this.fighter.setVelocityX(200);
+            this.fighter.flipX = false;
+            this.fighterFacing = "right";
+            this.fighter.anims.play("fight_walk", true);
+          } else {
+            this.fighter.setVelocityX(0);
+            this.fighter.anims.play("fight_idle", true);
+          }
         }
       }
 
