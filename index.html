@@ -95,6 +95,7 @@
             frameWidth: 512,
             frameHeight: 512,
           });
+          this.load.image("conecter", `${assetPath}conecter.png`);
         }
 
         create() {
@@ -2684,7 +2685,7 @@
           this.socket.body.allowGravity = false;
           this.socket.setCollideWorldBounds(true);
           this.socket.body.setBounce(1, 1);
-          this.socket.setScale(0.25); // 512px -> ~128px на экране
+          this.socket.setScale(0.5); // 512px -> ~256px на экране
           this.socket.body.setSize(400, 400); // hitbox под scale
           this.socket.anims.play("socket_fly", true);
 
@@ -2722,12 +2723,31 @@
             },
           });
 
+          // *** CONECTER — подбираемый предмет ***
+          this.conecters = this.physics.add.group();
+          this.human.hasConnecter = false;
+          this.carriedConnecter = this.add
+            .image(0, 0, "conecter")
+            .setScale(0.18)
+            .setVisible(false);
+
+          // Спавн conecter каждые 12 секунд
+          this.time.addEvent({
+            delay: 12000,
+            loop: true,
+            callback: this.spawnConnecter,
+            callbackScope: this,
+          });
+          // Первый спавн через 5 секунд
+          this.time.delayedCall(5000, this.spawnConnecter, [], this);
+
           console.log("🎮 Scene4: Игрок, собака и розетка созданы");
         }
 
         update() {
           this.updateHumanPlayer();
           this.updateDogAI();
+          this.updateConnecter();
 
           // Флип розетки в зависимости от направления
           if (this.socket && this.socket.active) {
@@ -2830,6 +2850,70 @@
           } else {
             this.human.setVelocityX(0);
             this.human.anims.play("human_idle", true);
+          }
+        }
+
+        spawnConnecter() {
+          if (this.conecters.countActive(true) > 0 || this.human.hasConnecter)
+            return;
+          const x = Phaser.Math.Between(80, 720);
+          const item = this.conecters.create(x, 575, "conecter");
+          item.setOrigin(0.5, 1).setScale(0.18);
+          item.body.allowGravity = false;
+          // Исчезает через 10 секунд если не подобран
+          this.time.delayedCall(10000, () => {
+            if (item && item.active) item.destroy();
+          });
+        }
+
+        updateConnecter() {
+          if (!this.carriedConnecter) return;
+
+          // Подбор conecter игроком
+          if (!this.human.hasConnecter) {
+            this.conecters.getChildren().forEach((item) => {
+              if (!item.active) return;
+              if (
+                Phaser.Geom.Intersects.RectangleToRectangle(
+                  this.human.getBounds(),
+                  item.getBounds(),
+                )
+              ) {
+                item.destroy();
+                this.human.hasConnecter = true;
+                this.carriedConnecter.setVisible(true);
+                // Через 8 секунд conecter пропадает сам
+                this.conecterTimer = this.time.delayedCall(8000, () => {
+                  this.human.hasConnecter = false;
+                  this.carriedConnecter.setVisible(false);
+                });
+              }
+            });
+          }
+
+          // Conecter следует за игроком и поворачивается по направлению
+          if (this.human.hasConnecter) {
+            const vel = this.human.body.velocity;
+
+            // Позиция над головой игрока
+            this.carriedConnecter.x = this.human.x;
+            this.carriedConnecter.y = this.human.y - 200;
+
+            // Целевой угол по направлению движения
+            let targetAngle = 0; // стоит — штырьки вверх
+            if (vel.x > 10) {
+              targetAngle = 90; // вправо
+            } else if (vel.x < -10) {
+              targetAngle = -90; // влево
+            } else if (this.isJumping) {
+              targetAngle = 180; // прыжок — вниз
+            }
+
+            // Плавный поворот
+            let diff = targetAngle - this.carriedConnecter.angle;
+            while (diff > 180) diff -= 360;
+            while (diff < -180) diff += 360;
+            this.carriedConnecter.angle += diff * 0.15;
           }
         }
 
