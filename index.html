@@ -2766,6 +2766,9 @@
           this.conecterMouth.x = -999;
           this.boomCooldown = false;
 
+          // *** THROWN CONECTER — летящий броском ***
+          this.thrownConnecter = null; // ссылка на летящий снаряд
+
           console.log("🎮 Scene4: Игрок, собака и розетка созданы");
         }
 
@@ -2907,6 +2910,65 @@
             this.human.setVelocityX(0);
             this.human.anims.play("human_idle", true);
           }
+
+          // Бросок conecter — клавиша вниз или джойстик вниз
+          const downJustPressed =
+            Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+            (isMobile && joystickState.down && !this._prevDown);
+          this._prevDown = isMobile && joystickState.down;
+
+          if (
+            downJustPressed &&
+            this.human.hasConnecter &&
+            !this.thrownConnecter
+          ) {
+            this.throwConnecter();
+          }
+        }
+
+        throwConnecter() {
+          this.human.hasConnecter = false;
+          this.carriedConnecter.setVisible(false);
+          if (this.conecterTimer) this.conecterTimer.remove();
+
+          // Создаём физический снаряд
+          const proj = this.physics.add.image(
+            this.carriedConnecter.x,
+            this.carriedConnecter.y,
+            "conecter",
+          );
+          proj.setScale(0.18);
+          proj.body.setAllowGravity(false);
+          proj.setDepth(5);
+
+          // Направление броска и угол совпадают с последним поворотом carriedConnecter
+          const angle = this.carriedConnecter.angle;
+          proj.setAngle(angle);
+
+          // Вектор скорости по направлению броска
+          const speed = 600;
+          let vx = 0,
+            vy = 0;
+          if (angle === 90 || (this.humanFacing === "right" && angle === 0)) {
+            vx = speed; // вправо
+          } else if (
+            angle === -90 ||
+            (this.humanFacing === "left" && angle === 0)
+          ) {
+            vx = -speed; // влево
+          } else if (angle === 180) {
+            vx = this.humanFacing === "right" ? speed : -speed;
+          } else {
+            // По умолчанию — по направлению взгляда игрока
+            vx = this.humanFacing === "right" ? speed : -speed;
+          }
+          proj.setVelocity(vx, vy);
+
+          // Рот снаряда (для boom с socket)
+          this.conecterMouth.x = proj.x;
+          this.conecterMouth.y = proj.y;
+
+          this.thrownConnecter = proj;
         }
 
         spawnConnecter() {
@@ -2972,7 +3034,24 @@
             this.conecterMouth.x = this.carriedConnecter.x;
             this.conecterMouth.y = this.carriedConnecter.y;
 
-            // Boom при касании рта conecter с ртом socket
+            // (boom только при броске — см. thrownConnecter ниже)
+          } else {
+            // Conecter не несут — убираем рот за экран (если нет thrownConnecter)
+            if (!this.thrownConnecter) {
+              this.conecterMouth.x = -999;
+              this.conecterMouth.y = -999;
+            }
+          }
+
+          // ── Летящий conecter (после броска) ────────────────────────────
+          if (this.thrownConnecter) {
+            const p = this.thrownConnecter;
+
+            // Рот снаряда следует за ним
+            this.conecterMouth.x = p.x;
+            this.conecterMouth.y = p.y;
+
+            // Boom при касании рта снаряда с ртом socket
             if (
               !this.boomCooldown &&
               this.socket &&
@@ -2983,10 +3062,8 @@
               )
             ) {
               this.boomCooldown = true;
-
-              // Boom в точке столкновения
-              const boomX = (this.conecterMouth.x + this.socketMouth.x) / 2;
-              const boomY = (this.conecterMouth.y + this.socketMouth.y) / 2;
+              const boomX = (p.x + this.socket.x) / 2;
+              const boomY = (p.y + this.socket.y) / 2;
               const boom = this.add.image(boomX, boomY, "boom");
               boom.setScale(0.6);
               boom.setBlendMode(Phaser.BlendModes.ADD);
@@ -2999,8 +3076,6 @@
                 ease: "Power2",
                 onComplete: () => boom.destroy(),
               });
-
-              // Отбрасываем socket в случайном направлении
               const kicks = [
                 [300, 0],
                 [-300, 0],
@@ -3009,15 +3084,27 @@
               ];
               const kick = Phaser.Math.RND.pick(kicks);
               this.socket.setVelocity(kick[0], kick[1]);
-
               this.time.delayedCall(800, () => {
                 this.boomCooldown = false;
               });
+
+              // Уничтожаем снаряд
+              p.destroy();
+              this.thrownConnecter = null;
+              this.conecterMouth.x = -999;
+              this.conecterMouth.y = -999;
             }
-          } else {
-            // Conecter не несут — убираем рот за экран
-            this.conecterMouth.x = -999;
-            this.conecterMouth.y = -999;
+
+            // Улетел за экран — уничтожаем
+            if (
+              p.active &&
+              (p.x < -50 || p.x > 850 || p.y < -50 || p.y > 650)
+            ) {
+              p.destroy();
+              this.thrownConnecter = null;
+              this.conecterMouth.x = -999;
+              this.conecterMouth.y = -999;
+            }
           }
         }
 
