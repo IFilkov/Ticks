@@ -3515,6 +3515,18 @@
           this.prevDown = false;
           this.isJumping = false;
 
+          // Восстановление HP каждую секунду если нет столкновений
+          this.time.addEvent({
+            delay: 1000,
+            loop: true,
+            callback: () => {
+              if (!this.fighterDead && !this.fighterHitCooldown)
+                this.healTarget("fighter", 5);
+              if (!this.robotDead && !this.robotHitCooldown)
+                this.healTarget("robot", 5);
+            },
+          });
+
           console.log("🥊 Scene5: Ринг готов!");
         }
 
@@ -3641,7 +3653,7 @@
             )
           ) {
             this.fighterHitCooldown = true;
-            this.applyDamage("robot", 5);
+            this.applyDamage("robot", Phaser.Math.Between(0, 5));
             this.time.delayedCall(400, () => {
               this.fighterHitCooldown = false;
             });
@@ -3657,7 +3669,7 @@
             )
           ) {
             this.robotHitCooldown = true;
-            this.applyDamage("fighter", 5);
+            this.applyDamage("fighter", Phaser.Math.Between(0, 5));
             this.time.delayedCall(400, () => {
               this.robotHitCooldown = false;
             });
@@ -3742,6 +3754,34 @@
               this.fighterDead = true;
               this.endFight("lose");
             }
+          }
+        }
+
+        healTarget(target, amount) {
+          if (target === "fighter") {
+            if (this.fighterHP >= 100) return;
+            this.fighterHP = Math.min(100, this.fighterHP + amount);
+            this.fighterHpBar.width = (this.fighterHP / 100) * 160;
+            this.fighterHpBar.setFillStyle(
+              this.fighterHP > 60
+                ? 0x00ff00
+                : this.fighterHP > 30
+                  ? 0xffff00
+                  : 0xff0000,
+            );
+            this.fighterHpTxt.setText("HP:" + this.fighterHP);
+          } else {
+            if (this.robotHP >= 100) return;
+            this.robotHP = Math.min(100, this.robotHP + amount);
+            this.robotHpBar.width = (this.robotHP / 100) * 160;
+            this.robotHpBar.setFillStyle(
+              this.robotHP > 60
+                ? 0xff4400
+                : this.robotHP > 30
+                  ? 0xffaa00
+                  : 0xff0000,
+            );
+            this.robotHpTxt.setText("HP:" + this.robotHP);
           }
         }
 
