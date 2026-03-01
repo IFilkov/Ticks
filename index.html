@@ -3539,7 +3539,8 @@
 
           const dx = this.fighter.x - this.robot.x;
           const dist = Math.abs(dx);
-          const touchRange = 90; // дистанция для удара
+          const stopGap = 120; // отступ — робот останавливается рядом, не слипаясь
+          const touchRange = stopGap + 20; // чуть больше stopGap — зона удара
 
           // Флип робота по направлению к игроку
           if (dx < 0) {
@@ -3573,10 +3574,14 @@
               this.robot.setVelocityX(0);
               this.robot.anims.play("robot_run", true);
             }
-          } else {
+          } else if (dist > stopGap) {
             // ── Преследование игрока ──────────────────────────────────
             const speed = 160;
             this.robot.setVelocityX(dx > 0 ? speed : -speed);
+            this.robot.anims.play("robot_run", true);
+          } else {
+            // ── В отступе — стоим лицом к игроку
+            this.robot.setVelocityX(0);
             this.robot.anims.play("robot_run", true);
           }
         }
@@ -3902,7 +3907,7 @@
           width: 800,
           height: 600,
         },
-        physics: { default: "arcade", arcade: { debug: false } },
+        physics: { default: "arcade", arcade: { debug: true } },
         scene: [
           PreloadScene,
           MainMenuScene,
