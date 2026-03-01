@@ -3436,6 +3436,77 @@
           this.robotCooldown = false; // пауза после удара
           this.robotFacing = "left";
 
+          // *** HP ***
+          this.fighterHP = 100;
+          this.robotHP = 100;
+          this.fighterDead = false;
+          this.robotDead = false;
+
+          // *** КУЛДАУНЫ УРОНА ***
+          this.fighterHitCooldown = false; // защита от мультиудара за кадр
+          this.robotHitCooldown = false;
+
+          // *** ХИТЗОНЫ — рука/нога ИГРОКА ***
+          this.fighterFist = this.add.zone(0, 0, 50, 50);
+          this.physics.world.enable(this.fighterFist);
+          this.fighterFist.body.setAllowGravity(false);
+          this.fighterFist.x = -999;
+
+          // *** ХИТЗОНЫ — рука/нога РОБОТА ***
+          this.robotFist = this.add.zone(0, 0, 50, 50);
+          this.physics.world.enable(this.robotFist);
+          this.robotFist.body.setAllowGravity(false);
+          this.robotFist.x = -999;
+
+          // *** ШКАЛЫ HP (UI поверх сцены) ***
+          // Фон левой шкалы
+          this.add
+            .rectangle(130, 22, 164, 22, 0x000000)
+            .setOrigin(0.5)
+            .setDepth(20);
+          this.fighterHpBar = this.add
+            .rectangle(130, 22, 160, 18, 0x00ff00)
+            .setOrigin(0.5)
+            .setDepth(21);
+          this.add
+            .text(10, 10, "Игрок", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: "#fff",
+            })
+            .setDepth(22);
+          this.fighterHpTxt = this.add
+            .text(10, 32, "HP:100", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "13px",
+              fill: "#fff",
+            })
+            .setDepth(22);
+
+          // Фон правой шкалы
+          this.add
+            .rectangle(670, 22, 164, 22, 0x000000)
+            .setOrigin(0.5)
+            .setDepth(20);
+          this.robotHpBar = this.add
+            .rectangle(670, 22, 160, 18, 0xff4400)
+            .setOrigin(0.5)
+            .setDepth(21);
+          this.add
+            .text(590, 10, "Робот", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: "#fff",
+            })
+            .setDepth(22);
+          this.robotHpTxt = this.add
+            .text(590, 32, "HP:100", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "13px",
+              fill: "#fff",
+            })
+            .setDepth(22);
+
           // *** УПРАВЛЕНИЕ ***
           this.cursors = this.input.keyboard.createCursorKeys();
           this.jumpKey = this.input.keyboard.addKey(
@@ -3461,6 +3532,8 @@
           this.prevDown = downNow;
 
           this.updateRobot();
+          this.updateHitZones();
+          this.checkHits();
 
           // ── Прыжок ────────────────────────────────────────────────────
           const jumpPressed =
@@ -3532,6 +3605,171 @@
             this.fighter.setVelocityX(0);
             this.fighter.anims.play("fight_idle", true);
           }
+        }
+
+        updateHitZones() {
+          // ХИТЗОНА ИГРОКА — активна только во время удара
+          if (this.isAttacking) {
+            const dir = this.fighterFacing === "right" ? 1 : -1;
+            // Рука/нога вытягивается в сторону удара
+            this.fighterFist.x = this.fighter.x + dir * 80;
+            this.fighterFist.y = this.fighter.y - 120;
+          } else {
+            this.fighterFist.x = -999;
+            this.fighterFist.y = -999;
+          }
+
+          // ХИТЗОНА РОБОТА — активна только во время удара
+          if (this.robotAttacking) {
+            const dir = this.robotFacing === "right" ? 1 : -1;
+            this.robotFist.x = this.robot.x + dir * 80;
+            this.robotFist.y = this.robot.y - 120;
+          } else {
+            this.robotFist.x = -999;
+            this.robotFist.y = -999;
+          }
+        }
+
+        checkHits() {
+          // Кулак ИГРОКА попал в РОБОТА
+          if (
+            !this.fighterHitCooldown &&
+            this.isAttacking &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.fighterFist.getBounds(),
+              this.robot.getBounds(),
+            )
+          ) {
+            this.fighterHitCooldown = true;
+            this.applyDamage("robot", 5);
+            this.time.delayedCall(400, () => {
+              this.fighterHitCooldown = false;
+            });
+          }
+
+          // Кулак РОБОТА попал в ИГРОКА
+          if (
+            !this.robotHitCooldown &&
+            this.robotAttacking &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.robotFist.getBounds(),
+              this.fighter.getBounds(),
+            )
+          ) {
+            this.robotHitCooldown = true;
+            this.applyDamage("fighter", 5);
+            this.time.delayedCall(400, () => {
+              this.robotHitCooldown = false;
+            });
+          }
+        }
+
+        applyDamage(target, dmg) {
+          if (target === "robot") {
+            if (this.robotDead) return;
+            this.robotHP = Math.max(0, this.robotHP - dmg);
+            // Обновляем шкалу
+            this.robotHpBar.width = (this.robotHP / 100) * 160;
+            this.robotHpBar.setFillStyle(
+              this.robotHP > 60
+                ? 0xff4400
+                : this.robotHP > 30
+                  ? 0xffaa00
+                  : 0xff0000,
+            );
+            this.robotHpTxt.setText("HP:" + this.robotHP);
+            // Красное мигание
+            this.robot.setTint(0xff0000);
+            this.time.delayedCall(150, () => {
+              if (this.robot) this.robot.clearTint();
+            });
+            // Плавающий текст
+            const t = this.add
+              .text(this.robot.x, this.robot.y - 260, "-" + dmg, {
+                fontSize: "28px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ff4400",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5)
+              .setDepth(30);
+            this.tweens.add({
+              targets: t,
+              y: t.y - 40,
+              alpha: 0,
+              duration: 700,
+              onComplete: () => t.destroy(),
+            });
+            if (this.robotHP <= 0) {
+              this.robotDead = true;
+              this.endFight("win");
+            }
+          } else {
+            if (this.fighterDead) return;
+            this.fighterHP = Math.max(0, this.fighterHP - dmg);
+            this.fighterHpBar.width = (this.fighterHP / 100) * 160;
+            this.fighterHpBar.setFillStyle(
+              this.fighterHP > 60
+                ? 0x00ff00
+                : this.fighterHP > 30
+                  ? 0xffff00
+                  : 0xff0000,
+            );
+            this.fighterHpTxt.setText("HP:" + this.fighterHP);
+            this.fighter.setTint(0xff0000);
+            this.time.delayedCall(150, () => {
+              if (this.fighter) this.fighter.clearTint();
+            });
+            const t = this.add
+              .text(this.fighter.x, this.fighter.y - 260, "-" + dmg, {
+                fontSize: "28px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ff0000",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5)
+              .setDepth(30);
+            this.tweens.add({
+              targets: t,
+              y: t.y - 40,
+              alpha: 0,
+              duration: 700,
+              onComplete: () => t.destroy(),
+            });
+            if (this.fighterHP <= 0) {
+              this.fighterDead = true;
+              this.endFight("lose");
+            }
+          }
+        }
+
+        endFight(result) {
+          this.robot.setVelocity(0, 0);
+          this.fighter.setVelocity(0, 0);
+          const msg = result === "win" ? "ПОБЕДА!" : "НОКАУТ!";
+          const color = result === "win" ? "#00ff00" : "#ff0000";
+          const txt = this.add
+            .text(400, 280, msg, {
+              fontSize: "120px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: color,
+              stroke: "#000000",
+              strokeThickness: 12,
+            })
+            .setOrigin(0.5)
+            .setDepth(40);
+          this.tweens.add({
+            targets: txt,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.4, to: 1 },
+            duration: 500,
+            ease: "Back.easeOut",
+          });
+          this.time.delayedCall(3500, () => {
+            this.scene.start("MainMenuScene");
+          });
         }
 
         updateRobot() {
