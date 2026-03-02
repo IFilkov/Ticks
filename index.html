@@ -3653,7 +3653,7 @@
             )
           ) {
             this.fighterHitCooldown = true;
-            this.applyDamage("robot", Phaser.Math.Between(0, 5));
+            this.applyDamage("robot", Phaser.Math.Between(0, 10));
             this.time.delayedCall(400, () => {
               this.fighterHitCooldown = false;
             });
@@ -3669,7 +3669,7 @@
             )
           ) {
             this.robotHitCooldown = true;
-            this.applyDamage("fighter", Phaser.Math.Between(0, 5));
+            this.applyDamage("fighter", Phaser.Math.Between(0, 10));
             this.time.delayedCall(400, () => {
               this.robotHitCooldown = false;
             });
