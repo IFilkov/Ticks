@@ -2049,7 +2049,7 @@
           this.events.emit("updateWave", this.wave);
 
           // *** Активируем бомжа после 6-й волны ***
-          if (this.wave >= 6 && !this.homelessActive) {
+          if (this.wave >= 2 && !this.homelessActive) {
             this.homelessActive = true;
             this.homeless.setVisible(true);
             this.homeless.active = true;
@@ -3180,7 +3180,7 @@
                 this.boomCooldown = false;
               });
               // -20 HP socket
-              this.events.emit("damageSocket4", 20);
+              this.events.emit("damageSocket4", 100);
 
               // Уничтожаем снаряд
               p.destroy();
@@ -3653,7 +3653,13 @@
             )
           ) {
             this.fighterHitCooldown = true;
-            this.applyDamage("robot", Phaser.Math.Between(0, 10));
+            this.applyDamage("robot", Phaser.Math.Between(0, 5));
+            // Отталкивание робота от игрока
+            const kbDirR = this.robot.x > this.fighter.x ? 1 : -1;
+            this.robot.setVelocityX(kbDirR * 300);
+            this.time.delayedCall(200, () => {
+              if (this.robot) this.robot.setVelocityX(0);
+            });
             this.time.delayedCall(400, () => {
               this.fighterHitCooldown = false;
             });
@@ -3669,7 +3675,13 @@
             )
           ) {
             this.robotHitCooldown = true;
-            this.applyDamage("fighter", Phaser.Math.Between(0, 10));
+            this.applyDamage("fighter", Phaser.Math.Between(0, 5));
+            // Отталкивание игрока от робота
+            const kbDirF = this.fighter.x > this.robot.x ? 1 : -1;
+            this.fighter.setVelocityX(kbDirF * 300);
+            this.time.delayedCall(200, () => {
+              if (this.fighter) this.fighter.setVelocityX(0);
+            });
             this.time.delayedCall(400, () => {
               this.robotHitCooldown = false;
             });
