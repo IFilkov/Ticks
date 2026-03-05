@@ -3591,6 +3591,11 @@
           if (downJust && !this.isAttacking) {
             this.isAttacking = true;
             this.fighter.setVelocityX(0);
+            // Сразу разворачиваем к роботу до начала анимации
+            const attackDir =
+              this.robot && this.robot.x > this.fighter.x ? 1 : -1;
+            this.fighter.flipX = attackDir === -1;
+            this.fighterFacing = attackDir === 1 ? "right" : "left";
             const attack = Phaser.Math.RND.pick(["fight_kick", "fight_punch"]);
             this.fighter.anims.play(attack, true);
             this.fighter.once("animationcomplete", () => {
@@ -3622,10 +3627,15 @@
         updateHitZones() {
           // ХИТЗОНА ИГРОКА — активна только во время удара
           if (this.isAttacking) {
-            const dir = this.fighterFacing === "right" ? 1 : -1;
-            // Рука/нога вытягивается в сторону удара
-            this.fighterFist.x = this.fighter.x + dir * 80;
-            this.fighterFist.y = this.fighter.y - 120;
+            const dir = this.robot && this.robot.x > this.fighter.x ? -1 : 1;
+            this.fighter.flipX = dir === -1;
+            this.fighterFacing = dir === 1 ? "right" : "left";
+            const curAnim = this.fighter.anims.currentAnim;
+            const isKick = curAnim && curAnim.key === "fight_kick";
+            // Координаты из пикселей спрайта (scale 1.5, origin bottom)
+            // Нога: 129px по X, 205px вверх; Рука: 80px по X, 150px вверх
+            this.fighterFist.x = this.fighter.x - dir * (isKick ? 129 : 80);
+            this.fighterFist.y = this.fighter.y - (isKick ? 205 : 150);
           } else {
             this.fighterFist.x = -999;
             this.fighterFist.y = -999;
