@@ -3441,6 +3441,7 @@
           this.robotHP = 100;
           this.fighterDead = false;
           this.robotDead = false;
+          this.rageActive = false;
 
           // *** КУЛДАУНЫ УРОНА ***
           this.fighterHitCooldown = false; // защита от мультиудара за кадр
@@ -3663,7 +3664,10 @@
             )
           ) {
             this.fighterHitCooldown = true;
-            this.applyDamage("robot", Phaser.Math.Between(0, 5));
+            // Расчёт урона с учётом ярости
+            const baseDmg = Phaser.Math.Between(0, 5);
+            const finalDmg = this.calcFighterDamage(baseDmg);
+            this.applyDamage("robot", finalDmg);
             // Отталкивание робота от игрока
             const kbDirR = this.robot.x > this.fighter.x ? 1 : -1;
             this.robot.setVelocityX(kbDirR * 300);
@@ -3685,7 +3689,7 @@
             )
           ) {
             this.robotHitCooldown = true;
-            this.applyDamage("fighter", Phaser.Math.Between(0, 5));
+            this.applyDamage("fighter", Phaser.Math.Between(0, 20));
             // Отталкивание игрока от робота
             const kbDirF = this.fighter.x > this.robot.x ? 1 : -1;
             this.fighter.setVelocityX(kbDirF * 300);
@@ -3805,6 +3809,69 @@
             );
             this.robotHpTxt.setText("HP:" + this.robotHP);
           }
+        }
+
+        calcFighterDamage(base) {
+          // Режим ярости активируется при HP <= 20%
+          if (this.fighterHP > 20) return base;
+
+          // Урон x5 от базы
+          let dmg = base * 5;
+
+          // Критический удар — балансированный шанс 20%
+          // При низком HP чаще: 20% + бонус до 35% при 1HP
+          const critChance = 0.2 + ((20 - this.fighterHP) / 20) * 0.15;
+          const isCrit = Math.random() < critChance;
+          if (isCrit) {
+            dmg = base * 5 + base * 5; // 100% крит = двойной урон ярости
+            // Визуальный эффект крита
+            const crit = this.add
+              .text(this.robot.x, this.robot.y - 300, "КРИТ!", {
+                fontSize: "40px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ffff00",
+                stroke: "#ff0000",
+                strokeThickness: 6,
+              })
+              .setOrigin(0.5)
+              .setDepth(35);
+            this.tweens.add({
+              targets: crit,
+              y: crit.y - 60,
+              alpha: 0,
+              scale: 1.5,
+              duration: 800,
+              ease: "Power2",
+              onComplete: () => crit.destroy(),
+            });
+          }
+
+          // Показываем иконку ярости если ещё не показана
+          if (!this.rageActive) {
+            this.rageActive = true;
+            this.rageIcon = this.add
+              .text(400, 80, "🔥 ЯРОСТЬ! 🔥", {
+                fontSize: "36px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ff4400",
+                stroke: "#000",
+                strokeThickness: 5,
+              })
+              .setOrigin(0.5)
+              .setDepth(35);
+            this.tweens.add({
+              targets: this.rageIcon,
+              alpha: { from: 0, to: 1 },
+              scale: { from: 0.5, to: 1.2 },
+              duration: 400,
+              ease: "Back.easeOut",
+              yoyo: true,
+              repeat: 2,
+            });
+            // Красная рамка вокруг шкалы игрока
+            this.fighterHpBar.setFillStyle(0xff0000);
+          }
+          return Math.round(dmg);
         }
 
         endFight(result) {
