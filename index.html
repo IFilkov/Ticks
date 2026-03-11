@@ -595,9 +595,7 @@
             this.registry.set("difficulty", "normal");
             this.registry.set("damageMultiplier", 1);
             console.log("💚 Выбрана сложность: Нормальный (урон x1)");
-            this.scene.start("GameScene");
-            this.scene.launch("UIScene");
-            this.scene.launch("VirtualControlsScene");
+            this.scene.start("SceneSelectScene");
           });
 
           // Подсказка под нормальной кнопкой
@@ -631,9 +629,7 @@
             this.registry.set("difficulty", "hardcore");
             this.registry.set("damageMultiplier", 2);
             console.log("💀 Выбрана сложность: Хардкор (урон x2)");
-            this.scene.start("GameScene");
-            this.scene.launch("UIScene");
-            this.scene.launch("VirtualControlsScene");
+            this.scene.start("SceneSelectScene");
           });
 
           // Подсказка под хардкорной кнопкой
@@ -644,6 +640,123 @@
               color: "#ff6666",
             })
             .setOrigin(0.5);
+        }
+      }
+
+      // =================================================================
+      // SCENE SELECT: выбор сцены для быстрого старта
+      // =================================================================
+      class SceneSelectScene extends Phaser.Scene {
+        constructor() {
+          super("SceneSelectScene");
+        }
+
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+
+          const difficulty = this.registry.get("difficulty");
+          const diffColor = difficulty === "hardcore" ? "#ff4444" : "#44ff44";
+          const diffLabel =
+            difficulty === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
+
+          this.add
+            .text(400, 80, "Выберите сцену", {
+              fontSize: "56px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ffffff",
+            })
+            .setOrigin(0.5)
+            .setShadow(3, 3, "#000", 5, true, true);
+
+          this.add
+            .text(400, 140, `Сложность: ${diffLabel}`, {
+              fontSize: "24px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: diffColor,
+            })
+            .setOrigin(0.5);
+
+          const scenes = [
+            {
+              label: "Фаза 1: Клещи",
+              sub: "Собака ловит клещей",
+              start: () => {
+                this.scene.start("GameScene");
+                this.scene.launch("UIScene");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+            {
+              label: "Фаза 2: Человек",
+              sub: "Человек против бомжа",
+              start: () => {
+                this.scene.start("Scene2");
+                this.scene.launch("UIScene2");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+            {
+              label: "Фаза 3: Розетка",
+              sub: "Кидай конектер в розетку",
+              start: () => {
+                this.scene.start("Scene4");
+                this.scene.launch("UIScene4");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+            {
+              label: "Фаза 4: Ринг",
+              sub: "Бой с роботом",
+              start: () => {
+                this.scene.start("Scene5");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+          ];
+
+          const startY = 210;
+          const gap = 90;
+          scenes.forEach((s, i) => {
+            const y = startY + i * gap;
+
+            const btn = this.add
+              .text(400, y, s.label, {
+                fontSize: "46px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#00ff00",
+                fontStyle: "bold",
+              })
+              .setOrigin(0.5)
+              .setInteractive();
+
+            this.add
+              .text(400, y + 32, s.sub, {
+                fontSize: "20px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#aaaaaa",
+              })
+              .setOrigin(0.5);
+
+            btn.on("pointerover", () => btn.setStyle({ fill: "#ffff00" }));
+            btn.on("pointerout", () => btn.setStyle({ fill: "#00ff00" }));
+            btn.on("pointerdown", () => s.start());
+          });
+
+          // Кнопка назад
+          const back = this.add
+            .text(400, 575, "← Назад", {
+              fontSize: "26px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#888888",
+            })
+            .setOrigin(0.5)
+            .setInteractive();
+          back.on("pointerover", () => back.setStyle({ fill: "#ffffff" }));
+          back.on("pointerout", () => back.setStyle({ fill: "#888888" }));
+          back.on("pointerdown", () =>
+            this.scene.start("DifficultySelectScene"),
+          );
         }
       }
 
@@ -2049,7 +2162,7 @@
           this.events.emit("updateWave", this.wave);
 
           // *** Активируем бомжа после 6-й волны ***
-          if (this.wave >= 2 && !this.homelessActive) {
+          if (this.wave >= 6 && !this.homelessActive) {
             this.homelessActive = true;
             this.homeless.setVisible(true);
             this.homeless.active = true;
@@ -3180,7 +3293,7 @@
                 this.boomCooldown = false;
               });
               // -20 HP socket
-              this.events.emit("damageSocket4", 100);
+              this.events.emit("damageSocket4", 20);
 
               // Уничтожаем снаряд
               p.destroy();
@@ -3532,6 +3645,9 @@
         }
 
         update() {
+          // Если бой завершён — ничего не делаем
+          if (this.fighterDead && this.robotDead) return;
+
           const joystickState = this.registry.get("joystickState") || {};
           const isMobile = this.registry.get("isMobile") || false;
 
@@ -3877,25 +3993,75 @@
         endFight(result) {
           this.robot.setVelocity(0, 0);
           this.fighter.setVelocity(0, 0);
+          this.fighterDead = true; // блокируем управление в обоих случаях
+          this.robotDead = true;
+
+          if (result === "win") {
+            // ── Взрыв робота ──────────────────────────────────────
+            this.robot.setVisible(false);
+            // Несколько волн взрыва для эффекта
+            const boomPositions = [
+              { x: this.robot.x, y: this.robot.y - 150, s: 1.2 },
+              { x: this.robot.x - 50, y: this.robot.y - 80, s: 0.8 },
+              { x: this.robot.x + 40, y: this.robot.y - 200, s: 0.9 },
+            ];
+            boomPositions.forEach((b, i) => {
+              this.time.delayedCall(i * 180, () => {
+                const boom = this.add.image(b.x, b.y, "boom");
+                boom
+                  .setScale(0.1)
+                  .setBlendMode(Phaser.BlendModes.ADD)
+                  .setDepth(25);
+                this.tweens.add({
+                  targets: boom,
+                  scale: { from: 0.1, to: b.s },
+                  alpha: { from: 1, to: 0 },
+                  duration: 600,
+                  ease: "Power2",
+                  onComplete: () => boom.destroy(),
+                });
+              });
+            });
+          } else {
+            // ── Игрок падает — поворачиваем горизонтально ─────────
+            // Запоминаем позицию ДО поворота
+            const deadY = this.fighter.y;
+            const deadX = this.fighter.x;
+            // Убиваем все твины чтобы прыжок не двигал спрайт
+            this.tweens.killTweensOf(this.fighter);
+            this.fighter.anims.stop();
+            this.fighter.body.setVelocity(0, 0);
+            this.fighter.body.setEnable(false);
+            this.isJumping = false;
+            // Кладём спрайт: angle=90, фиксируем позицию
+            this.fighter.setAngle(90);
+            this.fighter.x = deadX;
+            this.fighter.y = deadY;
+          }
+
+          // ── Текст результата ──────────────────────────────────────
           const msg = result === "win" ? "ПОБЕДА!" : "НОКАУТ!";
           const color = result === "win" ? "#00ff00" : "#ff0000";
-          const txt = this.add
-            .text(400, 280, msg, {
-              fontSize: "120px",
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              color: color,
-              stroke: "#000000",
-              strokeThickness: 12,
-            })
-            .setOrigin(0.5)
-            .setDepth(40);
-          this.tweens.add({
-            targets: txt,
-            alpha: { from: 0, to: 1 },
-            scale: { from: 0.4, to: 1 },
-            duration: 500,
-            ease: "Back.easeOut",
+          this.time.delayedCall(result === "win" ? 600 : 200, () => {
+            const txt = this.add
+              .text(400, 280, msg, {
+                fontSize: "120px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: color,
+                stroke: "#000000",
+                strokeThickness: 12,
+              })
+              .setOrigin(0.5)
+              .setDepth(40);
+            this.tweens.add({
+              targets: txt,
+              alpha: { from: 0, to: 1 },
+              scale: { from: 0.4, to: 1 },
+              duration: 500,
+              ease: "Back.easeOut",
+            });
           });
+
           this.time.delayedCall(3500, () => {
             this.scene.start("MainMenuScene");
           });
@@ -4274,11 +4440,12 @@
           width: 800,
           height: 600,
         },
-        physics: { default: "arcade", arcade: { debug: true } },
+        physics: { default: "arcade", arcade: { debug: false } },
         scene: [
           PreloadScene,
           MainMenuScene,
           DifficultySelectScene,
+          SceneSelectScene,
           GameScene,
           UIScene,
           Scene2,
