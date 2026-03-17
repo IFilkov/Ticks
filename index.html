@@ -19,39 +19,31 @@
         font-style: normal;
         font-display: block;
       }
-
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-
       html,
       body {
         width: 100%;
         height: 100%;
         overflow: hidden;
         -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
         user-select: none;
         touch-action: none;
       }
-
       body {
         display: flex;
         justify-content: center;
         align-items: center;
         background-color: #1d1d1d;
       }
-
       canvas {
         display: block;
         max-width: 100%;
         max-height: 100%;
       }
-
-      /* Убираем границу на мобильных */
       @media (max-width: 768px) {
         canvas {
           border: none;
@@ -68,24 +60,20 @@
         constructor() {
           super("PreloadScene");
         }
-
         preload() {
           const assetPath = "assets/images/";
           this.load.spritesheet("player", `${assetPath}player_sprite.png`, {
             frameWidth: 216,
             frameHeight: 312,
           });
-
           this.load.spritesheet("dog_sprite", `${assetPath}dog_sprite.png`, {
             frameWidth: 195,
             frameHeight: 128,
           });
-
           this.load.spritesheet("homeless", `${assetPath}homeless_sprite.png`, {
             frameWidth: 216,
             frameHeight: 312,
           });
-
           this.load.image("tick", `${assetPath}tick.png`);
           this.load.image("sky", `${assetPath}sky.jpg`);
           this.load.image("background", `${assetPath}background.png`);
@@ -101,11 +89,6 @@
             frameHeight: 307,
           });
           this.load.image("boom", `${assetPath}boom.png`);
-          this.load.audio(
-            "bark_aggressive",
-            "assets/audio/bark_aggressive.mp3",
-          );
-          this.load.audio("scream1", "assets/audio/scream1.mp3");
           this.load.spritesheet("humanFight", `${assetPath}humanFight.png`, {
             frameWidth: 172,
             frameHeight: 249,
@@ -114,252 +97,86 @@
             frameWidth: 172,
             frameHeight: 249,
           });
+          // ── Звуки ──────────────────────────────────────────────────────
+          this.load.audio(
+            "bark_aggressive",
+            "assets/audio/bark_aggressive.mp3",
+          );
+          this.load.audio("groan1", "assets/audio/groan1.mp3");
+          this.load.audio("bark", "assets/audio/bark.mp3");
+          this.load.audio("eat", "assets/audio/eat.mp3");
+          this.load.audio("hit2", "assets/audio/hit2.mp3");
+          this.load.audio("hit3", "assets/audio/hit3.mp3");
+          this.load.audio("tok", "assets/audio/tok.mp3");
+          this.load.audio("boom_snd", "assets/audio/boom.mp3");
+          this.load.audio("knockout", "assets/audio/knockout.mp3");
+          this.load.audio("rage", "assets/audio/rage.mp3");
+          this.load.audio("krit", "assets/audio/krit.mp3");
+          // ── Фоновые треки ───────────────────────────────────────
+          this.load.audio("fon_menu", "assets/audio/menu.mp3");
+          this.load.audio("fon1", "assets/audio/fon1.mp3");
+          this.load.audio("fon2", "assets/audio/fon2.mp3");
+          this.load.audio("fon3", "assets/audio/fon3.mp3");
         }
-
         create() {
-          // Создаём ВСЕ анимации один раз при загрузке игры
           this.createAllAnimations();
-
           this.scene.start("MainMenuScene");
         }
-
         createAllAnimations() {
-          // Анимации человека
-          if (!this.anims.exists("human_walk")) {
-            this.anims.create({
-              key: "human_walk",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 4,
-                end: 11,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("human_idle")) {
-            this.anims.create({
-              key: "human_idle",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("human_death")) {
-            this.anims.create({
-              key: "human_death",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: 0,
-            });
-          }
-
-          // Анимации собаки
-          if (!this.anims.exists("dog_idle")) {
-            this.anims.create({
-              key: "dog_idle",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_walk_right")) {
-            this.anims.create({
-              key: "dog_walk_right",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_walk_left")) {
-            this.anims.create({
-              key: "dog_walk_left",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 5,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("dog_jump")) {
-            this.anims.create({
-              key: "dog_jump",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 12,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("dog_death")) {
-            this.anims.create({
-              key: "dog_death",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 0,
-              }),
-              frameRate: 1,
-              repeat: 0,
-            });
-          }
-
-          // Анимации для меню (с другими ключами чтобы не конфликтовать)
-          if (!this.anims.exists("menu_human_walk")) {
-            this.anims.create({
-              key: "menu_human_walk",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 4,
-                end: 11,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_human_idle")) {
-            this.anims.create({
-              key: "menu_human_idle",
-              frames: this.anims.generateFrameNumbers("player", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_dog_idle")) {
-            this.anims.create({
-              key: "menu_dog_idle",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_dog_walk_right")) {
-            this.anims.create({
-              key: "menu_dog_walk_right",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("menu_dog_walk_left")) {
-            this.anims.create({
-              key: "menu_dog_walk_left",
-              frames: this.anims.generateFrameNumbers("dog_sprite", {
-                start: 5,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-
-          // Анимации бомжа
-          if (!this.anims.exists("homeless_idle")) {
-            this.anims.create({
-              key: "homeless_idle",
-              frames: this.anims.generateFrameNumbers("homeless", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("homeless_walk")) {
-            this.anims.create({
-              key: "homeless_walk",
-              frames: this.anims.generateFrameNumbers("homeless", {
-                start: 4,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("homeless_run")) {
-            this.anims.create({
-              key: "homeless_run",
-              frames: this.anims.generateFrameNumbers("homeless", {
-                start: 4,
-                end: 7,
-              }),
-              frameRate: 14,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("homeless_death")) {
-            this.anims.create({
-              key: "homeless_death",
-              frames: this.anims.generateFrameNumbers("homeless", {
-                start: 8,
-                end: 11,
-              }),
-              frameRate: 8,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("homeless_victory")) {
-            this.anims.create({
-              key: "homeless_victory",
-              frames: this.anims.generateFrameNumbers("homeless", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 8,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("socket_fly")) {
-            this.anims.create({
-              key: "socket_fly",
-              frames: this.anims.generateFrameNumbers("socket", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 6,
-              repeat: -1,
-            });
-          }
+          const a = (key, tex, s, e, fps, rep) => {
+            if (!this.anims.exists(key))
+              this.anims.create({
+                key,
+                frames: this.anims.generateFrameNumbers(tex, {
+                  start: s,
+                  end: e,
+                }),
+                frameRate: fps,
+                repeat: rep,
+              });
+          };
+          a("human_walk", "player", 4, 11, 10, -1);
+          a("human_idle", "player", 0, 3, 5, -1);
+          a("human_death", "player", 12, 15, 10, 0);
+          a("dog_idle", "dog_sprite", 0, 3, 5, -1);
+          a("dog_walk_right", "dog_sprite", 12, 15, 10, -1);
+          a("dog_walk_left", "dog_sprite", 5, 7, 10, -1);
+          a("dog_jump", "dog_sprite", 12, 15, 12, 0);
+          a("dog_death", "dog_sprite", 0, 0, 1, 0);
+          a("menu_human_walk", "player", 4, 11, 10, -1);
+          a("menu_human_idle", "player", 0, 3, 5, -1);
+          a("menu_dog_idle", "dog_sprite", 0, 3, 5, -1);
+          a("menu_dog_walk_right", "dog_sprite", 12, 15, 10, -1);
+          a("menu_dog_walk_left", "dog_sprite", 5, 7, 10, -1);
+          a("homeless_idle", "homeless", 0, 3, 5, -1);
+          a("homeless_walk", "homeless", 4, 7, 10, -1);
+          a("homeless_run", "homeless", 4, 7, 14, -1);
+          a("homeless_death", "homeless", 8, 11, 8, 0);
+          a("homeless_victory", "homeless", 12, 15, 8, -1);
+          a("socket_fly", "socket", 0, 3, 6, -1);
+          a("fight_idle", "humanFight", 0, 3, 5, -1);
+          a("fight_walk", "humanFight", 4, 7, 10, -1);
+          a("fight_kick", "humanFight", 8, 11, 12, 0);
+          a("fight_punch", "humanFight", 12, 15, 12, 0);
+          a("robot_run", "robot", 0, 7, 12, -1);
+          a("robot_punch", "robot", 8, 11, 12, 0);
+          a("robot_kick", "robot", 12, 15, 12, 0);
+          a("flash_anim", "flash", 0, 7, 16, 0);
         }
       }
 
       // =================================================================
-      // SCENE 2: MAIN MENU
+      // MAIN MENU
       // =================================================================
       class MainMenuScene extends Phaser.Scene {
         constructor() {
           super("MainMenuScene");
         }
-
         create() {
-          // *** СБРОС НАСТРОЕК СЛОЖНОСТИ ***
           this.registry.set("difficulty", null);
           this.registry.set("damageMultiplier", 1);
-          console.log("🔄 Настройки сложности сброшены");
-
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background");
-
           this.add
             .text(400, 200, "Клещ", {
               fontSize: "200px",
@@ -368,98 +185,14 @@
             })
             .setOrigin(0.5)
             .setShadow(2, 2, "#000000", 2, true, true);
+          // ── Фоновая музыка меню ────────────────────────────────
+          if (this.sound.get("fon_menu")) {
+            this.sound.stopByKey("fon_menu");
+          }
+          this.bgm = this.sound.add("fon_menu", { loop: true, volume: 0.25 });
+          this.bgm.play();
 
-          // Анимации бойца (Scene5)
-          if (!this.anims.exists("fight_idle")) {
-            this.anims.create({
-              key: "fight_idle",
-              frames: this.anims.generateFrameNumbers("humanFight", {
-                start: 0,
-                end: 3,
-              }),
-              frameRate: 5,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("fight_walk")) {
-            this.anims.create({
-              key: "fight_walk",
-              frames: this.anims.generateFrameNumbers("humanFight", {
-                start: 4,
-                end: 7,
-              }),
-              frameRate: 10,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("fight_kick")) {
-            this.anims.create({
-              key: "fight_kick",
-              frames: this.anims.generateFrameNumbers("humanFight", {
-                start: 8,
-                end: 11,
-              }),
-              frameRate: 12,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("fight_punch")) {
-            this.anims.create({
-              key: "fight_punch",
-              frames: this.anims.generateFrameNumbers("humanFight", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 12,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("robot_run")) {
-            this.anims.create({
-              key: "robot_run",
-              frames: this.anims.generateFrameNumbers("robot", {
-                start: 0,
-                end: 7,
-              }),
-              frameRate: 12,
-              repeat: -1,
-            });
-          }
-          if (!this.anims.exists("robot_punch")) {
-            this.anims.create({
-              key: "robot_punch",
-              frames: this.anims.generateFrameNumbers("robot", {
-                start: 8,
-                end: 11,
-              }),
-              frameRate: 12,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("robot_kick")) {
-            this.anims.create({
-              key: "robot_kick",
-              frames: this.anims.generateFrameNumbers("robot", {
-                start: 12,
-                end: 15,
-              }),
-              frameRate: 12,
-              repeat: 0,
-            });
-          }
-          if (!this.anims.exists("flash_anim")) {
-            this.anims.create({
-              key: "flash_anim",
-              frames: this.anims.generateFrameNumbers("flash", {
-                start: 0,
-                end: 7,
-              }),
-              frameRate: 16,
-              repeat: 0,
-            });
-          }
-
-          const startButton = this.add
+          const btn = this.add
             .text(400, 350, "Старт", {
               fontFamily: '"3_Muz-TV2000.ttf"',
               fontSize: "82px",
@@ -468,16 +201,12 @@
             })
             .setOrigin(0.5)
             .setInteractive();
-          startButton.on("pointerover", () => {
-            startButton.setStyle({ fill: "#ff0" });
-          });
-          startButton.on("pointerout", () => {
-            startButton.setStyle({ fill: "#00ff00" });
-          });
-          startButton.on("pointerdown", () => {
+          btn.on("pointerover", () => btn.setStyle({ fill: "#ff0" }));
+          btn.on("pointerout", () => btn.setStyle({ fill: "#00ff00" }));
+          btn.on("pointerdown", () => {
+            if (this.bgm) this.bgm.stop();
             this.scene.start("DifficultySelectScene");
           });
-
           this.human = this.physics.add.sprite(100, 580, "player");
           this.human.setOrigin(0.5, 1).body.allowGravity = false;
           this.humanDirection = 1;
@@ -492,64 +221,48 @@
               });
             },
           });
-
           this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
           this.dog.setCollideWorldBounds(true);
           this.dog.setOrigin(0.5, 1).body.allowGravity = false;
           this.dogDirection = "left";
-
           this.time.addEvent({
             delay: Phaser.Math.Between(1000, 3000),
             loop: true,
             callback: () => {
-              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
-              switch (action) {
-                case "left":
-                  this.dog.setVelocityX(-100);
-                  this.dogDirection = "left";
-                  break;
-                case "right":
-                  this.dog.setVelocityX(100);
-                  this.dogDirection = "right";
-                  break;
-                case "idle":
-                  this.dog.setVelocityX(0);
-                  break;
-              }
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.dog.setVelocityX(-100);
+                this.dogDirection = "left";
+              } else if (a === "right") {
+                this.dog.setVelocityX(100);
+                this.dogDirection = "right";
+              } else this.dog.setVelocityX(0);
             },
           });
         }
-
         update() {
           this.updateHumanAI();
           this.updateDogAI();
         }
-
         updateDogAI() {
           this.dog.flipX = false;
-          if (this.dog.body.velocity.x < 0) {
+          if (this.dog.body.velocity.x < 0)
             this.dog.anims.play("menu_dog_walk_left", true);
-          } else if (this.dog.body.velocity.x > 0) {
+          else if (this.dog.body.velocity.x > 0)
             this.dog.anims.play("menu_dog_walk_right", true);
-          } else {
+          else {
             this.dog.anims.play("menu_dog_idle", true);
             this.dog.flipX = this.dogDirection === "left";
           }
         }
-
         updateHumanAI() {
           if (this.humanPaused) {
             this.human.setVelocityX(0);
             this.human.anims.play("menu_human_idle", true);
             return;
           }
-          const leftBound = 40,
-            rightBound = 760;
-          if (this.human.x >= rightBound) {
-            this.humanDirection = -1;
-          } else if (this.human.x <= leftBound) {
-            this.humanDirection = 1;
-          }
+          if (this.human.x >= 760) this.humanDirection = -1;
+          else if (this.human.x <= 40) this.humanDirection = 1;
           this.human.setVelocityX(100 * this.humanDirection);
           this.human.flipX = this.human.body.velocity.x < 0;
           this.human.anims.play("menu_human_walk", true);
@@ -557,18 +270,15 @@
       }
 
       // =================================================================
-      // SCENE 2.5: ВЫБОР СЛОЖНОСТИ
+      // DIFFICULTY SELECT
       // =================================================================
       class DifficultySelectScene extends Phaser.Scene {
         constructor() {
           super("DifficultySelectScene");
         }
-
         create() {
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background");
-
-          // Заголовок
           this.add
             .text(400, 150, "Выберите сложность", {
               fontSize: "64px",
@@ -577,94 +287,77 @@
             })
             .setOrigin(0.5)
             .setShadow(3, 3, "#000000", 5, true, true);
-
-          // Кнопка "Нормальный"
-          const normalButton = this.add
-            .text(400, 280, "Нормальный", {
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              fontSize: "60px",
-              color: "#00ff00",
-              fontStyle: "bold",
-            })
-            .setOrigin(0.5)
-            .setInteractive();
-
-          normalButton.on("pointerover", () => {
-            normalButton.setStyle({ fill: "#ff0" });
-          });
-          normalButton.on("pointerout", () => {
-            normalButton.setStyle({ fill: "#00ff00" });
-          });
-          normalButton.on("pointerdown", () => {
-            // Устанавливаем нормальную сложность
-            this.registry.set("difficulty", "normal");
-            this.registry.set("damageMultiplier", 1);
-            console.log("💚 Выбрана сложность: Нормальный (урон x1)");
-            this.scene.start("SceneSelectScene");
-          });
-
-          // Подсказка под нормальной кнопкой
-          this.add
-            .text(400, 340, "Обычный урон от клещей", {
-              fontSize: "24px",
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              color: "#aaaaaa",
-            })
-            .setOrigin(0.5);
-
-          // Кнопка "Хардкор"
-          const hardcoreButton = this.add
-            .text(400, 420, "Хардкор", {
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              fontSize: "60px",
-              color: "#ff0000",
-              fontStyle: "bold",
-            })
-            .setOrigin(0.5)
-            .setInteractive();
-
-          hardcoreButton.on("pointerover", () => {
-            hardcoreButton.setStyle({ fill: "#ff00ff" });
-          });
-          hardcoreButton.on("pointerout", () => {
-            hardcoreButton.setStyle({ fill: "#ff0000" });
-          });
-          hardcoreButton.on("pointerdown", () => {
-            // Устанавливаем хардкорную сложность
-            this.registry.set("difficulty", "hardcore");
-            this.registry.set("damageMultiplier", 2);
-            console.log("💀 Выбрана сложность: Хардкор (урон x2)");
-            this.scene.start("SceneSelectScene");
-          });
-
-          // Подсказка под хардкорной кнопкой
-          this.add
-            .text(400, 480, "Урон от клещей x2!", {
-              fontSize: "24px",
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              color: "#ff6666",
-            })
-            .setOrigin(0.5);
+          const makeBtn = (
+            x,
+            y,
+            label,
+            color,
+            hcolor,
+            hint,
+            hintColor,
+            difficulty,
+            mult,
+          ) => {
+            const btn = this.add
+              .text(x, y, label, {
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                fontSize: "60px",
+                color,
+                fontStyle: "bold",
+              })
+              .setOrigin(0.5)
+              .setInteractive();
+            btn.on("pointerover", () => btn.setStyle({ fill: hcolor }));
+            btn.on("pointerout", () => btn.setStyle({ fill: color }));
+            btn.on("pointerdown", () => {
+              this.registry.set("difficulty", difficulty);
+              this.registry.set("damageMultiplier", mult);
+              this.scene.start("SceneSelectScene");
+            });
+            this.add
+              .text(x, y + 60, hint, {
+                fontSize: "24px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: hintColor,
+              })
+              .setOrigin(0.5);
+          };
+          makeBtn(
+            400,
+            280,
+            "Нормальный",
+            "#00ff00",
+            "#ff0",
+            "Обычный урон от клещей",
+            "#aaaaaa",
+            "normal",
+            1,
+          );
+          makeBtn(
+            400,
+            420,
+            "Хардкор",
+            "#ff0000",
+            "#ff00ff",
+            "Урон от клещей x2!",
+            "#ff6666",
+            "hardcore",
+            2,
+          );
         }
       }
 
       // =================================================================
-      // SCENE SELECT: выбор сцены для быстрого старта
+      // SCENE SELECT
       // =================================================================
       class SceneSelectScene extends Phaser.Scene {
         constructor() {
           super("SceneSelectScene");
         }
-
         create() {
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background");
-
-          const difficulty = this.registry.get("difficulty");
-          const diffColor = difficulty === "hardcore" ? "#ff4444" : "#44ff44";
-          const diffLabel =
-            difficulty === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
-
+          const diff = this.registry.get("difficulty");
           this.add
             .text(400, 80, "Выберите сцену", {
               fontSize: "56px",
@@ -673,15 +366,18 @@
             })
             .setOrigin(0.5)
             .setShadow(3, 3, "#000", 5, true, true);
-
           this.add
-            .text(400, 140, `Сложность: ${diffLabel}`, {
-              fontSize: "24px",
-              fontFamily: '"3_Muz-TV2000.ttf"',
-              color: diffColor,
-            })
+            .text(
+              400,
+              140,
+              `Сложность: ${diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ"}`,
+              {
+                fontSize: "24px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: diff === "hardcore" ? "#ff4444" : "#44ff44",
+              },
+            )
             .setOrigin(0.5);
-
           const scenes = [
             {
               label: "Фаза 1: Клещи",
@@ -719,13 +415,9 @@
               },
             },
           ];
-
-          const startY = 210;
-          const gap = 90;
           scenes.forEach((s, i) => {
-            const y = startY + i * gap;
-
-            const btn = this.add
+            const y = 210 + i * 90;
+            const b = this.add
               .text(400, y, s.label, {
                 fontSize: "46px",
                 fontFamily: '"3_Muz-TV2000.ttf"',
@@ -734,7 +426,6 @@
               })
               .setOrigin(0.5)
               .setInteractive();
-
             this.add
               .text(400, y + 32, s.sub, {
                 fontSize: "20px",
@@ -742,13 +433,10 @@
                 color: "#aaaaaa",
               })
               .setOrigin(0.5);
-
-            btn.on("pointerover", () => btn.setStyle({ fill: "#ffff00" }));
-            btn.on("pointerout", () => btn.setStyle({ fill: "#00ff00" }));
-            btn.on("pointerdown", () => s.start());
+            b.on("pointerover", () => b.setStyle({ fill: "#ffff00" }));
+            b.on("pointerout", () => b.setStyle({ fill: "#00ff00" }));
+            b.on("pointerdown", () => s.start());
           });
-
-          // Кнопка назад
           const back = this.add
             .text(400, 575, "← Назад", {
               fontSize: "26px",
@@ -766,34 +454,27 @@
       }
 
       // =================================================================
-      // SCENE 3: GAME (Фаза 1: Игрок = Собака, AI = Человек)
+      // GAME SCENE (Фаза 1)
       // =================================================================
       class GameScene extends Phaser.Scene {
         constructor() {
           super("GameScene");
         }
-
         create() {
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background");
-
-          // Dog Setup
           this.dog = this.physics.add.sprite(200, 580, "dog_sprite");
           this.dog.setOrigin(0.5, 1);
           this.dog.body.allowGravity = false;
           this.dog.setCollideWorldBounds(true);
           this.dog.hasMushroom = false;
-
           this.mouth = this.add.zone(0, 0, 60, 60);
           this.physics.world.enable(this.mouth);
           this.mouth.body.setAllowGravity(false);
-
           this.carriedMushroom = this.add
             .sprite(0, 0, "mushroom")
             .setScale(0.1)
             .setVisible(false);
-
-          // Human Setup
           this.human = this.physics.add.sprite(100, 580, "player");
           this.human.setOrigin(0.5, 1);
           this.human.body.allowGravity = false;
@@ -806,7 +487,6 @@
           this.humanDirection = 1;
           this.humanPaused = false;
           this.isHumanDead = false;
-
           this.time.addEvent({
             delay: 6000,
             loop: true,
@@ -817,20 +497,17 @@
               });
             },
           });
-
           this.cursors = this.input.keyboard.createCursorKeys();
           this.jumpKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE,
           );
           this.isJumping = false;
-
           this.ticks = this.physics.add.group();
           this.mushrooms = this.physics.add.group();
           this.wave = 1;
           this.ticksToSpawn = 5;
           this.spawnInterval = 1500;
           this.startWave();
-
           this.time.addEvent({
             delay: 10000,
             loop: true,
@@ -838,37 +515,30 @@
             callbackScope: this,
           });
         }
-
         update() {
           if (this.isHumanDead) return;
           this.updateDog();
           this.updateHuman();
           this.updateCollisions();
         }
-
         spawnMushroom() {
           if (this.mushrooms.countActive(true) > 0) return;
           const x = Phaser.Math.Between(100, 700);
           const mushroom = this.mushrooms.create(x, 580, "mushroom");
           mushroom.setOrigin(0.5, 1).setScale(0.1);
-          mushroom.collected = false; // Флаг - был ли подобран гриб
-
+          mushroom.collected = false;
           this.time.delayedCall(
             8000,
             () => {
-              // Удаляем только если гриб НЕ был подобран
-              if (mushroom.active && !mushroom.collected) {
-                mushroom.destroy();
-              }
+              if (mushroom.active && !mushroom.collected) mushroom.destroy();
             },
             [],
             this,
           );
         }
-
         collectMushroom(mouth, mushroom) {
           if (this.dog.hasMushroom) return;
-          mushroom.collected = true; // Помечаем что гриб подобран
+          mushroom.collected = true;
           mushroom.destroy();
           this.dog.hasMushroom = true;
           this.dog.setTint(0x00ff00);
@@ -877,86 +547,67 @@
             () => {
               this.dog.hasMushroom = false;
               this.dog.clearTint();
+              this.sound.play("eat", { volume: 0.8 });
             },
             [],
             this,
           );
         }
-
-        deliverMushroom(dog, human) {
+        deliverMushroom() {
           if (!this.dog.hasMushroom) return;
           this.dog.hasMushroom = false;
+          this.sound.play("eat", { volume: 0.8 });
           this.events.emit("damageHuman", -20);
           this.dog.clearTint();
           if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
         }
-
         updateDog() {
-          // Получаем джойстик для мобильных
-          const joystickState = this.registry.get("joystickState") || {};
-          const isMobile = this.registry.get("isMobile") || false;
-
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
           this.mouth.x = this.dog.body.center.x;
           this.mouth.y = this.dog.body.center.y - 40;
-
           if (this.dog.hasMushroom) {
             this.carriedMushroom.setVisible(true);
-            const offset = this.dogFacing === "left" ? -60 : 60;
-            this.carriedMushroom.x = this.mouth.x + offset;
+            const off = this.dogFacing === "left" ? -60 : 60;
+            this.carriedMushroom.x = this.mouth.x + off;
             this.carriedMushroom.y = this.mouth.y;
-
-            // *** НОВОЕ: Джойстик вниз - собака съедает гриб сама ***
-            const downPressed =
+            const dp =
               Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-              (isMobile && joystickState.down);
-            if (downPressed) {
-              console.log("🐕 Собака съела гриб! (джойстик вниз)");
+              (mob && js.down);
+            if (dp) {
               this.dog.hasMushroom = false;
               this.dog.clearTint();
               if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
-              console.log("🐕 Гриб использован собакой на себя!");
             }
           } else {
             this.carriedMushroom.setVisible(false);
           }
-
-          // Прыжок - клавиатура или свайп вверх
-          const jumpPressed =
+          const jp =
             Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
-            (isMobile && joystickState.isJumping);
-          if (jumpPressed && !this.isJumping) {
+            (mob && js.isJumping);
+          if (jp && !this.isJumping) {
             this.isJumping = true;
             this.dog.anims.play("dog_jump");
-
-            // Определяем направление прыжка
-            let jumpVelocityX = 0;
-
-            if (isMobile && joystickState.jumpDirection) {
-              // Прыжок по диагонали на мобильном (свайп вверх-влево/вправо)
-              if (joystickState.jumpDirection === "left") {
-                jumpVelocityX = -200;
+            let vx = 0;
+            if (mob && js.jumpDirection) {
+              if (js.jumpDirection === "left") {
+                vx = -200;
                 this.dogFacing = "left";
-              } else if (joystickState.jumpDirection === "right") {
-                jumpVelocityX = 200;
+              } else if (js.jumpDirection === "right") {
+                vx = 200;
                 this.dogFacing = "right";
               }
             } else {
-              // Клавиатура или прыжок на месте
-              const leftPressed = this.cursors.left.isDown;
-              const rightPressed = this.cursors.right.isDown;
-
-              if (leftPressed) {
-                jumpVelocityX = -200;
+              if (this.cursors.left.isDown) {
+                vx = -200;
                 this.dogFacing = "left";
-              } else if (rightPressed) {
-                jumpVelocityX = 200;
+              } else if (this.cursors.right.isDown) {
+                vx = 200;
                 this.dogFacing = "right";
               }
             }
-
             this.dog.flipX = this.dogFacing === "left";
-            this.dog.setVelocityX(jumpVelocityX);
-
+            this.dog.setVelocityX(vx);
             this.tweens.add({
               targets: this.dog,
               y: this.dog.y - 280,
@@ -970,19 +621,15 @@
             });
           }
           if (this.isJumping) return;
-
-          // Горизонтальное движение - клавиатура или свайп влево/вправо
-          const leftPressed =
-            this.cursors.left.isDown || (isMobile && joystickState.left);
-          const rightPressed =
-            this.cursors.right.isDown || (isMobile && joystickState.right);
-
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
           this.dog.flipX = false;
-          if (leftPressed) {
+          if (lp) {
             this.dog.setVelocityX(-200);
             this.dog.anims.play("dog_walk_left", true);
             this.dogFacing = "left";
-          } else if (rightPressed) {
+            this._dogGoingRight = false;
+          } else if (rp) {
             this.dog.setVelocityX(200);
             if (!this._dogGoingRight) {
               this._dogGoingRight = true;
@@ -1003,34 +650,23 @@
             this.dog.flipX = this.dogFacing === "left";
           }
         }
-
         updateHuman() {
           if (this.isHumanDead) return;
-
           if (this.humanPaused) {
             this.human.setVelocityX(0);
           } else {
-            const leftBound = 40,
-              rightBound = 760;
-            if (this.human.x >= rightBound) {
-              this.humanDirection = -1;
-            } else if (this.human.x <= leftBound) {
-              this.humanDirection = 1;
-            }
+            if (this.human.x >= 760) this.humanDirection = -1;
+            else if (this.human.x <= 40) this.humanDirection = 1;
             this.human.setVelocityX(this.humanSpeed * this.humanDirection);
           }
-
           if (this.human.body.velocity.x > 0) {
             this.human.flipX = false;
             this.human.anims.play("human_walk", true);
           } else if (this.human.body.velocity.x < 0) {
             this.human.flipX = true;
             this.human.anims.play("human_walk", true);
-          } else {
-            this.human.anims.play("human_idle", true);
-          }
+          } else this.human.anims.play("human_idle", true);
         }
-
         updateCollisions() {
           this.ticks.getChildren().forEach((tick) => {
             if (!tick.active) return;
@@ -1043,6 +679,7 @@
               )
             ) {
               tick.destroy();
+              this.sound.play("bark", { volume: 0.8 });
               return;
             }
             if (
@@ -1052,24 +689,21 @@
                 tick.getBounds(),
               )
             ) {
-              const damageMultiplier =
-                this.registry.get("damageMultiplier") || 1;
-              const damage = 10 * damageMultiplier;
-              this.events.emit("damageHuman", damage);
-              this.sound.play("scream1", { volume: 0.7 });
+              const dm = this.registry.get("damageMultiplier") || 1;
+              this.events.emit("damageHuman", 10 * dm);
+              this.sound.play("groan1", { volume: 0.7 });
               tick.destroy();
             }
           });
-          this.mushrooms.getChildren().forEach((mushroom) => {
-            if (!mushroom.active) return;
+          this.mushrooms.getChildren().forEach((m) => {
+            if (!m.active) return;
             if (
               Phaser.Geom.Intersects.RectangleToRectangle(
                 this.mouth.getBounds(),
-                mushroom.getBounds(),
+                m.getBounds(),
               )
-            ) {
-              this.collectMushroom(this.mouth, mushroom);
-            }
+            )
+              this.collectMushroom(this.mouth, m);
           });
           if (
             this.dog.hasMushroom &&
@@ -1077,11 +711,9 @@
               this.dog.getBounds(),
               this.human.getBounds(),
             )
-          ) {
+          )
             this.deliverMushroom();
-          }
         }
-
         startWave() {
           if (this.isHumanDead) return;
           this.ticksSpawned = 0;
@@ -1095,8 +727,6 @@
                 this.tickSpawner.remove();
                 this.time.delayedCall(2000, () => {
                   this.wave++;
-
-                  // Проверка после инкремента - если завершили 3 волны, переходим на Scene2
                   if (this.wave > 3) {
                     this.scene.stop("GameScene");
                     this.scene.stop("UIScene");
@@ -1106,7 +736,6 @@
                     this.scene.launch("VirtualControlsScene");
                     return;
                   }
-
                   this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
                   this.spawnInterval = Math.max(600, this.spawnInterval - 150);
                   this.startWave();
@@ -1118,60 +747,50 @@
             },
           });
         }
-
         spawnTick() {
           if (this.isHumanDead) return;
-          const startX = Phaser.Math.Between(50, 750);
-          const startY = 580;
-          const peakY = Phaser.Math.Between(100, 300);
-          const endX = startX + Phaser.Math.Between(-150, 150);
-          const tick = this.ticks.create(startX, startY, "tick");
+          const sx = Phaser.Math.Between(50, 750),
+            sy = 580,
+            py = Phaser.Math.Between(100, 300),
+            ex = sx + Phaser.Math.Between(-150, 150);
+          const tick = this.ticks.create(sx, sy, "tick");
           if (!tick) return;
-
           tick.setScale(0.8);
           tick.body.setAllowGravity(false);
           tick.isFalling = false;
-
           this.tweens.add({
             targets: tick,
-            x: endX,
+            x: ex,
             ease: "Sine.easeInOut",
             duration: Phaser.Math.Between(1200, 1800),
-            onUpdate: (tween, target) => {
-              const t = tween.progress;
-              const h = startY - peakY;
-              target.y = startY - 4 * h * t * (1 - t);
-              if (!target.isFalling && t > 0.5) target.isFalling = true;
+            onUpdate: (tw, t) => {
+              const p = tw.progress,
+                h = sy - py;
+              t.y = sy - 4 * h * p * (1 - p);
+              if (!t.isFalling && p > 0.5) t.isFalling = true;
             },
             onComplete: () => {
               if (tick) tick.destroy();
             },
           });
         }
-
         shutdown() {
-          // Очищаем таймеры при остановке сцены
-          if (this.tickSpawner) {
-            this.tickSpawner.remove();
-          }
-          if (this.mushroomCarryTimer) {
-            this.mushroomCarryTimer.remove();
-          }
-          // Очищаем все события
+          if (this.tickSpawner) this.tickSpawner.remove();
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
           this.events.off("updateWave");
           this.events.off("damageHuman");
         }
       }
 
       // =================================================================
-      // SCENE 4: UI для первой фазы
+      // UI SCENE (Фаза 1)
       // =================================================================
       class UIScene extends Phaser.Scene {
         constructor() {
           super("UIScene");
         }
         create() {
-          const textStyle = {
+          const ts = {
             fontFamily: "3_Muz-TV2000.ttf",
             fontSize: "16px",
             fill: "#fff",
@@ -1182,7 +801,7 @@
           this.healthBar = this.add
             .rectangle(120, 30, 160, 20, 0x00ff00)
             .setOrigin(0.5);
-          this.healthText = this.add.text(45, 45, "HP: 100%", textStyle);
+          this.healthText = this.add.text(45, 45, "HP: 100%", ts);
           this.waveText = this.add
             .text(400, 30, "Волна 1", {
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -1190,157 +809,88 @@
               fill: "#eb8c17",
             })
             .setOrigin(0.5);
-
-          // Индикатор сложности
-          const difficulty = this.registry.get("difficulty");
-          const difficultyText =
-            difficulty === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
-          const difficultyColor =
-            difficulty === "hardcore" ? "#ff0000" : "#00ff00";
+          const diff = this.registry.get("difficulty");
           this.add
-            .text(750, 15, difficultyText, {
+            .text(750, 15, diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ", {
               fontFamily: '"3_Muz-TV2000.ttf"',
               fontSize: "16px",
-              fill: difficultyColor,
+              fill: diff === "hardcore" ? "#ff0000" : "#00ff00",
             })
             .setOrigin(1, 0);
-
-          const gameScene = this.scene.get("GameScene");
-          if (gameScene && gameScene.scene.isActive()) {
-            // КРИТИЧНО: Отписываемся от старых событий перед новой подпиской
-            gameScene.events.off("updateWave");
-            gameScene.events.off("damageHuman");
-
-            gameScene.events.on("updateWave", (wave) => {
-              if (this.waveText && this.waveText.active) {
-                this.waveText.setText(`Волна ${wave}`);
-              }
+          const gs = this.scene.get("GameScene");
+          if (gs && gs.scene.isActive()) {
+            gs.events.off("updateWave");
+            gs.events.off("damageHuman");
+            gs.events.on("updateWave", (w) => {
+              if (this.waveText && this.waveText.active)
+                this.waveText.setText(`Волна ${w}`);
             });
-
-            gameScene.events.on("damageHuman", (damage) => {
-              if (gameScene.isHumanDead) return;
-              console.log(
-                `💥 UIScene: damageHuman вызван! Урон: ${damage}, HP до: ${gameScene.humanHealth}, HP после: ${gameScene.humanHealth - damage}`,
-              );
-              gameScene.humanHealth -= damage;
-              this.updateHealthBar(gameScene.humanHealth);
-
-              // Визуальная обратная связь
-              if (damage > 0) {
-                // Урон - красное мигание
-                gameScene.human.setTint(0xff0000);
-                gameScene.time.delayedCall(200, () => {
-                  if (gameScene.human) gameScene.human.clearTint();
+            gs.events.on("damageHuman", (dmg) => {
+              if (gs.isHumanDead) return;
+              gs.humanHealth -= dmg;
+              this.updateHealthBar(gs.humanHealth);
+              if (dmg > 0) {
+                gs.human.setTint(0xff0000);
+                gs.time.delayedCall(200, () => {
+                  if (gs.human) gs.human.clearTint();
                 });
-
-                // Показываем текст урона
-                const damageText = this.add
-                  .text(
-                    gameScene.human.x,
-                    gameScene.human.y - 150,
-                    `-${damage}`,
-                    {
-                      fontSize: "32px",
-                      color: "#ff0000",
-                      fontFamily: "3_Muz-TV2000.ttf",
-                      stroke: "#000",
-                      strokeThickness: 4,
-                    },
-                  )
+                const t = this.add
+                  .text(gs.human.x, gs.human.y - 150, `-${dmg}`, {
+                    fontSize: "32px",
+                    color: "#ff0000",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  })
                   .setOrigin(0.5);
-
                 this.tweens.add({
-                  targets: damageText,
-                  y: damageText.y - 50,
+                  targets: t,
+                  y: t.y - 50,
                   alpha: 0,
                   duration: 1000,
-                  onComplete: () => damageText.destroy(),
+                  onComplete: () => t.destroy(),
                 });
               } else {
-                // Лечение - зелёное мигание
-                gameScene.human.setTint(0x00ff00);
-                gameScene.time.delayedCall(400, () => {
-                  if (gameScene.human) gameScene.human.clearTint();
+                gs.human.setTint(0x00ff00);
+                gs.time.delayedCall(400, () => {
+                  if (gs.human) gs.human.clearTint();
                 });
-
-                // Показываем текст лечения
-                const healText = this.add
-                  .text(
-                    gameScene.human.x,
-                    gameScene.human.y - 150,
-                    `+${Math.abs(damage)}`,
-                    {
-                      fontSize: "32px",
-                      color: "#00ff00",
-                      fontFamily: "3_Muz-TV2000.ttf",
-                      stroke: "#000",
-                      strokeThickness: 4,
-                    },
-                  )
+                const t = this.add
+                  .text(gs.human.x, gs.human.y - 150, `+${Math.abs(dmg)}`, {
+                    fontSize: "32px",
+                    color: "#00ff00",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  })
                   .setOrigin(0.5);
-
                 this.tweens.add({
-                  targets: healText,
-                  y: healText.y - 50,
+                  targets: t,
+                  y: t.y - 50,
                   alpha: 0,
                   duration: 1000,
-                  onComplete: () => healText.destroy(),
+                  onComplete: () => t.destroy(),
                 });
               }
-
-              if (gameScene.humanHealth <= 0) {
-                gameScene.isHumanDead = true;
-                const human = gameScene.human;
-                human.anims.play("human_death", true);
-                human.on(
+              if (gs.humanHealth <= 0) {
+                gs.isHumanDead = true;
+                const h = gs.human;
+                h.anims.play("human_death", true);
+                h.on(
                   "animationcomplete",
                   () => {
-                    // Прячем человека
-                    human.setVisible(false);
-
-                    // Создаём могилку на месте человека
-                    const graveX = human.x;
-                    const graveY = human.y;
-
-                    // Основание могилы (прямоугольник)
-                    const graveBase = this.add.rectangle(
-                      graveX,
-                      graveY - 50,
-                      50,
-                      80,
-                      0x222222,
-                    );
-                    graveBase.setStrokeStyle(2, 0x000000);
-
-                    // Верхняя часть (закругленная)
-                    const graveTop = this.add.ellipse(
-                      graveX,
-                      graveY - 90,
-                      50,
-                      40,
-                      0x222222,
-                    );
-                    graveTop.setStrokeStyle(2, 0x000000);
-
-                    // Крест
-                    const crossVertical = this.add.rectangle(
-                      graveX,
-                      graveY - 75,
-                      5,
-                      30,
-                      0x888888,
-                    );
-                    const crossHorizontal = this.add.rectangle(
-                      graveX,
-                      graveY - 83,
-                      20,
-                      5,
-                      0x888888,
-                    );
-
-                    gameScene.scene.pause();
-
-                    // Показываем Game Over экран
+                    h.setVisible(false);
+                    const gx = h.x,
+                      gy = h.y;
+                    this.add
+                      .rectangle(gx, gy - 50, 50, 80, 0x222222)
+                      .setStrokeStyle(2, 0x000000);
+                    this.add
+                      .ellipse(gx, gy - 90, 50, 40, 0x222222)
+                      .setStrokeStyle(2, 0x000000);
+                    this.add.rectangle(gx, gy - 75, 5, 30, 0x888888);
+                    this.add.rectangle(gx, gy - 83, 20, 5, 0x888888);
+                    gs.scene.pause();
                     this.showGameOver("GameScene", "UIScene");
                   },
                   this,
@@ -1350,17 +900,15 @@
           }
         }
         updateHealthBar(health) {
-          const currentHealth = Math.max(0, health);
-          this.healthBar.width = (currentHealth / 100) * 160;
-          if (currentHealth > 60) this.healthBar.setFillStyle(0x00ff00);
-          else if (currentHealth > 30) this.healthBar.setFillStyle(0xffff00);
+          const h = Math.max(0, health);
+          this.healthBar.width = (h / 100) * 160;
+          if (h > 60) this.healthBar.setFillStyle(0x00ff00);
+          else if (h > 30) this.healthBar.setFillStyle(0xffff00);
           else this.healthBar.setFillStyle(0xff0000);
-          this.healthText.setText(`HP: ${currentHealth}%`);
+          this.healthText.setText(`HP: ${h}%`);
         }
-
-        showGameOver(sceneName, uiSceneName) {
-          console.log("=== ПОКАЗЫВАЕМ GAME OVER ===");
-          const gameOverText = this.add
+        showGameOver(sn, ui) {
+          const t = this.add
             .text(400, 300, "ИГРА ОКОНЧЕНА", {
               fontSize: "200px",
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -1370,71 +918,54 @@
             })
             .setOrigin(0.5)
             .setShadow(10, 10, "#000000", 20, true, true);
-
-          console.log("Создан текст ИГРА ОКОНЧЕНА с fontSize: 200px");
-
-          // Анимация появления
           this.tweens.add({
-            targets: gameOverText,
+            targets: t,
             alpha: { from: 0, to: 1 },
             scale: { from: 0.5, to: 1.0 },
             duration: 600,
             ease: "Back.easeOut",
           });
-
-          // Через 5 секунд возврат в меню
           this.time.delayedCall(5000, () => {
-            this.scene.stop(sceneName);
-            this.scene.stop(uiSceneName);
+            this.scene.stop(sn);
+            this.scene.stop(ui);
             this.scene.start("MainMenuScene");
           });
         }
-
         shutdown() {
-          // Очищаем все события при остановке сцены
-          const gameScene = this.scene.get("GameScene");
-          if (gameScene) {
-            gameScene.events.off("updateWave");
-            gameScene.events.off("damageHuman");
+          const gs = this.scene.get("GameScene");
+          if (gs) {
+            gs.events.off("updateWave");
+            gs.events.off("damageHuman");
           }
         }
       }
 
       // =================================================================
-      // SCENE 5: GAME 2 (Фаза 2: Игрок = Человек, AI = Собака)
+      // SCENE 2 (Фаза 2)
       // =================================================================
       class Scene2 extends Phaser.Scene {
         constructor() {
           super("Scene2");
         }
-
         create() {
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background");
-
-          // *** СОБАКА ТЕПЕРЬ НА AI ***
           this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
           this.dog.setOrigin(0.5, 1);
           this.dog.body.allowGravity = false;
           this.dog.setCollideWorldBounds(true);
-          this.dog.body.setSize(150, 100); // Увеличиваем hitbox для лучших коллизий
-          this.dogHealth = 100; // *** Теперь у собаки есть здоровье ***
+          this.dog.body.setSize(150, 100);
+          this.dogHealth = 100;
           this.dogDirection = "left";
           this.isDogDead = false;
-
-          this.mouth = this.add.zone(0, 0, 80, 80); // Зона у головы - ПОЛУЧАЕТ УРОН
+          this.mouth = this.add.zone(0, 0, 80, 80);
           this.physics.world.enable(this.mouth);
           this.mouth.body.setAllowGravity(false);
-
-          this.footZone = this.add.zone(0, 0, 200, 60); // Зона у ног - ЛОВИТ КЛЕЩЕЙ (очень широкая и низкая)
+          this.footZone = this.add.zone(0, 0, 200, 60);
           this.physics.world.enable(this.footZone);
           this.footZone.body.setAllowGravity(false);
-
-          // *** СЧЁТЧИК ПНУТЫХ КЛЕЩЕЙ ДЛЯ НАГРАДЫ ***
-          this.kickedTicksCount = 0; // Счётчик пнутых клещей
-          this.kicksNeededForReward = 3; // Сколько пинков нужно для награды
-
-          // *** ЧЕЛОВЕК ТЕПЕРЬ УПРАВЛЯЕТСЯ ИГРОКОМ ***
+          this.kickedTicksCount = 0;
+          this.kicksNeededForReward = 3;
           this.human = this.physics.add.sprite(200, 580, "player");
           this.human.setOrigin(0.5, 1);
           this.human.body.allowGravity = false;
@@ -1445,15 +976,12 @@
           this.human.setCollideWorldBounds(true);
           this.human.hasMushroom = false;
           this.humanFacing = "right";
-          this.humanHealth = 100; // *** Добавляем здоровье человеку ***
-          this.isHumanDead = false; // *** Флаг смерти человека ***
-
+          this.humanHealth = 100;
+          this.isHumanDead = false;
           this.carriedMushroom = this.add
             .sprite(0, 0, "mushroom")
             .setScale(0.1)
             .setVisible(false);
-
-          // *** БОМЖ - появляется после 6-й волны ***
           this.homeless = this.physics.add.sprite(600, 580, "homeless");
           this.homeless.setOrigin(0.5, 1);
           this.homeless.body.allowGravity = false;
@@ -1462,39 +990,29 @@
             this.homeless.width * 0.5,
             this.homeless.height * 0.9,
           );
-          this.homeless.setVisible(false); // Скрыт до 6-й волны
+          this.homeless.setVisible(false);
           this.homeless.active = false;
-          this.homeless.isFallen = false; // Флаг состояния падения
-          this.homeless.isVictory = false; // Флаг анимации победы
+          this.homeless.isFallen = false;
+          this.homeless.isVictory = false;
           this.homelessActive = false;
           this.homelessFacing = "left";
-          this.homelessTargetMushroom = null; // Гриб к которому бежит бомж
-          this.homelessHealth = 100; // *** Здоровье бомжа ***
-          this.isHomelessDead = false; // *** Флаг смерти бомжа ***
-
-          // *** AI таймер для собаки (как в меню) ***
+          this.homelessHealth = 100;
+          this.isHomelessDead = false;
           this.time.addEvent({
             delay: Phaser.Math.Between(1000, 3000),
             loop: true,
             callback: () => {
               if (this.isDogDead) return;
-              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
-              switch (action) {
-                case "left":
-                  this.dog.setVelocityX(-100);
-                  this.dogDirection = "left";
-                  break;
-                case "right":
-                  this.dog.setVelocityX(100);
-                  this.dogDirection = "right";
-                  break;
-                case "idle":
-                  this.dog.setVelocityX(0);
-                  break;
-              }
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.dog.setVelocityX(-100);
+                this.dogDirection = "left";
+              } else if (a === "right") {
+                this.dog.setVelocityX(100);
+                this.dogDirection = "right";
+              } else this.dog.setVelocityX(0);
             },
           });
-
           this.cursors = this.input.keyboard.createCursorKeys();
           this.jumpKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE,
@@ -1503,163 +1021,110 @@
             Phaser.Input.Keyboard.KeyCodes.D,
           );
           this.isJumping = false;
-
           this.ticks = this.physics.add.group();
           this.mushrooms = this.add.group();
-
           this.wave = 1;
           this.ticksToSpawn = 5;
           this.spawnInterval = 1500;
           this.startWave();
-
           this.time.addEvent({
             delay: 10000,
             loop: true,
             callback: this.spawnMushroom,
             callbackScope: this,
           });
+          // ── Фоновая музыка Scene2 ─────────────────────────────
+          this.bgm = this.sound.add("fon1", { loop: true, volume: 0.25 });
+          this.bgm.play();
         }
-
         update() {
           if (this.isDogDead || this.isHumanDead) return;
-
-          // Переключение debug режима по клавише D
-          if (Phaser.Input.Keyboard.JustDown(this.debugKey)) {
+          if (Phaser.Input.Keyboard.JustDown(this.debugKey))
             this.physics.world.debugGraphic.visible =
               !this.physics.world.debugGraphic.visible;
-          }
-
-          this.updateHumanPlayer(); // *** Игрок управляет человеком ***
-          this.updateDogAI(); // *** Собака на AI ***
-          this.updateHomeless(); // *** Бомж на AI ***
+          this.updateHumanPlayer();
+          this.updateDogAI();
+          this.updateHomeless();
           this.updateCollisions();
         }
-
         spawnMushroom() {
-          if (this.isDogDead || this.isHumanDead) return;
-          if (this.mushrooms.countActive(true) > 0) return;
+          if (
+            this.isDogDead ||
+            this.isHumanDead ||
+            this.mushrooms.countActive(true) > 0
+          )
+            return;
           const x = Phaser.Math.Between(100, 700);
-          const mushroom = this.mushrooms.create(x, 580, "mushroom");
-          mushroom.setOrigin(0.5, 1).setScale(0.1);
-          mushroom.collected = false; // Флаг - был ли подобран гриб
+          const m = this.mushrooms.create(x, 580, "mushroom");
+          m.setOrigin(0.5, 1).setScale(0.1);
+          m.collected = false;
           this.time.delayedCall(
             8000,
             () => {
-              // Удаляем только если гриб НЕ был подобран
-              if (mushroom.active && !mushroom.collected) {
-                console.log("Гриб исчез (не был подобран)");
-                mushroom.destroy();
-              }
+              if (m.active && !m.collected) m.destroy();
             },
             [],
             this,
           );
         }
-
         collectMushroom(human, mushroom) {
           if (this.human.hasMushroom) return;
-          mushroom.collected = true; // Помечаем что гриб подобран
+          mushroom.collected = true;
           mushroom.destroy();
           this.human.hasMushroom = true;
           this.human.setTint(0x00ff00);
-          console.log("Человек подобрал гриб, таймер запущен на 8 секунд");
-
-          // *** НОВОЕ: Если гриб не отдали собаке за 8 секунд, человек его съедает сам ***
           this.mushroomCarryTimer = this.time.delayedCall(
             8000,
             () => {
-              console.log(
-                "Таймер истёк! Проверка: this.human.hasMushroom =",
-                this.human.hasMushroom,
-              );
               if (this.human && this.human.hasMushroom) {
-                // Человек съедает гриб и лечится
                 this.human.hasMushroom = false;
                 this.human.clearTint();
-                console.log(
-                  "Человек съедает гриб! Отправляем событие healHuman",
-                );
-                this.events.emit("healHuman", 20); // Лечим человека
-              } else {
-                console.log("Человек уже отдал гриб или его нет");
+                this.sound.play("eat", { volume: 0.8 });
+                this.events.emit("healHuman", 20);
               }
             },
             [],
             this,
           );
         }
-
         deliverMushroom() {
-          if (!this.human.hasMushroom) {
-            console.log("deliverMushroom: у человека нет гриба");
-            return;
-          }
-          console.log("deliverMushroom: человек отдаёт гриб собаке");
+          if (!this.human.hasMushroom) return;
           this.human.hasMushroom = false;
           this.human.clearTint();
-          this.events.emit("healDog", 20); // *** Собака получает HP ***
-          if (this.mushroomCarryTimer) {
-            console.log("deliverMushroom: отменяем таймер гриба");
-            this.mushroomCarryTimer.remove();
-          }
+          this.sound.play("eat", { volume: 0.8 });
+          this.events.emit("healDog", 20);
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
         }
-
         updateCollisions() {
-          // *** НОВАЯ ЛОГИКА: Зона у ног ЛОВИТ клещей ***
-          this.physics.overlap(this.footZone, this.ticks, (footZone, tick) => {
+          this.physics.overlap(this.footZone, this.ticks, (fz, tick) => {
             if (
               !this.human.hasMushroom &&
               tick.isFalling &&
               tick.body &&
               !tick.isKicked
             ) {
-              console.log("Клещ пойман зоной у ног! ПИНОК!");
-
-              // *** ЭФФЕКТ ПИНКА ***
-              tick.isKicked = true; // Помечаем что клещ был пнут
-              tick.isFalling = false; // Больше не может наносить урон
-
-              // *** УВЕЛИЧИВАЕМ СЧЁТЧИК ПИНКОВ ***
+              tick.isKicked = true;
+              // Звук пинка клеща
+              this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+                volume: 0.8,
+              });
+              tick.isFalling = false;
               this.kickedTicksCount++;
-              console.log(
-                `⚡ Пнуто клещей: ${this.kickedTicksCount}/${this.kicksNeededForReward}`,
-              );
-
-              // Обновляем UI
               this.events.emit(
                 "updateKickCount",
                 this.kickedTicksCount,
                 this.kicksNeededForReward,
               );
-
-              // Проверяем достижение награды
               if (this.kickedTicksCount >= this.kicksNeededForReward) {
-                this.kickedTicksCount = 0; // Сбрасываем счётчик
-
-                // Обновляем UI (сброс счётчика)
+                this.kickedTicksCount = 0;
                 this.events.emit(
                   "updateKickCount",
                   this.kickedTicksCount,
                   this.kicksNeededForReward,
                 );
-
-                // *** НАГРАДА: +20 HP ОБОИМ! ***
-                console.log(
-                  "🎁 НАГРАДА! За 3 пинка клещей: +20 HP человеку и собаке!",
-                );
-
-                // Лечим человека
-                if (!this.isHumanDead) {
-                  this.events.emit("healHuman", 20);
-                }
-
-                // Лечим собаку
-                if (!this.isDogDead) {
-                  this.events.emit("healDog", 20);
-                }
-
-                // Визуальный эффект награды
-                const rewardText = this.add
+                if (!this.isHumanDead) this.events.emit("healHuman", 20);
+                if (!this.isDogDead) this.events.emit("healDog", 20);
+                const rt = this.add
                   .text(400, 200, "+20 HP!", {
                     fontSize: "48px",
                     fontFamily: '"3_Muz-TV2000.ttf"',
@@ -1668,60 +1133,40 @@
                     strokeThickness: 6,
                   })
                   .setOrigin(0.5);
-
                 this.tweens.add({
-                  targets: rewardText,
-                  y: rewardText.y - 50,
+                  targets: rt,
+                  y: rt.y - 50,
                   alpha: 0,
                   scale: 1.5,
                   duration: 1500,
                   ease: "Power2",
-                  onComplete: () => rewardText.destroy(),
+                  onComplete: () => rt.destroy(),
                 });
               }
-
-              // Определяем направление пинка (противоположное направлению человека)
-              const kickDirection = this.humanFacing === "right" ? 1 : -1;
-              const kickDistance = 200; // Дистанция полёта
-              const kickHeight = 150; // Высота дуги
-
-              const startX = tick.x;
-              const startY = tick.y;
-              const endX = startX + kickDistance * kickDirection;
-
-              // Останавливаем физику для клеща
+              const kd = this.humanFacing === "right" ? 1 : -1,
+                sx = tick.x,
+                sy = tick.y,
+                ex = sx + 200 * kd;
               tick.body.setVelocity(0, 0);
-
-              // Визуальный эффект - серый цвет (обезврежен)
               tick.setTint(0x888888);
-
-              // Анимация полёта по дуге
               this.tweens.add({
                 targets: tick,
-                x: endX,
-                scale: 0.5, // Уменьшаем размер во время полёта
+                x: ex,
+                scale: 0.5,
                 ease: "Sine.easeOut",
                 duration: 500,
-                onUpdate: (tween) => {
-                  const t = tween.progress;
-                  // Параболическая траектория вверх и вниз
-                  tick.y = startY - 4 * kickHeight * t * (1 - t);
-                  // Быстрое вращение клеща во время полёта
-                  tick.rotation = t * Math.PI * 4 * kickDirection;
-                  // Постепенное исчезновение
+                onUpdate: (tw) => {
+                  const t = tw.progress;
+                  tick.y = sy - 4 * 150 * t * (1 - t);
+                  tick.rotation = t * Math.PI * 4 * kd;
                   tick.alpha = 1 - t * 0.5;
                 },
                 onComplete: () => {
-                  if (tick && tick.active) {
-                    console.log("Клещ приземлился и исчезает");
-                    tick.destroy();
-                  }
+                  if (tick && tick.active) tick.destroy();
                 },
               });
             }
           });
-
-          // *** НОВАЯ ЛОГИКА: Пинаем бомжа ногами во время прыжка ***
           if (
             this.homelessActive &&
             !this.homeless.isFallen &&
@@ -1731,196 +1176,126 @@
             this.physics.overlap(
               this.footZone,
               this.homeless,
-              (footZone, homeless) => {
+              (fz, homeless) => {
                 if (
                   this.isJumping &&
                   !homeless.isFallen &&
                   !homeless.isVictory
                 ) {
-                  console.log("👟 Игрок пнул бомжа в прыжке!");
-                  console.log(
-                    `📍 ПАДЕНИЕ: До - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY})`,
-                  );
-
-                  // *** НАНОСИМ УРОН БОМЖУ ***
-                  this.events.emit("damageHomeless", 50); // -5 HP за пинок
-
-                  // Проверяем смерть бомжа
+                  // Звук пинка бомжа
+                  this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+                    volume: 0.8,
+                  });
+                  this.events.emit("damageHomeless", 50);
                   if (this.homelessHealth <= 0 && !this.isHomelessDead) {
                     this.isHomelessDead = true;
-                    console.log("💀 БОМЖ УМЕР!");
                     this.homelessDied(homeless);
-                    return; // Не даём бомжу встать
+                    return;
                   }
-
-                  // Помечаем что бомж упал
                   homeless.isFallen = true;
-                  homeless.isVictory = false; // Прерываем анимацию победы
+                  homeless.isVictory = false;
                   homeless.setVelocityX(0);
-
-                  // Сохраняем оригинальную Y позицию
                   homeless.originalY = homeless.y;
-
-                  // Меняем origin чтобы спрайт не обрезался при падении
-                  // Origin (0.5, 1) = низ по центру, (0.5, 0.5) = центр спрайта
-                  // При смене origin спрайт визуально сместится, компенсируем это
-                  const spriteHeight = 312; // Высота спрайта бомжа
                   homeless.setOrigin(0.5, 0.5);
-                  homeless.y = homeless.y - spriteHeight / 2; // Компенсация: поднимаем на половину высоты
-
-                  console.log(
-                    `📍 ПАДЕНИЕ: После - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY}), originalY=${homeless.originalY}`,
-                  );
-
-                  // Проигрываем анимацию падения
+                  homeless.y = homeless.y - 312 / 2;
                   homeless.anims.play("homeless_death", true);
-
-                  // После анимации падения (3 секунды) бомж встаёт
                   this.time.delayedCall(3000, () => {
                     if (homeless && homeless.active) {
-                      console.log(
-                        `📍 ВСТАЁТ: До - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY})`,
-                      );
                       homeless.isFallen = false;
-                      homeless.setOrigin(0.5, 1); // Сначала возвращаем origin
-                      homeless.y = homeless.originalY; // Потом возвращаем позицию
-                      console.log(
-                        `📍 ВСТАЁТ: После - Y=${homeless.y}, origin=(${homeless.originX}, ${homeless.originY})`,
-                      );
-                      console.log("🧔 Бомж встал и снова бегает!");
+                      homeless.setOrigin(0.5, 1);
+                      homeless.y = homeless.originalY;
                     }
                   });
                 }
               },
             );
           }
-
-          // *** НОВАЯ ЛОГИКА: Зона у головы ПОЛУЧАЕТ УРОН ***
-          this.physics.overlap(this.mouth, this.ticks, (mouth, tick) => {
+          this.physics.overlap(this.mouth, this.ticks, (mo, tick) => {
             if (tick.isFalling && tick.body && !tick.isKicked) {
-              const damageMultiplier =
-                this.registry.get("damageMultiplier") || 1;
-              const damage = 10 * damageMultiplier;
-              console.log(`Клещ попал в голову человека! Урон -${damage} HP`);
-              this.events.emit("damageHuman", damage);
-              this.sound.play("scream1", { volume: 0.7 });
+              const dm = this.registry.get("damageMultiplier") || 1;
+              this.events.emit("damageHuman", 10 * dm);
+              this.sound.play("groan1", { volume: 0.7 });
               tick.destroy();
             }
           });
-
-          // *** Клещи наносят урон СОБАКЕ ***
           this.physics.overlap(this.dog, this.ticks, (dog, tick) => {
             if (tick.isFalling && tick.body && !tick.isKicked) {
-              const damageMultiplier =
-                this.registry.get("damageMultiplier") || 1;
-              const damage = 10 * damageMultiplier;
-              console.log(`Клещ попал в собаку! Урон -${damage} HP`);
-              this.events.emit("damageDog", damage);
+              const dm = this.registry.get("damageMultiplier") || 1;
+              this.events.emit("damageDog", 10 * dm);
+              this.sound.play("bark", { volume: 0.8 });
               tick.destroy();
             }
           });
-
-          // *** Человек собирает грибы ***
-          this.mushrooms.getChildren().forEach((mushroom) => {
-            if (!mushroom.active) return;
+          this.mushrooms.getChildren().forEach((m) => {
+            if (!m.active) return;
             if (
               Phaser.Geom.Intersects.RectangleToRectangle(
                 this.human.getBounds(),
-                mushroom.getBounds(),
+                m.getBounds(),
               )
-            ) {
-              this.collectMushroom(this.human, mushroom);
-            }
+            )
+              this.collectMushroom(this.human, m);
           });
-
-          // *** Человек передаёт гриб собаке ***
           if (
             this.human.hasMushroom &&
             Phaser.Geom.Intersects.RectangleToRectangle(
               this.dog.getBounds(),
               this.human.getBounds(),
             )
-          ) {
+          )
             this.deliverMushroom();
-          }
         }
-
-        // *** ИГРОК УПРАВЛЯЕТ ЧЕЛОВЕКОМ ***
         updateHumanPlayer() {
-          // Получаем джойстик для мобильных
-          const joystickState = this.registry.get("joystickState") || {};
-          const isMobile = this.registry.get("isMobile") || false;
-
-          // Обновляем позиции зон
-          this.mouth.x = this.human.body.center.x; // Зона у головы
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          this.mouth.x = this.human.body.center.x;
           this.mouth.y = this.human.body.center.y - 100;
-
-          this.footZone.x = this.human.body.center.x; // Зона у ног (очень широкая, почти на земле)
+          this.footZone.x = this.human.body.center.x;
           this.footZone.y = this.human.body.center.y + 120;
-
           if (this.human.hasMushroom) {
             this.carriedMushroom.setVisible(true);
-            const offset = this.humanFacing === "left" ? -60 : 60;
-            this.carriedMushroom.x = this.human.x + offset;
+            const off = this.humanFacing === "left" ? -60 : 60;
+            this.carriedMushroom.x = this.human.x + off;
             this.carriedMushroom.y = this.human.y - 150;
-
-            // *** НОВОЕ: Джойстик вниз - человек съедает гриб сам ***
-            const downPressed =
+            const dp =
               Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-              (isMobile && joystickState.down);
-            if (downPressed) {
-              console.log("🧑 Человек съел гриб! (джойстик вниз)");
+              (mob && js.down);
+            if (dp) {
               this.human.hasMushroom = false;
               this.human.clearTint();
-              if (this.mushroomCarryTimer) {
-                this.mushroomCarryTimer.remove();
-              }
-              // Лечим человека
+              this.sound.play("eat", { volume: 0.8 });
+              if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
               this.events.emit("healHuman", 20);
             }
-          } else {
-            this.carriedMushroom.setVisible(false);
-          }
-
-          // Прыжок - клавиатура или свайп вверх
-          const jumpPressed =
+          } else this.carriedMushroom.setVisible(false);
+          const jp =
             Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
-            (isMobile && joystickState.isJumping);
-          if (jumpPressed && !this.isJumping) {
+            (mob && js.isJumping);
+          if (jp && !this.isJumping) {
             this.isJumping = true;
-
-            // Определяем направление прыжка
-            let jumpVelocityX = 0;
-
-            if (isMobile && joystickState.jumpDirection) {
-              // Прыжок по диагонали на мобильном (свайп вверх-влево/вправо)
-              if (joystickState.jumpDirection === "left") {
-                jumpVelocityX = -200;
+            let vx = 0;
+            if (mob && js.jumpDirection) {
+              if (js.jumpDirection === "left") {
+                vx = -200;
                 this.humanFacing = "left";
                 this.human.flipX = true;
-              } else if (joystickState.jumpDirection === "right") {
-                jumpVelocityX = 200;
+              } else if (js.jumpDirection === "right") {
+                vx = 200;
                 this.humanFacing = "right";
                 this.human.flipX = false;
               }
             } else {
-              // Клавиатура или прыжок на месте
-              const leftPressed = this.cursors.left.isDown;
-              const rightPressed = this.cursors.right.isDown;
-
-              if (leftPressed) {
-                jumpVelocityX = -200;
+              if (this.cursors.left.isDown) {
+                vx = -200;
                 this.humanFacing = "left";
                 this.human.flipX = true;
-              } else if (rightPressed) {
-                jumpVelocityX = 200;
+              } else if (this.cursors.right.isDown) {
+                vx = 200;
                 this.humanFacing = "right";
                 this.human.flipX = false;
               }
             }
-
-            this.human.setVelocityX(jumpVelocityX);
-
+            this.human.setVelocityX(vx);
             this.tweens.add({
               targets: this.human,
               y: this.human.y - 280,
@@ -1933,21 +1308,15 @@
               },
             });
           }
-
           if (this.isJumping) return;
-
-          // Горизонтальное движение - клавиатура или свайп влево/вправо
-          const leftPressed =
-            this.cursors.left.isDown || (isMobile && joystickState.left);
-          const rightPressed =
-            this.cursors.right.isDown || (isMobile && joystickState.right);
-
-          if (leftPressed) {
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          if (lp) {
             this.human.setVelocityX(-200);
             this.human.anims.play("human_walk", true);
             this.human.flipX = true;
             this.humanFacing = "left";
-          } else if (rightPressed) {
+          } else if (rp) {
             this.human.setVelocityX(200);
             this.human.anims.play("human_walk", true);
             this.human.flipX = false;
@@ -1957,14 +1326,10 @@
             this.human.anims.play("human_idle", true);
           }
         }
-
-        // *** СОБАКА НА AI (как в меню) ***
         updateDogAI() {
           this.dog.flipX = false;
           if (this.dog.body.velocity.x < 0) {
-            if (this._dogGoingRight) {
-              this._dogGoingRight = false;
-            }
+            this._dogGoingRight = false;
             this.dog.anims.play("dog_walk_left", true);
           } else if (this.dog.body.velocity.x > 0) {
             if (!this._dogGoingRight) {
@@ -1984,195 +1349,125 @@
             this.dog.flipX = this.dogDirection === "left";
           }
         }
-
-        // *** БОМЖ НА AI - бегает за грибами ***
         updateHomeless() {
           if (!this.homelessActive) return;
-
-          // Если бомж упал - он лежит и не двигается
           if (this.homeless.isFallen) {
             this.homeless.setVelocityX(0);
             return;
           }
-
-          // Если бомж празднует победу - не двигается
           if (this.homeless.isVictory) {
             this.homeless.setVelocityX(0);
             return;
           }
-
-          // Ищем ближайший гриб
           const mushrooms = this.mushrooms
             .getChildren()
             .filter((m) => m.active);
-
           if (mushrooms.length > 0) {
-            // Находим ближайший гриб
-            let closestMushroom = null;
-            let closestDistance = Infinity;
-
-            mushrooms.forEach((mushroom) => {
-              const distance = Phaser.Math.Distance.Between(
+            let closest = null,
+              minDist = Infinity;
+            mushrooms.forEach((m) => {
+              const d = Phaser.Math.Distance.Between(
                 this.homeless.x,
                 this.homeless.y,
-                mushroom.x,
-                mushroom.y,
+                m.x,
+                m.y,
               );
-              if (distance < closestDistance) {
-                closestDistance = distance;
-                closestMushroom = mushroom;
+              if (d < minDist) {
+                minDist = d;
+                closest = m;
               }
             });
-
-            // Бежим к ближайшему грибу
-            if (closestMushroom) {
-              const speed = 150; // Скорость бомжа
-              const diff = closestMushroom.x - this.homeless.x;
-
+            if (closest) {
+              const diff = closest.x - this.homeless.x;
               if (Math.abs(diff) > 10) {
-                // Двигаемся к грибу
                 if (diff > 0) {
-                  this.homeless.setVelocityX(speed);
+                  this.homeless.setVelocityX(150);
                   this.homeless.flipX = false;
                   this.homelessFacing = "right";
                 } else {
-                  this.homeless.setVelocityX(-speed);
+                  this.homeless.setVelocityX(-150);
                   this.homeless.flipX = true;
                   this.homelessFacing = "left";
                 }
                 this.homeless.anims.play("homeless_run", true);
               } else {
-                // Достигли гриба - пытаемся подобрать
                 this.homeless.setVelocityX(0);
                 this.homeless.anims.play("homeless_idle", true);
               }
-
-              // Проверяем коллизию с грибом
               if (
                 Phaser.Geom.Intersects.RectangleToRectangle(
                   this.homeless.getBounds(),
-                  closestMushroom.getBounds(),
+                  closest.getBounds(),
                 )
               ) {
-                console.log("🧔 Бомж подобрал гриб!");
-                closestMushroom.destroy();
-
-                // *** ЛЕЧИМ БОМЖА ***
-                if (!this.isHomelessDead) {
-                  this.events.emit("healHomeless", 40); // +40 HP за гриб
-                }
-
-                // Анимация победы на 1 секунду
+                closest.destroy();
+                if (!this.isHomelessDead) this.events.emit("healHomeless", 40);
                 this.homeless.setVelocityX(0);
                 this.homeless.anims.play("homeless_victory", true);
                 this.homeless.isVictory = true;
-
                 this.time.delayedCall(1000, () => {
-                  if (this.homeless && this.homeless.active) {
+                  if (this.homeless && this.homeless.active)
                     this.homeless.isVictory = false;
-                  }
                 });
               }
             }
           } else {
-            // Нет грибов - просто ходим случайно
             if (
               !this.homelessWalkTimer ||
               this.time.now > this.homelessWalkTimer
             ) {
-              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
-              switch (action) {
-                case "left":
-                  this.homeless.setVelocityX(-80);
-                  this.homeless.flipX = true;
-                  this.homelessFacing = "left";
-                  break;
-                case "right":
-                  this.homeless.setVelocityX(80);
-                  this.homeless.flipX = false;
-                  this.homelessFacing = "right";
-                  break;
-                case "idle":
-                  this.homeless.setVelocityX(0);
-                  break;
-              }
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.homeless.setVelocityX(-80);
+                this.homeless.flipX = true;
+                this.homelessFacing = "left";
+              } else if (a === "right") {
+                this.homeless.setVelocityX(80);
+                this.homeless.flipX = false;
+                this.homelessFacing = "right";
+              } else this.homeless.setVelocityX(0);
               this.homelessWalkTimer =
                 this.time.now + Phaser.Math.Between(2000, 4000);
             }
-
-            // Анимация в зависимости от скорости
-            if (Math.abs(this.homeless.body.velocity.x) > 0) {
+            if (Math.abs(this.homeless.body.velocity.x) > 0)
               this.homeless.anims.play("homeless_walk", true);
-            } else {
-              this.homeless.anims.play("homeless_idle", true);
-            }
+            else this.homeless.anims.play("homeless_idle", true);
           }
         }
-
         homelessDied(homeless) {
-          console.log("💀 БОМЖ УМЕР! Проигрываем анимацию смерти...");
-
-          // Останавливаем бомжа
+          // Звук смерти бомжа (ярость)
+          this.sound.play("rage", { volume: 0.9 });
           homeless.setVelocityX(0);
           homeless.isFallen = true;
-
-          // *** АНИМАЦИЯ ПАДЕНИЯ (как при обычном пинке) ***
-          // Сохраняем позицию
-          const fallPositionX = homeless.x;
-          const fallPositionY = homeless.y;
-
-          // Меняем origin чтобы спрайт не обрезался при падении
-          const spriteHeight = 312; // Высота спрайта бомжа
+          const fx = homeless.x,
+            fy = homeless.y;
           homeless.setOrigin(0.5, 0.5);
-          homeless.y = homeless.y - spriteHeight / 2; // Компенсация: поднимаем на половину высоты
-
-          // Проигрываем анимацию падения
+          homeless.y = homeless.y - 156;
           homeless.anims.play("homeless_death", true);
-          console.log(
-            `💀 Анимация падения запущена на позиции (${fallPositionX}, ${fallPositionY})`,
-          );
-
-          // Рисуем растекающуюся жёлтую лужу
-          // Создаём графику для лужи
           const puddle = this.add.graphics();
-          puddle.fillStyle(0xffff00, 0.6); // Жёлтый цвет
-          puddle.setDepth(-1); // Под персонажем
-
-          // Анимация растекания лужи
-          let puddleRadius = 0;
-          const maxRadius = 80; // Максимальный радиус лужи
-
-          const puddleTimer = this.time.addEvent({
+          puddle.fillStyle(0xffff00, 0.6);
+          puddle.setDepth(-1);
+          let pr = 0;
+          this.time.addEvent({
             delay: 50,
             repeat: 40,
             callback: () => {
-              puddleRadius += 2;
+              pr += 2;
               puddle.clear();
               puddle.fillStyle(0xffff00, 0.6);
-
-              // Рисуем овальную лужу (эллипс)
-              puddle.fillEllipse(
-                fallPositionX,
-                fallPositionY,
-                puddleRadius * 1.5,
-                puddleRadius,
-              );
-
-              // Добавляем неровные края для реалистичности
+              puddle.fillEllipse(fx, fy, pr * 1.5, pr);
               for (let i = 0; i < 5; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const distance = puddleRadius * (0.8 + Math.random() * 0.4);
-                const blobX = fallPositionX + Math.cos(angle) * distance;
-                const blobY = fallPositionY + Math.sin(angle) * distance * 0.7;
-                const blobSize = 5 + Math.random() * 10;
-                puddle.fillCircle(blobX, blobY, blobSize);
+                const a = Math.random() * Math.PI * 2,
+                  d = pr * (0.8 + Math.random() * 0.4);
+                puddle.fillCircle(
+                  fx + Math.cos(a) * d,
+                  fy + Math.sin(a) * d * 0.7,
+                  5 + Math.random() * 10,
+                );
               }
             },
           });
-
-          // Через 4 секунды переключаемся на Scene4
           this.time.delayedCall(4000, () => {
-            console.log("🎬 Переход на Scene4...");
             this.scene.stop("Scene2");
             this.scene.stop("UIScene2");
             this.scene.stop("VirtualControlsScene");
@@ -2181,7 +1476,6 @@
             this.scene.launch("VirtualControlsScene");
           });
         }
-
         startWave() {
           if (this.wave > 12) {
             this.scene.stop("Scene2");
@@ -2192,16 +1486,12 @@
           if (this.isDogDead || this.isHumanDead) return;
           this.ticksSpawned = 0;
           this.events.emit("updateWave", this.wave);
-
-          // *** Активируем бомжа после 6-й волны ***
           if (this.wave >= 6 && !this.homelessActive) {
             this.homelessActive = true;
             this.homeless.setVisible(true);
             this.homeless.active = true;
-            this.events.emit("showHomelessBar"); // Показываем шкалу HP
-            console.log("🧔 БОМЖ ПОЯВИЛСЯ! Теперь он будет собирать грибы!");
+            this.events.emit("showHomelessBar");
           }
-
           if (this.tickSpawner) this.tickSpawner.remove();
           this.tickSpawner = this.time.addEvent({
             delay: this.spawnInterval,
@@ -2222,56 +1512,38 @@
             },
           });
         }
-
         spawnTick() {
           if (this.isDogDead || this.isHumanDead) return;
-          const startX = Phaser.Math.Between(50, 750);
-          const startY = 580;
-          const peakY = Phaser.Math.Between(100, 300);
-          const endX = startX + Phaser.Math.Between(-150, 150);
-
-          // *** ИСПРАВЛЕНИЕ: Используем ticks.create() чтобы клещ добавился в группу ***
-          const tick = this.ticks.create(startX, startY, "tick");
+          const sx = Phaser.Math.Between(50, 750),
+            sy = 580,
+            py = Phaser.Math.Between(100, 300),
+            ex = sx + Phaser.Math.Between(-150, 150);
+          const tick = this.ticks.create(sx, sy, "tick");
           if (!tick) return;
-
           tick.setScale(0.8);
           tick.body.setAllowGravity(false);
-          tick.body.setSize(tick.width * 1.2, tick.height * 1.2); // Увеличиваем hitbox клеща
+          tick.body.setSize(tick.width * 1.2, tick.height * 1.2);
           tick.isFalling = false;
-          console.log("Клещ создан на позиции", startX, startY);
-
           this.tweens.add({
             targets: tick,
-            x: endX,
+            x: ex,
             ease: "Sine.easeInOut",
             duration: Phaser.Math.Between(1200, 1800),
-            onUpdate: (tween, target) => {
-              const t = tween.progress;
-              const h = startY - peakY;
-              target.y = startY - 4 * h * t * (1 - t);
-              if (!target.isFalling && t > 0.5) {
-                target.isFalling = true;
-                console.log("Клещ начал падать! Теперь активен");
-              }
+            onUpdate: (tw, t) => {
+              const p = tw.progress,
+                h = sy - py;
+              t.y = sy - 4 * h * p * (1 - p);
+              if (!t.isFalling && p > 0.5) t.isFalling = true;
             },
             onComplete: () => {
-              if (tick.active) {
-                console.log("Клещ достиг земли и удалён");
-                tick.destroy();
-              }
+              if (tick.active) tick.destroy();
             },
           });
         }
-
         shutdown() {
-          // Очищаем таймеры при остановке сцены
-          if (this.tickSpawner) {
-            this.tickSpawner.remove();
-          }
-          if (this.mushroomCarryTimer) {
-            this.mushroomCarryTimer.remove();
-          }
-          // Очищаем все события
+          if (this.bgm) this.bgm.stop();
+          if (this.tickSpawner) this.tickSpawner.remove();
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
           this.events.off("updateWave");
           this.events.off("damageDog");
           this.events.off("damageHuman");
@@ -2285,40 +1557,34 @@
       }
 
       // =================================================================
-      // SCENE 6: UI для второй фазы
+      // UI SCENE 2
       // =================================================================
       class UIScene2 extends Phaser.Scene {
         constructor() {
           super("UIScene2");
         }
         create() {
-          const textStyle = {
+          const ts = {
             fontFamily: "3_Muz-TV2000.ttf",
             fontSize: "16px",
             fill: "#fff",
           };
-
-          // *** ШКАЛА ЗДОРОВЬЯ СОБАКИ (слева) ***
-          this.add.text(40, 15, "Собака:", textStyle);
+          this.add.text(40, 15, "Собака:", ts);
           this.dogHealthBarBg = this.add
             .rectangle(120, 30, 160, 20, 0x000000)
             .setOrigin(0.5);
           this.dogHealthBar = this.add
             .rectangle(120, 30, 160, 20, 0x00ff00)
             .setOrigin(0.5);
-          this.dogHealthText = this.add.text(45, 45, "HP: 100%", textStyle);
-
-          // *** ШКАЛА ЗДОРОВЬЯ ЧЕЛОВЕКА (справа) ***
-          this.add.text(600, 15, "Человек:", textStyle);
+          this.dogHealthText = this.add.text(45, 45, "HP: 100%", ts);
+          this.add.text(600, 15, "Человек:", ts);
           this.humanHealthBarBg = this.add
             .rectangle(680, 30, 160, 20, 0x000000)
             .setOrigin(0.5);
           this.humanHealthBar = this.add
             .rectangle(680, 30, 160, 20, 0x00ff00)
             .setOrigin(0.5);
-          this.humanHealthText = this.add.text(605, 45, "HP: 100%", textStyle);
-
-          // *** ШКАЛА ЗДОРОВЬЯ БОМЖА (по центру внизу) ***
+          this.humanHealthText = this.add.text(605, 45, "HP: 100%", ts);
           this.homelessLabel = this.add
             .text(400, 560, "🧔 Бомж:", {
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -2327,13 +1593,12 @@
             })
             .setOrigin(0.5)
             .setVisible(false);
-
           this.homelessHealthBarBg = this.add
             .rectangle(400, 580, 200, 15, 0x000000)
             .setOrigin(0.5)
             .setVisible(false);
           this.homelessHealthBar = this.add
-            .rectangle(400, 580, 200, 15, 0xff9900) // Оранжевый цвет для бомжа
+            .rectangle(400, 580, 200, 15, 0xff9900)
             .setOrigin(0.5)
             .setVisible(false);
           this.homelessHealthText = this.add
@@ -2344,8 +1609,6 @@
             })
             .setOrigin(0.5, 0)
             .setVisible(false);
-
-          // *** ИНДИКАТОР ВОЛНЫ (по центру) ***
           this.waveText = this.add
             .text(400, 30, "Волна 1", {
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -2353,22 +1616,14 @@
               fill: "#eb8c17",
             })
             .setOrigin(0.5);
-
-          // Индикатор сложности
-          const difficulty = this.registry.get("difficulty");
-          const difficultyText =
-            difficulty === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
-          const difficultyColor =
-            difficulty === "hardcore" ? "#ff0000" : "#00ff00";
+          const diff = this.registry.get("difficulty");
           this.add
-            .text(750, 15, difficultyText, {
+            .text(750, 15, diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ", {
               fontFamily: '"3_Muz-TV2000.ttf"',
               fontSize: "16px",
-              fill: difficultyColor,
+              fill: diff === "hardcore" ? "#ff0000" : "#00ff00",
             })
             .setOrigin(1, 0);
-
-          // *** ИНДИКАТОР СЧЁТЧИКА ПИНКОВ ***
           this.kickCountText = this.add
             .text(750, 35, "⚡ Пинков: 0/3", {
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -2376,128 +1631,82 @@
               fill: "#ffaa00",
             })
             .setOrigin(1, 0);
-
-          const gameScene = this.scene.get("Scene2");
-          if (gameScene && gameScene.scene.isActive()) {
-            // КРИТИЧНО: Отписываемся от старых событий перед новой подпиской
-            gameScene.events.off("updateWave");
-            gameScene.events.off("damageDog");
-            gameScene.events.off("damageHuman");
-            gameScene.events.off("healDog");
-            gameScene.events.off("healHuman");
-            gameScene.events.off("updateKickCount");
-            gameScene.events.off("showHomelessBar");
-            gameScene.events.off("damageHomeless");
-            gameScene.events.off("healHomeless");
-
-            gameScene.events.on("updateWave", (wave) => {
-              if (this.waveText && this.waveText.active) {
-                this.waveText.setText(`Волна ${wave}`);
-              }
+          const gs = this.scene.get("Scene2");
+          if (gs && gs.scene.isActive()) {
+            [
+              "updateWave",
+              "damageDog",
+              "damageHuman",
+              "healDog",
+              "healHuman",
+              "updateKickCount",
+              "showHomelessBar",
+              "damageHomeless",
+              "healHomeless",
+            ].forEach((e) => gs.events.off(e));
+            gs.events.on("updateWave", (w) => {
+              if (this.waveText && this.waveText.active)
+                this.waveText.setText(`Волна ${w}`);
             });
-
-            // *** Событие показа шкалы HP бомжа ***
-            gameScene.events.on("showHomelessBar", () => {
+            gs.events.on("showHomelessBar", () => {
               this.homelessLabel.setVisible(true);
               this.homelessHealthBarBg.setVisible(true);
               this.homelessHealthBar.setVisible(true);
               this.homelessHealthText.setVisible(true);
-              console.log("🧔 Шкала HP бомжа показана");
             });
-
-            // *** Событие урона бомжу ***
-            gameScene.events.on("damageHomeless", (damage) => {
-              if (gameScene.isHomelessDead) return;
-              gameScene.homelessHealth -= damage;
-              console.log(
-                `💥 Бомж получил урон ${damage}, HP: ${gameScene.homelessHealth}`,
-              );
-              this.updateHomelessHealthBar(gameScene.homelessHealth);
-
-              // Визуальная обратная связь - красное мигание
-              gameScene.homeless.setTint(0xff0000);
-              gameScene.time.delayedCall(200, () => {
-                if (gameScene.homeless && gameScene.homeless.active) {
-                  gameScene.homeless.clearTint();
-                }
+            gs.events.on("damageHomeless", (dmg) => {
+              if (gs.isHomelessDead) return;
+              gs.homelessHealth -= dmg;
+              this.updateHomelessHealthBar(gs.homelessHealth);
+              gs.homeless.setTint(0xff0000);
+              gs.time.delayedCall(200, () => {
+                if (gs.homeless && gs.homeless.active) gs.homeless.clearTint();
               });
-
-              // Показываем текст урона
-              const damageText = this.add
-                .text(
-                  gameScene.homeless.x,
-                  gameScene.homeless.y - 150,
-                  `-${damage}`,
-                  {
-                    fontSize: "28px",
-                    color: "#ff0000",
-                    fontFamily: "3_Muz-TV2000.ttf",
-                    stroke: "#000",
-                    strokeThickness: 4,
-                  },
-                )
+              const t = this.add
+                .text(gs.homeless.x, gs.homeless.y - 150, `-${dmg}`, {
+                  fontSize: "28px",
+                  color: "#ff0000",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
                 .setOrigin(0.5);
-
               this.tweens.add({
-                targets: damageText,
-                y: damageText.y - 40,
+                targets: t,
+                y: t.y - 40,
                 alpha: 0,
                 duration: 1000,
-                onComplete: () => damageText.destroy(),
+                onComplete: () => t.destroy(),
               });
             });
-
-            // *** Событие лечения бомжа ***
-            gameScene.events.on("healHomeless", (heal) => {
-              if (gameScene.isHomelessDead) return;
-              gameScene.homelessHealth = Math.min(
-                100,
-                gameScene.homelessHealth + heal,
-              );
-              console.log(
-                `💚 Бомж вылечен на ${heal}, HP: ${gameScene.homelessHealth}`,
-              );
-              this.updateHomelessHealthBar(gameScene.homelessHealth);
-
-              // Зелёное мигание
-              gameScene.homeless.setTint(0x00ff00);
-              gameScene.time.delayedCall(300, () => {
-                if (gameScene.homeless && gameScene.homeless.active) {
-                  gameScene.homeless.clearTint();
-                }
+            gs.events.on("healHomeless", (heal) => {
+              if (gs.isHomelessDead) return;
+              gs.homelessHealth = Math.min(100, gs.homelessHealth + heal);
+              this.updateHomelessHealthBar(gs.homelessHealth);
+              gs.homeless.setTint(0x00ff00);
+              gs.time.delayedCall(300, () => {
+                if (gs.homeless && gs.homeless.active) gs.homeless.clearTint();
               });
-
-              // Показываем текст лечения
-              const healText = this.add
-                .text(
-                  gameScene.homeless.x,
-                  gameScene.homeless.y - 150,
-                  `+${heal}`,
-                  {
-                    fontSize: "28px",
-                    color: "#00ff00",
-                    fontFamily: "3_Muz-TV2000.ttf",
-                    stroke: "#000",
-                    strokeThickness: 4,
-                  },
-                )
+              const t = this.add
+                .text(gs.homeless.x, gs.homeless.y - 150, `+${heal}`, {
+                  fontSize: "28px",
+                  color: "#00ff00",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
                 .setOrigin(0.5);
-
               this.tweens.add({
-                targets: healText,
-                y: healText.y - 40,
+                targets: t,
+                y: t.y - 40,
                 alpha: 0,
                 duration: 1000,
-                onComplete: () => healText.destroy(),
+                onComplete: () => t.destroy(),
               });
             });
-
-            // *** Событие обновления счётчика пинков ***
-            gameScene.events.on("updateKickCount", (count, needed) => {
+            gs.events.on("updateKickCount", (c, n) => {
               if (this.kickCountText && this.kickCountText.active) {
-                this.kickCountText.setText(`⚡ Пинков: ${count}/${needed}`);
-
-                // Визуальный эффект при увеличении счётчика
+                this.kickCountText.setText(`⚡ Пинков: ${c}/${n}`);
                 this.tweens.add({
                   targets: this.kickCountText,
                   scale: 1.3,
@@ -2507,25 +1716,104 @@
                 });
               }
             });
-
-            // *** Теперь слушаем урон СОБАКИ ***
-            gameScene.events.on("damageDog", (damage) => {
-              if (gameScene.isDogDead) return;
-              console.log(
-                `💥 UIScene2: damageDog вызван! Урон: ${damage}, HP до: ${gameScene.dogHealth}, HP после: ${gameScene.dogHealth - damage}`,
-              );
-              gameScene.dogHealth -= damage;
-              this.updateDogHealthBar(gameScene.dogHealth);
-
-              // Визуальная обратная связь - красное мигание
-              gameScene.dog.setTint(0xff0000);
-              gameScene.time.delayedCall(200, () => {
-                if (gameScene.dog) gameScene.dog.clearTint();
+            const handleDamage = (
+              who,
+              getHealth,
+              setHealth,
+              getSprite,
+              getDead,
+              setDead,
+              bar,
+              txt,
+              updateBar,
+              yOff,
+              extra,
+            ) => {
+              gs.events.on(`damage${who}`, (dmg) => {
+                if (getDead()) return;
+                setHealth(getHealth() - dmg);
+                updateBar(getHealth());
+                const sp = getSprite();
+                sp.setTint(0xff0000);
+                gs.time.delayedCall(200, () => {
+                  if (sp) sp.clearTint();
+                });
+                const t = this.add
+                  .text(sp.x, sp.y - yOff, `-${dmg}`, {
+                    fontSize: "32px",
+                    color: "#ff0000",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  })
+                  .setOrigin(0.5);
+                this.tweens.add({
+                  targets: t,
+                  y: t.y - 50,
+                  alpha: 0,
+                  duration: 1000,
+                  onComplete: () => t.destroy(),
+                });
+                if (getHealth() <= 0 && !getDead()) {
+                  setDead(true);
+                  extra(sp);
+                }
               });
-
-              // Показываем текст урона
-              const damageText = this.add
-                .text(gameScene.dog.x, gameScene.dog.y - 100, `-${damage}`, {
+            };
+            const makeDogDie = (dog) => {
+              dog.anims.play("dog_death", true);
+              dog.on(
+                "animationcomplete",
+                () => {
+                  dog.setVisible(false);
+                  const gx = dog.x,
+                    gy = dog.y;
+                  this.add
+                    .rectangle(gx, gy - 30, 40, 60, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add
+                    .ellipse(gx, gy - 60, 40, 30, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add.rectangle(gx, gy - 50, 4, 24, 0x888888);
+                  this.add.rectangle(gx, gy - 56, 16, 4, 0x888888);
+                  gs.scene.pause();
+                  this.showGameOver();
+                },
+                this,
+              );
+            };
+            const makeHumanDie = (human) => {
+              human.anims.play("human_death", true);
+              human.on(
+                "animationcomplete",
+                () => {
+                  human.setVisible(false);
+                  const gx = human.x,
+                    gy = human.y;
+                  this.add
+                    .rectangle(gx, gy - 50, 50, 80, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add
+                    .ellipse(gx, gy - 90, 50, 40, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add.rectangle(gx, gy - 75, 5, 30, 0x888888);
+                  this.add.rectangle(gx, gy - 83, 20, 5, 0x888888);
+                  gs.scene.pause();
+                  this.showGameOver();
+                },
+                this,
+              );
+            };
+            gs.events.on("damageDog", (dmg) => {
+              if (gs.isDogDead) return;
+              gs.dogHealth -= dmg;
+              this.updateDogHealthBar(gs.dogHealth);
+              gs.dog.setTint(0xff0000);
+              gs.time.delayedCall(200, () => {
+                if (gs.dog) gs.dog.clearTint();
+              });
+              const t = this.add
+                .text(gs.dog.x, gs.dog.y - 100, `-${dmg}`, {
                   fontSize: "32px",
                   color: "#ff0000",
                   fontFamily: "3_Muz-TV2000.ttf",
@@ -2533,188 +1821,57 @@
                   strokeThickness: 4,
                 })
                 .setOrigin(0.5);
-
               this.tweens.add({
-                targets: damageText,
-                y: damageText.y - 50,
+                targets: t,
+                y: t.y - 50,
                 alpha: 0,
                 duration: 1000,
-                onComplete: () => damageText.destroy(),
+                onComplete: () => t.destroy(),
               });
-              if (gameScene.dogHealth <= 0) {
-                gameScene.isDogDead = true;
-                const dog = gameScene.dog;
-                dog.anims.play("dog_death", true);
-                dog.on(
-                  "animationcomplete",
-                  () => {
-                    // Прячем собаку
-                    dog.setVisible(false);
-
-                    // Создаём могилку на месте собаки
-                    const graveX = dog.x;
-                    const graveY = dog.y;
-
-                    // Основание могилы (прямоугольник)
-                    const graveBase = this.add.rectangle(
-                      graveX,
-                      graveY - 30,
-                      40,
-                      60,
-                      0x222222,
-                    );
-                    graveBase.setStrokeStyle(2, 0x000000);
-
-                    // Верхняя часть (закругленная)
-                    const graveTop = this.add.ellipse(
-                      graveX,
-                      graveY - 60,
-                      40,
-                      30,
-                      0x222222,
-                    );
-                    graveTop.setStrokeStyle(2, 0x000000);
-
-                    // Крест
-                    const crossVertical = this.add.rectangle(
-                      graveX,
-                      graveY - 50,
-                      4,
-                      24,
-                      0x888888,
-                    );
-                    const crossHorizontal = this.add.rectangle(
-                      graveX,
-                      graveY - 56,
-                      16,
-                      4,
-                      0x888888,
-                    );
-
-                    gameScene.scene.pause();
-
-                    // Показываем Game Over экран
-                    this.showGameOver();
-                  },
-                  this,
-                );
+              if (gs.dogHealth <= 0) {
+                gs.isDogDead = true;
+                makeDogDie(gs.dog);
               }
             });
-
-            // *** НОВОЕ: Слушаем урон ЧЕЛОВЕКА ***
-            gameScene.events.on("damageHuman", (damage) => {
-              if (gameScene.isHumanDead) return;
-              console.log(
-                `💥 UIScene2: damageHuman вызван! Урон: ${damage}, HP до: ${gameScene.humanHealth}, HP после: ${gameScene.humanHealth - damage}`,
-              );
-              gameScene.humanHealth -= damage;
-              this.updateHumanHealthBar(gameScene.humanHealth);
-
-              // Визуальная обратная связь - красное мигание
-              gameScene.human.setTint(0xff0000);
-              gameScene.time.delayedCall(200, () => {
-                if (gameScene.human) gameScene.human.clearTint();
+            gs.events.on("damageHuman", (dmg) => {
+              if (gs.isHumanDead) return;
+              gs.humanHealth -= dmg;
+              this.updateHumanHealthBar(gs.humanHealth);
+              gs.human.setTint(0xff0000);
+              gs.time.delayedCall(200, () => {
+                if (gs.human) gs.human.clearTint();
               });
-
-              // Показываем текст урона
-              const damageText = this.add
-                .text(
-                  gameScene.human.x,
-                  gameScene.human.y - 150,
-                  `-${damage}`,
-                  {
-                    fontSize: "32px",
-                    color: "#ff0000",
-                    fontFamily: "3_Muz-TV2000.ttf",
-                    stroke: "#000",
-                    strokeThickness: 4,
-                  },
-                )
+              const t = this.add
+                .text(gs.human.x, gs.human.y - 150, `-${dmg}`, {
+                  fontSize: "32px",
+                  color: "#ff0000",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
                 .setOrigin(0.5);
-
               this.tweens.add({
-                targets: damageText,
-                y: damageText.y - 50,
+                targets: t,
+                y: t.y - 50,
                 alpha: 0,
                 duration: 1000,
-                onComplete: () => damageText.destroy(),
+                onComplete: () => t.destroy(),
               });
-
-              if (gameScene.humanHealth <= 0) {
-                gameScene.isHumanDead = true;
-                const human = gameScene.human;
-                human.anims.play("human_death", true);
-                human.on(
-                  "animationcomplete",
-                  () => {
-                    // Прячем человека
-                    human.setVisible(false);
-
-                    // Создаём могилку на месте человека
-                    const graveX = human.x;
-                    const graveY = human.y;
-
-                    // Основание могилы (прямоугольник)
-                    const graveBase = this.add.rectangle(
-                      graveX,
-                      graveY - 50,
-                      50,
-                      80,
-                      0x222222,
-                    );
-                    graveBase.setStrokeStyle(2, 0x000000);
-
-                    // Верхняя часть (закругленная)
-                    const graveTop = this.add.ellipse(
-                      graveX,
-                      graveY - 90,
-                      50,
-                      40,
-                      0x222222,
-                    );
-                    graveTop.setStrokeStyle(2, 0x000000);
-
-                    // Крест
-                    const crossVertical = this.add.rectangle(
-                      graveX,
-                      graveY - 75,
-                      5,
-                      30,
-                      0x888888,
-                    );
-                    const crossHorizontal = this.add.rectangle(
-                      graveX,
-                      graveY - 83,
-                      20,
-                      5,
-                      0x888888,
-                    );
-
-                    gameScene.scene.pause();
-
-                    // Показываем Game Over экран
-                    this.showGameOver();
-                  },
-                  this,
-                );
+              if (gs.humanHealth <= 0) {
+                gs.isHumanDead = true;
+                makeHumanDie(gs.human);
               }
             });
-
-            // *** Восстановление здоровья собаки ***
-            gameScene.events.on("healDog", (heal) => {
-              if (gameScene.isDogDead) return;
-              gameScene.dogHealth = Math.min(100, gameScene.dogHealth + heal);
-              this.updateDogHealthBar(gameScene.dogHealth);
-
-              // Визуальная обратная связь - зелёное мигание
-              gameScene.dog.setTint(0x00ff00);
-              gameScene.time.delayedCall(400, () => {
-                if (gameScene.dog) gameScene.dog.clearTint();
+            gs.events.on("healDog", (heal) => {
+              if (gs.isDogDead) return;
+              gs.dogHealth = Math.min(100, gs.dogHealth + heal);
+              this.updateDogHealthBar(gs.dogHealth);
+              gs.dog.setTint(0x00ff00);
+              gs.time.delayedCall(400, () => {
+                if (gs.dog) gs.dog.clearTint();
               });
-
-              // Показываем текст лечения
-              const healText = this.add
-                .text(gameScene.dog.x, gameScene.dog.y - 100, `+${heal}`, {
+              const t = this.add
+                .text(gs.dog.x, gs.dog.y - 100, `+${heal}`, {
                   fontSize: "32px",
                   color: "#00ff00",
                   fontFamily: "3_Muz-TV2000.ttf",
@@ -2722,43 +1879,24 @@
                   strokeThickness: 4,
                 })
                 .setOrigin(0.5);
-
               this.tweens.add({
-                targets: healText,
-                y: healText.y - 50,
+                targets: t,
+                y: t.y - 50,
                 alpha: 0,
                 duration: 1000,
-                onComplete: () => healText.destroy(),
+                onComplete: () => t.destroy(),
               });
             });
-
-            // *** НОВОЕ: Восстановление здоровья человека (когда съедает гриб сам) ***
-            gameScene.events.on("healHuman", (heal) => {
-              console.log(
-                "UIScene2: Получено событие healHuman с heal =",
-                heal,
-              );
-              console.log("humanHealth до лечения:", gameScene.humanHealth);
-              if (gameScene.isHumanDead) {
-                console.log("Человек мёртв, лечение не применяется");
-                return;
-              }
-              gameScene.humanHealth = Math.min(
-                100,
-                gameScene.humanHealth + heal,
-              );
-              console.log("humanHealth после лечения:", gameScene.humanHealth);
-              this.updateHumanHealthBar(gameScene.humanHealth);
-
-              // Визуальная обратная связь - зелёное мигание
-              gameScene.human.setTint(0x00ff00);
-              gameScene.time.delayedCall(400, () => {
-                if (gameScene.human) gameScene.human.clearTint();
+            gs.events.on("healHuman", (heal) => {
+              if (gs.isHumanDead) return;
+              gs.humanHealth = Math.min(100, gs.humanHealth + heal);
+              this.updateHumanHealthBar(gs.humanHealth);
+              gs.human.setTint(0x00ff00);
+              gs.time.delayedCall(400, () => {
+                if (gs.human) gs.human.clearTint();
               });
-
-              // Показываем текст лечения
-              const healText = this.add
-                .text(gameScene.human.x, gameScene.human.y - 150, `+${heal}`, {
+              const t = this.add
+                .text(gs.human.x, gs.human.y - 150, `+${heal}`, {
                   fontSize: "32px",
                   color: "#00ff00",
                   fontFamily: "3_Muz-TV2000.ttf",
@@ -2766,51 +1904,42 @@
                   strokeThickness: 4,
                 })
                 .setOrigin(0.5);
-
               this.tweens.add({
-                targets: healText,
-                y: healText.y - 50,
+                targets: t,
+                y: t.y - 50,
                 alpha: 0,
                 duration: 1000,
-                onComplete: () => healText.destroy(),
+                onComplete: () => t.destroy(),
               });
             });
           }
         }
-
-        updateDogHealthBar(health) {
-          const currentHealth = Math.max(0, health);
-          this.dogHealthBar.width = (currentHealth / 100) * 160;
-          if (currentHealth > 60) this.dogHealthBar.setFillStyle(0x00ff00);
-          else if (currentHealth > 30) this.dogHealthBar.setFillStyle(0xffff00);
+        updateDogHealthBar(h) {
+          h = Math.max(0, h);
+          this.dogHealthBar.width = (h / 100) * 160;
+          if (h > 60) this.dogHealthBar.setFillStyle(0x00ff00);
+          else if (h > 30) this.dogHealthBar.setFillStyle(0xffff00);
           else this.dogHealthBar.setFillStyle(0xff0000);
-          this.dogHealthText.setText(`HP: ${currentHealth}%`);
+          this.dogHealthText.setText(`HP: ${h}%`);
         }
-
-        updateHumanHealthBar(health) {
-          const currentHealth = Math.max(0, health);
-          this.humanHealthBar.width = (currentHealth / 100) * 160;
-          if (currentHealth > 60) this.humanHealthBar.setFillStyle(0x00ff00);
-          else if (currentHealth > 30)
-            this.humanHealthBar.setFillStyle(0xffff00);
+        updateHumanHealthBar(h) {
+          h = Math.max(0, h);
+          this.humanHealthBar.width = (h / 100) * 160;
+          if (h > 60) this.humanHealthBar.setFillStyle(0x00ff00);
+          else if (h > 30) this.humanHealthBar.setFillStyle(0xffff00);
           else this.humanHealthBar.setFillStyle(0xff0000);
-          this.humanHealthText.setText(`HP: ${currentHealth}%`);
+          this.humanHealthText.setText(`HP: ${h}%`);
         }
-
-        updateHomelessHealthBar(health) {
-          const currentHealth = Math.max(0, health);
-          this.homelessHealthBar.width = (currentHealth / 100) * 200;
-          if (currentHealth > 60)
-            this.homelessHealthBar.setFillStyle(0xff9900); // Оранжевый
-          else if (currentHealth > 30)
-            this.homelessHealthBar.setFillStyle(0xffaa00); // Светло-оранжевый
-          else this.homelessHealthBar.setFillStyle(0xff0000); // Красный
-          this.homelessHealthText.setText(`HP: ${currentHealth}%`);
+        updateHomelessHealthBar(h) {
+          h = Math.max(0, h);
+          this.homelessHealthBar.width = (h / 100) * 200;
+          if (h > 60) this.homelessHealthBar.setFillStyle(0xff9900);
+          else if (h > 30) this.homelessHealthBar.setFillStyle(0xffaa00);
+          else this.homelessHealthBar.setFillStyle(0xff0000);
+          this.homelessHealthText.setText(`HP: ${h}%`);
         }
-
         showGameOver() {
-          console.log("=== ПОКАЗЫВАЕМ GAME OVER (Scene2) ===");
-          const gameOverText = this.add
+          const t = this.add
             .text(400, 300, "ИГРА ОКОНЧЕНА", {
               fontSize: "200px",
               fontFamily: '"3_Muz-TV2000.ttf"',
@@ -2820,56 +1949,47 @@
             })
             .setOrigin(0.5)
             .setShadow(10, 10, "#000000", 20, true, true);
-
-          console.log("Создан текст ИГРА ОКОНЧЕНА с fontSize: 200px");
-
-          // Анимация появления
           this.tweens.add({
-            targets: gameOverText,
+            targets: t,
             alpha: { from: 0, to: 1 },
             scale: { from: 0.5, to: 1.0 },
             duration: 600,
             ease: "Back.easeOut",
           });
-
-          // Через 5 секунд возврат в меню
           this.time.delayedCall(5000, () => {
             this.scene.stop("Scene2");
             this.scene.stop("UIScene2");
             this.scene.start("MainMenuScene");
           });
         }
-
         shutdown() {
-          // Очищаем все события при остановке сцены
-          const gameScene = this.scene.get("Scene2");
-          if (gameScene) {
-            gameScene.events.off("updateWave");
-            gameScene.events.off("damageDog");
-            gameScene.events.off("damageHuman");
-            gameScene.events.off("healDog");
-            gameScene.events.off("healHuman");
-            gameScene.events.off("showHomelessBar");
-            gameScene.events.off("damageHomeless");
-            gameScene.events.off("healHomeless");
-            gameScene.events.off("updateKickCount");
+          const gs = this.scene.get("Scene2");
+          if (gs) {
+            [
+              "updateWave",
+              "damageDog",
+              "damageHuman",
+              "healDog",
+              "healHuman",
+              "showHomelessBar",
+              "damageHomeless",
+              "healHomeless",
+              "updateKickCount",
+            ].forEach((e) => gs.events.off(e));
           }
         }
       }
 
       // =================================================================
-      // SCENE 4: ИССЛЕДОВАНИЕ - После победы над бомжом
+      // SCENE 4 (Розетка)
       // =================================================================
       class Scene4 extends Phaser.Scene {
         constructor() {
           super("Scene4");
         }
-
         create() {
           this.add.image(400, 300, "sky");
           this.add.image(400, 300, "background2");
-
-          // *** ИГРОК (ЧЕЛОВЕК) - УПРАВЛЯЕТСЯ ***
           this.human = this.physics.add.sprite(200, 580, "player");
           this.human.setOrigin(0.5, 1);
           this.human.body.allowGravity = false;
@@ -2882,44 +2002,30 @@
           this.isJumping = false;
           this.humanHealth = 100;
           this.isHumanDead = false;
-
-          // *** СОБАКА - НА AI ***
           this.dog = this.physics.add.sprite(600, 580, "dog_sprite");
           this.dog.setOrigin(0.5, 1);
           this.dog.body.allowGravity = false;
           this.dog.setCollideWorldBounds(true);
           this.dog.body.setSize(150, 100);
           this.dogDirection = "left";
-
-          // *** УПРАВЛЕНИЕ ***
           this.cursors = this.input.keyboard.createCursorKeys();
           this.jumpKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE,
           );
-
-          // *** AI ТАЙМЕР ДЛЯ СОБАКИ ***
           this.time.addEvent({
             delay: Phaser.Math.Between(1500, 3000),
             loop: true,
             callback: () => {
-              const action = Phaser.Math.RND.pick(["left", "right", "idle"]);
-              switch (action) {
-                case "left":
-                  this.dog.setVelocityX(-80);
-                  this.dogDirection = "left";
-                  break;
-                case "right":
-                  this.dog.setVelocityX(80);
-                  this.dogDirection = "right";
-                  break;
-                case "idle":
-                  this.dog.setVelocityX(0);
-                  break;
-              }
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.dog.setVelocityX(-80);
+                this.dogDirection = "left";
+              } else if (a === "right") {
+                this.dog.setVelocityX(80);
+                this.dogDirection = "right";
+              } else this.dog.setVelocityX(0);
             },
           });
-
-          // *** SOCKET — Летающая розетка ***
           this.socket = this.physics.add.sprite(
             Phaser.Math.Between(150, 650),
             Phaser.Math.Between(100, 350),
@@ -2929,112 +2035,80 @@
           this.socket.body.allowGravity = false;
           this.socket.setCollideWorldBounds(true);
           this.socket.body.setBounce(1, 1);
-          this.socket.setScale(0.5); // 512px -> ~256px на экране
-          this.socket.body.setSize(400, 400); // hitbox под scale
+          this.socket.setScale(0.5);
+          this.socket.body.setSize(400, 400);
           this.socket.anims.play("socket_fly", true);
           this.socketHealth = 100;
           this.isSocketDead = false;
-
-          // 4 направления: лево, право, вверх, вниз
-          const socketDirs = [
-            [200, 0], // вправо
-            [-200, 0], // влево
-            [0, 180], // вниз
-            [0, -180], // вверх
-          ];
-          const startDir = Phaser.Math.RND.pick(socketDirs);
-          this.socket.setVelocity(startDir[0], startDir[1]);
-
-          // Таймер смены направления каждые 1.5-3 секунды
+          const sd = Phaser.Math.RND.pick([
+            [200, 0],
+            [-200, 0],
+            [0, 180],
+            [0, -180],
+          ]);
+          this.socket.setVelocity(sd[0], sd[1]);
           this.socketDirTimer = this.time.addEvent({
             delay: Phaser.Math.Between(1500, 3000),
             loop: true,
             callback: () => {
               if (!this.socket || !this.socket.active) return;
-              // Выбираем новое направление, отличное от текущего
-              const vel = this.socket.body.velocity;
-              const allDirs = [
+              const d = Phaser.Math.RND.pick([
                 [210, 0],
                 [-210, 0],
                 [0, 190],
                 [0, -190],
-              ];
-              let newDir = Phaser.Math.RND.pick(allDirs);
-              // Небольшая скоростная вариация
-              const speedMult = Phaser.Math.FloatBetween(0.85, 1.3);
-              this.socket.setVelocity(
-                newDir[0] * speedMult,
-                newDir[1] * speedMult,
-              );
+              ]);
+              const sm = Phaser.Math.FloatBetween(0.85, 1.3);
+              this.socket.setVelocity(d[0] * sm, d[1] * sm);
             },
           });
-
-          // *** CONECTER — подбираемый предмет ***
           this.conecters = this.physics.add.group();
           this.human.hasConnecter = false;
           this.carriedConnecter = this.add
             .image(0, 0, "conecter")
             .setScale(0.18)
             .setVisible(false);
-
-          // Спавн conecter каждые 12 секунд
           this.time.addEvent({
             delay: 12000,
             loop: true,
             callback: this.spawnConnecter,
             callbackScope: this,
           });
-          // Первый спавн через 5 секунд
           this.time.delayedCall(5000, this.spawnConnecter, [], this);
-
-          // *** SOCKET MOUTH — рот в центре socket ***
           this.socketMouth = this.add.zone(0, 0, 80, 80);
           this.physics.world.enable(this.socketMouth);
           this.socketMouth.body.setAllowGravity(false);
           this.socketMouth.x = -999;
           this.flashCooldown = false;
-
-          // *** CONECTER MOUTH — рот в центре conecter ***
           this.conecterMouth = this.add.zone(0, 0, 60, 60);
           this.physics.world.enable(this.conecterMouth);
           this.conecterMouth.body.setAllowGravity(false);
           this.conecterMouth.x = -999;
           this.boomCooldown = false;
-
-          // *** THROWN CONECTER — летящий броском ***
-          this.thrownConnecter = null; // ссылка на летящий снаряд
-
-          console.log("🎮 Scene4: Игрок, собака и розетка созданы");
+          this.thrownConnecter = null;
+          // ── Фоновая музыка Scene4 ─────────────────────────────
+          this.bgm = this.sound.add("fon2", { loop: true, volume: 0.25 });
+          this.bgm.play();
         }
-
         update() {
           this.updateHumanPlayer();
           this.updateDogAI();
           this.updateConnecter();
-
-          // Флип розетки + рот + flash на игроке
           if (this.socket && this.socket.active) {
             const vel = this.socket.body.velocity;
-            if (vel.x < -10) {
-              this.socket.flipX = true;
-            } else if (vel.x > 10) {
-              this.socket.flipX = false;
-            }
+            if (vel.x < -10) this.socket.flipX = true;
+            else if (vel.x > 10) this.socket.flipX = false;
             if (Math.abs(vel.x) < 15 && Math.abs(vel.y) < 15) {
-              const dirs = [
+              const d = Phaser.Math.RND.pick([
                 [180, 0],
                 [-180, 0],
                 [0, 180],
                 [0, -180],
-              ];
-              const d = Phaser.Math.RND.pick(dirs);
+              ]);
               this.socket.setVelocity(d[0], d[1]);
             }
-            // Рот socket всегда в центре спрайта
             this.socketMouth.x = this.socket.x;
             this.socketMouth.y = this.socket.y;
-
-            // Flash при касании игрока ртом socket
             if (
               !this.flashCooldown &&
               Phaser.Geom.Intersects.RectangleToRectangle(
@@ -3060,58 +2134,42 @@
               this.time.delayedCall(1500, () => {
                 this.flashCooldown = false;
               });
-              // -5 HP игроку
+              this.sound.play("tok", { volume: 0.9 });
               this.events.emit("damageHuman4", 5);
             }
-          } else {
-            this.socketMouth.x = -999;
-          }
+          } else this.socketMouth.x = -999;
         }
-
         updateHumanPlayer() {
-          // Получаем джойстик для мобильных
-          const joystickState = this.registry.get("joystickState") || {};
-          const isMobile = this.registry.get("isMobile") || false;
-
-          // Прыжок - клавиатура или джойстик вверх
-          const jumpPressed =
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          const jp =
             Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
-            (isMobile && joystickState.isJumping);
-          if (jumpPressed && !this.isJumping) {
+            (mob && js.isJumping);
+          if (jp && !this.isJumping) {
             this.isJumping = true;
-
-            // Определяем направление прыжка
-            let jumpVelocityX = 0;
-
-            if (isMobile && joystickState.jumpDirection) {
-              // Прыжок по диагонали на мобильном
-              if (joystickState.jumpDirection === "left") {
-                jumpVelocityX = -200;
+            let vx = 0;
+            if (mob && js.jumpDirection) {
+              if (js.jumpDirection === "left") {
+                vx = -200;
                 this.humanFacing = "left";
                 this.human.flipX = true;
-              } else if (joystickState.jumpDirection === "right") {
-                jumpVelocityX = 200;
+              } else if (js.jumpDirection === "right") {
+                vx = 200;
                 this.humanFacing = "right";
                 this.human.flipX = false;
               }
             } else {
-              // Клавиатура
-              const leftPressed = this.cursors.left.isDown;
-              const rightPressed = this.cursors.right.isDown;
-
-              if (leftPressed) {
-                jumpVelocityX = -200;
+              if (this.cursors.left.isDown) {
+                vx = -200;
                 this.humanFacing = "left";
                 this.human.flipX = true;
-              } else if (rightPressed) {
-                jumpVelocityX = 200;
+              } else if (this.cursors.right.isDown) {
+                vx = 200;
                 this.humanFacing = "right";
                 this.human.flipX = false;
               }
             }
-
-            this.human.setVelocityX(jumpVelocityX);
-
+            this.human.setVelocityX(vx);
             this.tweens.add({
               targets: this.human,
               y: this.human.y - 280,
@@ -3124,21 +2182,15 @@
               },
             });
           }
-
           if (this.isJumping) return;
-
-          // Горизонтальное движение
-          const leftPressed =
-            this.cursors.left.isDown || (isMobile && joystickState.left);
-          const rightPressed =
-            this.cursors.right.isDown || (isMobile && joystickState.right);
-
-          if (leftPressed) {
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          if (lp) {
             this.human.setVelocityX(-200);
             this.human.anims.play("human_walk", true);
             this.human.flipX = true;
             this.humanFacing = "left";
-          } else if (rightPressed) {
+          } else if (rp) {
             this.human.setVelocityX(200);
             this.human.anims.play("human_walk", true);
             this.human.flipX = false;
@@ -3147,28 +2199,17 @@
             this.human.setVelocityX(0);
             this.human.anims.play("human_idle", true);
           }
-
-          // Бросок conecter — клавиша вниз или джойстик вниз
-          const downJustPressed =
+          const djp =
             Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-            (isMobile && joystickState.down && !this._prevDown);
-          this._prevDown = isMobile && joystickState.down;
-
-          if (
-            downJustPressed &&
-            this.human.hasConnecter &&
-            !this.thrownConnecter
-          ) {
+            (mob && js.down && !this._prevDown);
+          this._prevDown = mob && js.down;
+          if (djp && this.human.hasConnecter && !this.thrownConnecter)
             this.throwConnecter();
-          }
         }
-
         throwConnecter() {
           this.human.hasConnecter = false;
           this.carriedConnecter.setVisible(false);
           if (this.conecterTimer) this.conecterTimer.remove();
-
-          // Создаём физический снаряд
           const proj = this.physics.add.image(
             this.carriedConnecter.x,
             this.carriedConnecter.y,
@@ -3177,36 +2218,22 @@
           proj.setScale(0.18);
           proj.body.setAllowGravity(false);
           proj.setDepth(5);
-
-          // Направление броска и угол совпадают с последним поворотом carriedConnecter
           const angle = this.carriedConnecter.angle;
           proj.setAngle(angle);
-
-          // Вектор скорости по направлению броска
           const speed = 600;
           let vx = 0,
             vy = 0;
-          if (angle === 0) {
-            vy = -speed; // стоит — бросок вверх
-          } else if (angle === 90) {
-            vx = speed; // вправо
-          } else if (angle === -90) {
-            vx = -speed; // влево
-          } else if (angle === 180) {
+          if (angle === 0) vy = -speed;
+          else if (angle === 90) vx = speed;
+          else if (angle === -90) vx = -speed;
+          else if (angle === 180)
             vx = this.humanFacing === "right" ? speed : -speed;
-          } else {
-            // По умолчанию — по направлению взгляда
-            vx = this.humanFacing === "right" ? speed : -speed;
-          }
+          else vx = this.humanFacing === "right" ? speed : -speed;
           proj.setVelocity(vx, vy);
-
-          // Рот снаряда (для boom с socket)
           this.conecterMouth.x = proj.x;
           this.conecterMouth.y = proj.y;
-
           this.thrownConnecter = proj;
         }
-
         spawnConnecter() {
           if (this.conecters.countActive(true) > 0 || this.human.hasConnecter)
             return;
@@ -3214,16 +2241,12 @@
           const item = this.conecters.create(x, 575, "conecter");
           item.setOrigin(0.5, 1).setScale(0.18);
           item.body.allowGravity = false;
-          // Исчезает через 10 секунд если не подобран
           this.time.delayedCall(10000, () => {
             if (item && item.active) item.destroy();
           });
         }
-
         updateConnecter() {
           if (!this.carriedConnecter) return;
-
-          // Подбор conecter игроком
           if (!this.human.hasConnecter) {
             this.conecters.getChildren().forEach((item) => {
               if (!item.active) return;
@@ -3236,7 +2259,6 @@
                 item.destroy();
                 this.human.hasConnecter = true;
                 this.carriedConnecter.setVisible(true);
-                // Через 8 секунд conecter пропадает сам
                 this.conecterTimer = this.time.delayedCall(8000, () => {
                   this.human.hasConnecter = false;
                   this.carriedConnecter.setVisible(false);
@@ -3246,49 +2268,27 @@
               }
             });
           }
-
-          // ── Conecter следует за игроком ──────────────────────────────
           if (this.human.hasConnecter) {
             const vel = this.human.body.velocity;
-
-            // Позиция со смещением по стороне движения (как гриб)
-            const cOffset = this.humanFacing === "left" ? -60 : 60;
-            this.carriedConnecter.x = this.human.x + cOffset;
+            const coff = this.humanFacing === "left" ? -60 : 60;
+            this.carriedConnecter.x = this.human.x + coff;
             this.carriedConnecter.y = this.human.y - 130;
-
-            // Мгновенный поворот по направлению движения
-            if (vel.x > 10) {
-              this.carriedConnecter.angle = 90; // вправо
-            } else if (vel.x < -10) {
-              this.carriedConnecter.angle = -90; // влево
-            } else if (this.isJumping) {
-              this.carriedConnecter.angle = 180; // прыжок
-            } else {
-              this.carriedConnecter.angle = 0; // стоит — исходное
-            }
-
-            // Рот conecter — в центре carriedConnecter
+            if (vel.x > 10) this.carriedConnecter.angle = 90;
+            else if (vel.x < -10) this.carriedConnecter.angle = -90;
+            else if (this.isJumping) this.carriedConnecter.angle = 180;
+            else this.carriedConnecter.angle = 0;
             this.conecterMouth.x = this.carriedConnecter.x;
             this.conecterMouth.y = this.carriedConnecter.y;
-
-            // (boom только при броске — см. thrownConnecter ниже)
           } else {
-            // Conecter не несут — убираем рот за экран (если нет thrownConnecter)
             if (!this.thrownConnecter) {
               this.conecterMouth.x = -999;
               this.conecterMouth.y = -999;
             }
           }
-
-          // ── Летящий conecter (после броска) ────────────────────────────
           if (this.thrownConnecter) {
             const p = this.thrownConnecter;
-
-            // Рот снаряда следует за ним
             this.conecterMouth.x = p.x;
             this.conecterMouth.y = p.y;
-
-            // Boom при касании рта снаряда с ртом socket
             if (
               !this.boomCooldown &&
               this.socket &&
@@ -3299,12 +2299,13 @@
               )
             ) {
               this.boomCooldown = true;
-              const boomX = (p.x + this.socket.x) / 2;
-              const boomY = (p.y + this.socket.y) / 2;
-              const boom = this.add.image(boomX, boomY, "boom");
-              boom.setScale(0.6);
-              boom.setBlendMode(Phaser.BlendModes.ADD);
-              boom.setDepth(15);
+              const bx = (p.x + this.socket.x) / 2,
+                by = (p.y + this.socket.y) / 2;
+              const boom = this.add.image(bx, by, "boom");
+              boom
+                .setScale(0.6)
+                .setBlendMode(Phaser.BlendModes.ADD)
+                .setDepth(15);
               this.tweens.add({
                 targets: boom,
                 scale: { from: 0.2, to: 1.0 },
@@ -3313,28 +2314,23 @@
                 ease: "Power2",
                 onComplete: () => boom.destroy(),
               });
-              const kicks = [
+              const kick = Phaser.Math.RND.pick([
                 [300, 0],
                 [-300, 0],
                 [0, 260],
                 [0, -260],
-              ];
-              const kick = Phaser.Math.RND.pick(kicks);
+              ]);
               this.socket.setVelocity(kick[0], kick[1]);
               this.time.delayedCall(800, () => {
                 this.boomCooldown = false;
               });
-              // -20 HP socket
+              this.sound.play("boom_snd", { volume: 0.9 });
               this.events.emit("damageSocket4", 20);
-
-              // Уничтожаем снаряд
               p.destroy();
               this.thrownConnecter = null;
               this.conecterMouth.x = -999;
               this.conecterMouth.y = -999;
             }
-
-            // Улетел за экран — уничтожаем
             if (
               p.active &&
               (p.x < -50 || p.x > 850 || p.y < -50 || p.y > 650)
@@ -3346,12 +2342,11 @@
             }
           }
         }
-
         updateDogAI() {
           this.dog.flipX = false;
-          if (this.dog.body.velocity.x < 0) {
+          if (this.dog.body.velocity.x < 0)
             this.dog.anims.play("dog_walk_left", true);
-          } else if (this.dog.body.velocity.x > 0) {
+          else if (this.dog.body.velocity.x > 0) {
             if (!this._barkCooldown) {
               this._barkCooldown = true;
               this.sound.play("bark_aggressive", { volume: 0.6 });
@@ -3368,21 +2363,18 @@
       }
 
       // =================================================================
-      // SCENE 8: UI для Scene4
+      // UI SCENE 4
       // =================================================================
       class UIScene4 extends Phaser.Scene {
         constructor() {
           super("UIScene4");
         }
-
         create() {
           const ts = {
             fontFamily: '"3_Muz-TV2000.ttf"',
             fontSize: "16px",
             fill: "#fff",
           };
-
-          // ── Шкала HP игрока (слева) ─────────────────────────────────
           this.add.text(10, 12, "Игрок:", ts);
           this.humanHpBg = this.add
             .rectangle(130, 22, 160, 18, 0x000000)
@@ -3391,8 +2383,6 @@
             .rectangle(130, 22, 160, 18, 0x00ff00)
             .setOrigin(0.5);
           this.humanHpTxt = this.add.text(10, 35, "HP: 100%", ts);
-
-          // ── Шкала HP socket (справа) ─────────────────────────────────
           this.add.text(570, 12, "Socket:", ts);
           this.socketHpBg = this.add
             .rectangle(680, 22, 160, 18, 0x000000)
@@ -3401,9 +2391,7 @@
             .rectangle(680, 22, 160, 18, 0x00ff00)
             .setOrigin(0.5);
           this.socketHpTxt = this.add.text(610, 35, "HP: 100%", ts);
-
-          // ── Кнопка меню ────────────────────────────────────────────
-          const menuButton = this.add
+          const mb = this.add
             .text(750, 55, "📋 Меню", {
               fontFamily: '"3_Muz-TV2000.ttf"',
               fontSize: "18px",
@@ -3413,30 +2401,22 @@
             })
             .setOrigin(1, 0)
             .setInteractive();
-          menuButton.on("pointerover", () =>
-            menuButton.setStyle({ fill: "#ffff00" }),
-          );
-          menuButton.on("pointerout", () =>
-            menuButton.setStyle({ fill: "#ffffff" }),
-          );
-          menuButton.on("pointerdown", () => {
+          mb.on("pointerover", () => mb.setStyle({ fill: "#ffff00" }));
+          mb.on("pointerout", () => mb.setStyle({ fill: "#ffffff" }));
+          mb.on("pointerdown", () => {
             this.scene.stop("Scene4");
             this.scene.stop("UIScene4");
             this.scene.stop("VirtualControlsScene");
             this.scene.start("MainMenuScene");
           });
-
-          // ── Слушаем события от Scene4 ───────────────────────────────
           const g = this.scene.get("Scene4");
           if (g && g.scene.isActive()) {
             g.events.off("damageHuman4");
             g.events.off("damageSocket4");
-
             g.events.on("damageHuman4", (dmg) => {
               if (g.isHumanDead) return;
               g.humanHealth = Math.max(0, g.humanHealth - dmg);
               this.updateHumanBar(g.humanHealth);
-              // Плавающий текст урона
               const t = this.add
                 .text(g.human.x, g.human.y - 160, "-" + dmg, {
                   fontSize: "28px",
@@ -3459,12 +2439,10 @@
                 this.showResult("ИГРА ОКОНЧЕНА", "#ff0000");
               }
             });
-
             g.events.on("damageSocket4", (dmg) => {
               if (g.isSocketDead) return;
               g.socketHealth = Math.max(0, g.socketHealth - dmg);
               this.updateSocketBar(g.socketHealth);
-              // Плавающий текст урона
               const t = this.add
                 .text(g.socket.x, g.socket.y - 80, "-" + dmg, {
                   fontSize: "28px",
@@ -3491,10 +2469,7 @@
               }
             });
           }
-
-          console.log("✅ UIScene4 создан");
         }
-
         updateHumanBar(hp) {
           const h = Math.max(0, hp);
           this.humanHpBar.width = (h / 100) * 160;
@@ -3503,7 +2478,6 @@
           );
           this.humanHpTxt.setText("HP: " + h + "%");
         }
-
         updateSocketBar(hp) {
           const h = Math.max(0, hp);
           this.socketHpBar.width = (h / 100) * 160;
@@ -3512,13 +2486,12 @@
           );
           this.socketHpTxt.setText("HP: " + h + "%");
         }
-
         showResult(msg, color, victory) {
           const txt = this.add
             .text(400, 300, msg, {
               fontSize: "120px",
               fontFamily: '"3_Muz-TV2000.ttf"',
-              color: color,
+              color,
               stroke: "#000000",
               strokeThickness: 10,
             })
@@ -3533,14 +2506,10 @@
           this.time.delayedCall(3000, () => {
             this.scene.stop("Scene4");
             this.scene.stop("UIScene4");
-            if (victory) {
-              this.scene.start("Scene5");
-            } else {
-              this.scene.start("MainMenuScene");
-            }
+            if (victory) this.scene.start("Scene5");
+            else this.scene.start("MainMenuScene");
           });
         }
-
         shutdown() {
           const g = this.scene.get("Scene4");
           if (g) {
@@ -3551,22 +2520,17 @@
       }
 
       // =================================================================
-      // SCENE 5: Ринг — после победы над Socket
+      // SCENE 5 (Ринг)
       // =================================================================
       class Scene5 extends Phaser.Scene {
         constructor() {
           super("Scene5");
         }
-
         preload() {
           this.load.image("ring", "assets/images/ring.jpg");
         }
-
         create() {
-          // Фон — ринг
           this.add.image(400, 300, "ring").setDisplaySize(800, 600);
-
-          // *** БОЕЦ — спрайт humanFight ***
           this.fighter = this.physics.add.sprite(400, 520, "humanFight");
           this.fighter.setOrigin(0.5, 1);
           this.fighter.body.allowGravity = false;
@@ -3574,45 +2538,32 @@
           this.fighter.setScale(1.5);
           this.fighter.anims.play("fight_idle", true);
           this.fighterFacing = "right";
-          this.isAttacking = false; // блокировка во время удара
-
-          // *** РОБОТ — противник ***
+          this.isAttacking = false;
           this.robot = this.physics.add.sprite(650, 520, "robot");
           this.robot.setOrigin(0.5, 1);
           this.robot.body.allowGravity = false;
           this.robot.setCollideWorldBounds(true);
           this.robot.setScale(1.5);
-          this.robot.body.setSize(86, 224); // 0.5*172 x 0.9*249
+          this.robot.body.setSize(86, 224);
           this.robot.anims.play("robot_run", true);
-          this.robotAttacking = false; // робот бьёт
-          this.robotCooldown = false; // пауза после удара
+          this.robotAttacking = false;
+          this.robotCooldown = false;
           this.robotFacing = "left";
-
-          // *** HP ***
           this.fighterHP = 100;
           this.robotHP = 100;
           this.fighterDead = false;
           this.robotDead = false;
           this.rageActive = false;
-
-          // *** КУЛДАУНЫ УРОНА ***
-          this.fighterHitCooldown = false; // защита от мультиудара за кадр
+          this.fighterHitCooldown = false;
           this.robotHitCooldown = false;
-
-          // *** ХИТЗОНЫ — рука/нога ИГРОКА ***
           this.fighterFist = this.add.zone(0, 0, 50, 50);
           this.physics.world.enable(this.fighterFist);
           this.fighterFist.body.setAllowGravity(false);
           this.fighterFist.x = -999;
-
-          // *** ХИТЗОНЫ — рука/нога РОБОТА ***
           this.robotFist = this.add.zone(0, 0, 50, 50);
           this.physics.world.enable(this.robotFist);
           this.robotFist.body.setAllowGravity(false);
           this.robotFist.x = -999;
-
-          // *** ШКАЛЫ HP (UI поверх сцены) ***
-          // Фон левой шкалы
           this.add
             .rectangle(130, 22, 164, 22, 0x000000)
             .setOrigin(0.5)
@@ -3635,8 +2586,6 @@
               fill: "#fff",
             })
             .setDepth(22);
-
-          // Фон правой шкалы
           this.add
             .rectangle(670, 22, 164, 22, 0x000000)
             .setOrigin(0.5)
@@ -3659,16 +2608,12 @@
               fill: "#fff",
             })
             .setDepth(22);
-
-          // *** УПРАВЛЕНИЕ ***
           this.cursors = this.input.keyboard.createCursorKeys();
           this.jumpKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE,
           );
           this.prevDown = false;
           this.isJumping = false;
-
-          // Восстановление HP каждую секунду если нет столкновений
           this.time.addEvent({
             delay: 1000,
             loop: true,
@@ -3679,55 +2624,46 @@
                 this.healTarget("robot", 5);
             },
           });
-
-          console.log("🥊 Scene5: Ринг готов!");
+          // ── Фоновая музыка Scene5 ─────────────────────────────
+          this.bgm = this.sound.add("fon3", { loop: true, volume: 0.25 });
+          this.bgm.play();
         }
-
         update() {
-          // Если бой завершён — ничего не делаем
           if (this.fighterDead && this.robotDead) return;
-
-          const joystickState = this.registry.get("joystickState") || {};
-          const isMobile = this.registry.get("isMobile") || false;
-
-          const leftPressed =
-            this.cursors.left.isDown || (isMobile && joystickState.left);
-          const rightPressed =
-            this.cursors.right.isDown || (isMobile && joystickState.right);
-          const downNow =
-            this.cursors.down.isDown || (isMobile && joystickState.down);
-          const downJust = downNow && !this.prevDown;
-          this.prevDown = downNow;
-
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          const dn = this.cursors.down.isDown || (mob && js.down);
+          const dj = dn && !this.prevDown;
+          this.prevDown = dn;
           this.updateRobot();
           this.updateHitZones();
           this.checkHits();
-
-          // ── Прыжок ────────────────────────────────────────────────────
-          const jumpPressed =
+          const jp =
             Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
-            (isMobile && joystickState.isJumping);
-          if (jumpPressed && !this.isJumping && !this.isAttacking) {
+            (mob && js.isJumping);
+          if (jp && !this.isJumping && !this.isAttacking) {
             this.isJumping = true;
-            let jumpVelocityX = 0;
-            if (isMobile && joystickState.jumpDirection === "left") {
-              jumpVelocityX = -200;
+            let vx = 0;
+            if (mob && js.jumpDirection === "left") {
+              vx = -200;
               this.fighter.flipX = true;
               this.fighterFacing = "left";
-            } else if (isMobile && joystickState.jumpDirection === "right") {
-              jumpVelocityX = 200;
+            } else if (mob && js.jumpDirection === "right") {
+              vx = 200;
               this.fighter.flipX = false;
               this.fighterFacing = "right";
             } else if (this.cursors.left.isDown) {
-              jumpVelocityX = -200;
+              vx = -200;
               this.fighter.flipX = true;
               this.fighterFacing = "left";
             } else if (this.cursors.right.isDown) {
-              jumpVelocityX = 200;
+              vx = 200;
               this.fighter.flipX = false;
               this.fighterFacing = "right";
             }
-            this.fighter.setVelocityX(jumpVelocityX);
+            this.fighter.setVelocityX(vx);
             this.tweens.add({
               targets: this.fighter,
               y: this.fighter.y - 220,
@@ -3740,36 +2676,28 @@
               },
             });
           }
-
           if (this.isJumping) return;
-
-          // ── Удар ──────────────────────────────────────────────────────
-          if (downJust && !this.isAttacking) {
+          if (dj && !this.isAttacking) {
             this.isAttacking = true;
             this.fighter.setVelocityX(0);
-            // Сразу разворачиваем к роботу до начала анимации
-            const attackDir =
-              this.robot && this.robot.x > this.fighter.x ? 1 : -1;
-            this.fighter.flipX = attackDir === -1;
-            this.fighterFacing = attackDir === 1 ? "right" : "left";
-            const attack = Phaser.Math.RND.pick(["fight_kick", "fight_punch"]);
-            this.fighter.anims.play(attack, true);
+            const ad = this.robot && this.robot.x > this.fighter.x ? 1 : -1;
+            this.fighter.flipX = ad === -1;
+            this.fighterFacing = ad === 1 ? "right" : "left";
+            const atk = Phaser.Math.RND.pick(["fight_kick", "fight_punch"]);
+            this.fighter.anims.play(atk, true);
             this.fighter.once("animationcomplete", () => {
               this.isAttacking = false;
               this.fighter.anims.play("fight_idle", true);
             });
             return;
           }
-
           if (this.isAttacking) return;
-
-          // ── Движение ─────────────────────────────────────────────────
-          if (leftPressed) {
+          if (lp) {
             this.fighter.setVelocityX(-200);
             this.fighter.flipX = true;
             this.fighterFacing = "left";
             this.fighter.anims.play("fight_walk", true);
-          } else if (rightPressed) {
+          } else if (rp) {
             this.fighter.setVelocityX(200);
             this.fighter.flipX = false;
             this.fighterFacing = "right";
@@ -3779,25 +2707,19 @@
             this.fighter.anims.play("fight_idle", true);
           }
         }
-
         updateHitZones() {
-          // ХИТЗОНА ИГРОКА — активна только во время удара
           if (this.isAttacking) {
             const dir = this.robot && this.robot.x > this.fighter.x ? -1 : 1;
             this.fighter.flipX = dir === -1;
             this.fighterFacing = dir === 1 ? "right" : "left";
-            const curAnim = this.fighter.anims.currentAnim;
-            const isKick = curAnim && curAnim.key === "fight_kick";
-            // Координаты из пикселей спрайта (scale 1.5, origin bottom)
-            // Нога: 129px по X, 205px вверх; Рука: 80px по X, 150px вверх
-            this.fighterFist.x = this.fighter.x - dir * (isKick ? 129 : 80);
-            this.fighterFist.y = this.fighter.y - (isKick ? 205 : 150);
+            const ca = this.fighter.anims.currentAnim;
+            const ik = ca && ca.key === "fight_kick";
+            this.fighterFist.x = this.fighter.x - dir * (ik ? 129 : 80);
+            this.fighterFist.y = this.fighter.y - (ik ? 205 : 150);
           } else {
             this.fighterFist.x = -999;
             this.fighterFist.y = -999;
           }
-
-          // ХИТЗОНА РОБОТА — активна только во время удара
           if (this.robotAttacking) {
             const dir = this.robotFacing === "right" ? 1 : -1;
             this.robotFist.x = this.robot.x + dir * 80;
@@ -3807,9 +2729,7 @@
             this.robotFist.y = -999;
           }
         }
-
         checkHits() {
-          // Кулак ИГРОКА попал в РОБОТА
           if (
             !this.fighterHitCooldown &&
             this.isAttacking &&
@@ -3819,13 +2739,14 @@
             )
           ) {
             this.fighterHitCooldown = true;
-            // Расчёт урона с учётом ярости
-            const baseDmg = Phaser.Math.Between(0, 5);
-            const finalDmg = this.calcFighterDamage(baseDmg);
-            this.applyDamage("robot", finalDmg);
-            // Отталкивание робота от игрока
-            const kbDirR = this.robot.x > this.fighter.x ? 1 : -1;
-            this.robot.setVelocityX(kbDirR * 300);
+            const base = Phaser.Math.Between(0, 5);
+            const final = this.calcFighterDamage(base);
+            this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+              volume: 0.8,
+            });
+            this.applyDamage("robot", final);
+            const kbR = this.robot.x > this.fighter.x ? 1 : -1;
+            this.robot.setVelocityX(kbR * 300);
             this.time.delayedCall(200, () => {
               if (this.robot) this.robot.setVelocityX(0);
             });
@@ -3833,8 +2754,6 @@
               this.fighterHitCooldown = false;
             });
           }
-
-          // Кулак РОБОТА попал в ИГРОКА
           if (
             !this.robotHitCooldown &&
             this.robotAttacking &&
@@ -3844,10 +2763,12 @@
             )
           ) {
             this.robotHitCooldown = true;
+            this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+              volume: 0.8,
+            });
             this.applyDamage("fighter", Phaser.Math.Between(0, 20));
-            // Отталкивание игрока от робота
-            const kbDirF = this.fighter.x > this.robot.x ? 1 : -1;
-            this.fighter.setVelocityX(kbDirF * 300);
+            const kbF = this.fighter.x > this.robot.x ? 1 : -1;
+            this.fighter.setVelocityX(kbF * 300);
             this.time.delayedCall(200, () => {
               if (this.fighter) this.fighter.setVelocityX(0);
             });
@@ -3856,12 +2777,10 @@
             });
           }
         }
-
         applyDamage(target, dmg) {
           if (target === "robot") {
             if (this.robotDead) return;
             this.robotHP = Math.max(0, this.robotHP - dmg);
-            // Обновляем шкалу
             this.robotHpBar.width = (this.robotHP / 100) * 160;
             this.robotHpBar.setFillStyle(
               this.robotHP > 60
@@ -3871,12 +2790,10 @@
                   : 0xff0000,
             );
             this.robotHpTxt.setText("HP:" + this.robotHP);
-            // Красное мигание
             this.robot.setTint(0xff0000);
             this.time.delayedCall(150, () => {
               if (this.robot) this.robot.clearTint();
             });
-            // Плавающий текст
             const t = this.add
               .text(this.robot.x, this.robot.y - 260, "-" + dmg, {
                 fontSize: "28px",
@@ -3937,7 +2854,6 @@
             }
           }
         }
-
         healTarget(target, amount) {
           if (target === "fighter") {
             if (this.fighterHP >= 100) return;
@@ -3965,22 +2881,15 @@
             this.robotHpTxt.setText("HP:" + this.robotHP);
           }
         }
-
         calcFighterDamage(base) {
-          // Режим ярости активируется при HP <= 20%
           if (this.fighterHP > 20) return base;
-
-          // Урон x5 от базы
           let dmg = base * 5;
-
-          // Критический удар — балансированный шанс 20%
-          // При низком HP чаще: 20% + бонус до 35% при 1HP
           const critChance = 0.2 + ((20 - this.fighterHP) / 20) * 0.15;
-          const isCrit = Math.random() < critChance;
-          if (isCrit) {
-            dmg = base * 5 + base * 5; // 100% крит = двойной урон ярости
-            // Визуальный эффект крита
-            const crit = this.add
+          if (Math.random() < critChance) {
+            dmg = base * 10;
+            // ── Звук крита ────────────────────────────────────────────
+            this.sound.play("krit", { volume: 1.0 });
+            const c = this.add
               .text(this.robot.x, this.robot.y - 300, "КРИТ!", {
                 fontSize: "40px",
                 fontFamily: '"3_Muz-TV2000.ttf"',
@@ -3991,19 +2900,19 @@
               .setOrigin(0.5)
               .setDepth(35);
             this.tweens.add({
-              targets: crit,
-              y: crit.y - 60,
+              targets: c,
+              y: c.y - 60,
               alpha: 0,
               scale: 1.5,
               duration: 800,
               ease: "Power2",
-              onComplete: () => crit.destroy(),
+              onComplete: () => c.destroy(),
             });
           }
-
-          // Показываем иконку ярости если ещё не показана
           if (!this.rageActive) {
             this.rageActive = true;
+            // ── Звук ярости ───────────────────────────────────────────
+            this.sound.play("rage", { volume: 0.9 });
             this.rageIcon = this.add
               .text(400, 80, "🔥 ЯРОСТЬ! 🔥", {
                 fontSize: "36px",
@@ -4023,62 +2932,52 @@
               yoyo: true,
               repeat: 2,
             });
-            // Красная рамка вокруг шкалы игрока
             this.fighterHpBar.setFillStyle(0xff0000);
           }
           return Math.round(dmg);
         }
-
         endFight(result) {
+          if (this.bgm) this.bgm.stop();
           this.robot.setVelocity(0, 0);
           this.fighter.setVelocity(0, 0);
-          this.fighterDead = true; // блокируем управление в обоих случаях
+          this.fighterDead = true;
           this.robotDead = true;
-
           if (result === "win") {
-            // ── Взрыв робота ──────────────────────────────────────
             this.robot.setVisible(false);
-            // Несколько волн взрыва для эффекта
-            const boomPositions = [
+            this.sound.play("boom_snd", { volume: 1.0 });
+            [
               { x: this.robot.x, y: this.robot.y - 150, s: 1.2 },
               { x: this.robot.x - 50, y: this.robot.y - 80, s: 0.8 },
               { x: this.robot.x + 40, y: this.robot.y - 200, s: 0.9 },
-            ];
-            boomPositions.forEach((b, i) => {
+            ].forEach((b, i) => {
               this.time.delayedCall(i * 180, () => {
-                const boom = this.add.image(b.x, b.y, "boom");
-                boom
-                  .setScale(0.1)
+                const bm = this.add.image(b.x, b.y, "boom");
+                bm.setScale(0.1)
                   .setBlendMode(Phaser.BlendModes.ADD)
                   .setDepth(25);
                 this.tweens.add({
-                  targets: boom,
+                  targets: bm,
                   scale: { from: 0.1, to: b.s },
                   alpha: { from: 1, to: 0 },
                   duration: 600,
                   ease: "Power2",
-                  onComplete: () => boom.destroy(),
+                  onComplete: () => bm.destroy(),
                 });
               });
             });
           } else {
-            // ── Игрок падает — поворачиваем горизонтально ─────────
-            // Запоминаем позицию ДО поворота
-            const deadY = this.fighter.y;
-            const deadX = this.fighter.x;
-            // Убиваем все твины чтобы прыжок не двигал спрайт
+            this.sound.play("knockout", { volume: 1.0 });
+            const dy = this.fighter.y,
+              dx = this.fighter.x;
             this.tweens.killTweensOf(this.fighter);
             this.fighter.anims.stop();
             this.fighter.body.setVelocity(0, 0);
             this.fighter.body.setEnable(false);
             this.isJumping = false;
-            // Кладём спрайт: angle=90, фиксируем позицию
             this.fighter.setAngle(90);
-            this.fighter.x = deadX;
-            this.fighter.y = deadY;
+            this.fighter.x = dx;
+            this.fighter.y = dy;
           }
-
-          // ── Текст результата ──────────────────────────────────────
           const msg = result === "win" ? "ПОБЕДА!" : "НОКАУТ!";
           const color = result === "win" ? "#00ff00" : "#ff0000";
           this.time.delayedCall(result === "win" ? 600 : 200, () => {
@@ -4086,7 +2985,7 @@
               .text(400, 280, msg, {
                 fontSize: "120px",
                 fontFamily: '"3_Muz-TV2000.ttf"',
-                color: color,
+                color,
                 stroke: "#000000",
                 strokeThickness: 12,
               })
@@ -4100,21 +2999,16 @@
               ease: "Back.easeOut",
             });
           });
-
           this.time.delayedCall(3500, () => {
             this.scene.start("MainMenuScene");
           });
         }
-
         updateRobot() {
           if (!this.robot || !this.robot.active) return;
-
           const dx = this.fighter.x - this.robot.x;
           const dist = Math.abs(dx);
-          const stopGap = 120; // отступ — робот останавливается рядом, не слипаясь
-          const touchRange = stopGap + 20; // чуть больше stopGap — зона удара
-
-          // Флип робота по направлению к игроку
+          const stopGap = 120;
+          const touchRange = stopGap + 20;
           if (dx < 0) {
             this.robot.flipX = true;
             this.robotFacing = "left";
@@ -4122,11 +3016,8 @@
             this.robot.flipX = false;
             this.robotFacing = "right";
           }
-
-          if (this.robotAttacking) return; // идёт анимация удара
-
+          if (this.robotAttacking) return;
           if (dist <= touchRange) {
-            // ── В зоне удара ──────────────────────────────────────────
             if (!this.robotCooldown) {
               this.robotAttacking = true;
               this.robotCooldown = true;
@@ -4136,23 +3027,19 @@
               this.robot.once("animationcomplete", () => {
                 this.robotAttacking = false;
                 this.robot.anims.play("robot_run", true);
-                // Кулдаун 0.8 сек перед следующим ударом
                 this.time.delayedCall(800, () => {
                   this.robotCooldown = false;
                 });
               });
             } else {
-              // Кулдаун — стоим на месте
               this.robot.setVelocityX(0);
               this.robot.anims.play("robot_run", true);
             }
           } else if (dist > stopGap) {
-            // ── Преследование игрока ──────────────────────────────────
             const speed = 160;
             this.robot.setVelocityX(dx > 0 ? speed : -speed);
             this.robot.anims.play("robot_run", true);
           } else {
-            // ── В отступе — стоим лицом к игроку
             this.robot.setVelocityX(0);
             this.robot.anims.play("robot_run", true);
           }
@@ -4160,174 +3047,92 @@
       }
 
       // =================================================================
-      // SCENE 7: ВИРТУАЛЬНЫЙ ДЖОЙСТИК ДЛЯ МОБИЛЬНЫХ
+      // VIRTUAL CONTROLS
       // =================================================================
       class VirtualControlsScene extends Phaser.Scene {
         constructor() {
           super({ key: "VirtualControlsScene", active: false });
         }
-
         create() {
-          // Проверяем, мобильное ли устройство
           const isMobile =
             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
               navigator.userAgent,
             ) || window.innerWidth < 768;
-
           if (!isMobile) {
-            console.log("💻 Десктоп - джойстик отключён");
             this.registry.set("isMobile", false);
             return;
           }
-
-          console.log("🕹️ Мобильное устройство - создаём виртуальный джойстик");
           this.registry.set("isMobile", true);
-
-          // Состояние джойстика
           this.joystickState = {
             left: false,
             right: false,
             up: false,
             down: false,
             isJumping: false,
-            jumpDirection: null, // 'left', 'right', или null для прыжка на месте
+            jumpDirection: null,
           };
-
-          // Параметры джойстика
-          const joystickX = 680; // Позиция в правом нижнем углу
-          const joystickY = 500;
-          const baseRadius = 60; // Радиус базы джойстика
-          const stickRadius = 30; // Радиус стика
-          const maxDistance = 40; // Максимальное расстояние стика от центра
-
-          // База джойстика (неподвижный круг)
-          this.joystickBase = this.add.circle(
-            joystickX,
-            joystickY,
-            baseRadius,
-            0x333333,
-            0.3,
-          );
+          const jx = 680,
+            jy = 500,
+            br = 60,
+            sr = 30,
+            md = 40;
+          this.joystickBase = this.add.circle(jx, jy, br, 0x333333, 0.3);
           this.joystickBase.setStrokeStyle(3, 0x666666, 0.5);
           this.joystickBase.setScrollFactor(0);
-
-          // Стик джойстика (подвижный круг)
-          this.joystickStick = this.add.circle(
-            joystickX,
-            joystickY,
-            stickRadius,
-            0x00ff00,
-            0.6,
-          );
+          this.joystickStick = this.add.circle(jx, jy, sr, 0x00ff00, 0.6);
           this.joystickStick.setStrokeStyle(3, 0x00cc00, 0.8);
           this.joystickStick.setScrollFactor(0);
-
-          // Стрелки для визуальной подсказки (8 направлений)
-          const arrowStyle = { fontSize: "16px", color: "#666666" };
-          this.add
-            .text(joystickX, joystickY - baseRadius - 15, "⬆", arrowStyle)
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setAlpha(0.5);
-          this.add
-            .text(joystickX + baseRadius + 15, joystickY, "➡", arrowStyle)
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setAlpha(0.5);
-          this.add
-            .text(joystickX, joystickY + baseRadius + 15, "⬇", arrowStyle)
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setAlpha(0.5);
-          this.add
-            .text(joystickX - baseRadius - 15, joystickY, "⬅", arrowStyle)
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setAlpha(0.5);
-
-          // Переменные для отслеживания
+          const as = { fontSize: "16px", color: "#666666" };
+          [
+            { t: "⬆", x: jx, y: jy - br - 15 },
+            { t: "➡", x: jx + br + 15, y: jy },
+            { t: "⬇", x: jx, y: jy + br + 15 },
+            { t: "⬅", x: jx - br - 15, y: jy },
+          ].forEach((a) =>
+            this.add
+              .text(a.x, a.y, a.t, as)
+              .setOrigin(0.5)
+              .setScrollFactor(0)
+              .setAlpha(0.5),
+          );
           this.joystickActive = false;
           this.lastJumpTime = 0;
-          const minJumpInterval = 500; // Минимальный интервал между прыжками (мс)
-
-          // Создаём интерактивную зону вокруг джойстика
-          const joystickZone = this.add.zone(
-            joystickX,
-            joystickY,
-            baseRadius * 3,
-            baseRadius * 3,
-          );
-          joystickZone.setInteractive();
-          joystickZone.setScrollFactor(0);
-
-          // Начало касания
-          joystickZone.on("pointerdown", (pointer) => {
+          const zone = this.add.zone(jx, jy, br * 3, br * 3);
+          zone.setInteractive();
+          zone.setScrollFactor(0);
+          zone.on("pointerdown", (p) => {
             this.joystickActive = true;
-            this.updateJoystick(
-              pointer.x,
-              pointer.y,
-              joystickX,
-              joystickY,
-              maxDistance,
-            );
+            this.updateJoystick(p.x, p.y, jx, jy, md);
           });
-
-          // Движение пальца
-          joystickZone.on("pointermove", (pointer) => {
+          zone.on("pointermove", (p) => {
             if (!this.joystickActive) return;
-            this.updateJoystick(
-              pointer.x,
-              pointer.y,
-              joystickX,
-              joystickY,
-              maxDistance,
-            );
+            this.updateJoystick(p.x, p.y, jx, jy, md);
           });
-
-          // Глобальное движение (если палец уходит за пределы зоны)
-          this.input.on("pointermove", (pointer) => {
+          this.input.on("pointermove", (p) => {
             if (!this.joystickActive) return;
-            this.updateJoystick(
-              pointer.x,
-              pointer.y,
-              joystickX,
-              joystickY,
-              maxDistance,
-            );
+            this.updateJoystick(p.x, p.y, jx, jy, md);
           });
-
-          // Отпускание пальца
-          const resetJoystick = () => {
+          const reset = () => {
             if (!this.joystickActive) return;
-
             this.joystickActive = false;
-
-            // Возвращаем стик в центр с анимацией
             this.tweens.add({
               targets: this.joystickStick,
-              x: joystickX,
-              y: joystickY,
+              x: jx,
+              y: jy,
               duration: 100,
               ease: "Power2",
             });
-
-            // Сбрасываем состояния
             this.joystickState.left = false;
             this.joystickState.right = false;
             this.joystickState.up = false;
             this.joystickState.down = false;
           };
-
-          joystickZone.on("pointerup", resetJoystick);
-          joystickZone.on("pointerout", resetJoystick);
-          this.input.on("pointerup", resetJoystick);
-
-          // Сохраняем в registry для доступа из других сцен
+          zone.on("pointerup", reset);
+          zone.on("pointerout", reset);
+          this.input.on("pointerup", reset);
           this.registry.set("joystickState", this.joystickState);
-
-          // Визуальная подсказка
           const hint = this.add
-            .text(joystickX, joystickY - 100, "Джойстик\nдля управления", {
+            .text(jx, jy - 100, "Джойстик\nдля управления", {
               fontFamily: '"3_Muz-TV2000.ttf"',
               fontSize: "18px",
               color: "#888888",
@@ -4336,8 +3141,6 @@
             .setOrigin(0.5)
             .setAlpha(0.6)
             .setScrollFactor(0);
-
-          // Убираем подсказку через 3 секунды
           this.tweens.add({
             targets: hint,
             alpha: 0,
@@ -4346,116 +3149,70 @@
             onComplete: () => hint.destroy(),
           });
         }
-
-        updateJoystick(pointerX, pointerY, centerX, centerY, maxDistance) {
-          const deltaX = pointerX - centerX;
-          const deltaY = pointerY - centerY;
-          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-          const angle = Math.atan2(deltaY, deltaX);
-
-          // Ограничиваем стик максимальной дистанцией
-          let stickX, stickY;
-          if (distance > maxDistance) {
-            stickX = centerX + Math.cos(angle) * maxDistance;
-            stickY = centerY + Math.sin(angle) * maxDistance;
+        updateJoystick(px, py, cx, cy, md) {
+          const dx = px - cx,
+            dy = py - cy,
+            dist = Math.sqrt(dx * dx + dy * dy),
+            angle = Math.atan2(dy, dx);
+          let sx, sy;
+          if (dist > md) {
+            sx = cx + Math.cos(angle) * md;
+            sy = cy + Math.sin(angle) * md;
           } else {
-            stickX = pointerX;
-            stickY = pointerY;
+            sx = px;
+            sy = py;
           }
-
-          // Обновляем позицию стика
-          this.joystickStick.x = stickX;
-          this.joystickStick.y = stickY;
-
-          // Определяем направление (нужна минимальная дистанция для срабатывания)
-          const deadZone = 10; // Мёртвая зона в центре
-
-          if (distance > deadZone) {
-            // Определяем угол в градусах
-            const degrees = angle * (180 / Math.PI);
-
-            // Сбрасываем все направления
+          this.joystickStick.x = sx;
+          this.joystickStick.y = sy;
+          const dz = 10;
+          if (dist > dz) {
+            const deg = angle * (180 / Math.PI);
             this.joystickState.left = false;
             this.joystickState.right = false;
             this.joystickState.up = false;
             this.joystickState.down = false;
-
-            // Определяем направление по углу (8 направлений)
-            // Вправо: -22.5° до 22.5°
-            if (degrees >= -22.5 && degrees <= 22.5) {
-              this.joystickState.right = true;
-            }
-            // Вправо-вниз: 22.5° до 67.5°
-            else if (degrees > 22.5 && degrees <= 67.5) {
+            if (deg >= -22.5 && deg <= 22.5) this.joystickState.right = true;
+            else if (deg > 22.5 && deg <= 67.5) {
               this.joystickState.right = true;
               this.joystickState.down = true;
-            }
-            // Вниз: 67.5° до 112.5°
-            else if (degrees > 67.5 && degrees <= 112.5) {
+            } else if (deg > 67.5 && deg <= 112.5)
               this.joystickState.down = true;
-            }
-            // Влево-вниз: 112.5° до 157.5°
-            else if (degrees > 112.5 && degrees <= 157.5) {
+            else if (deg > 112.5 && deg <= 157.5) {
               this.joystickState.left = true;
               this.joystickState.down = true;
-            }
-            // Влево: 157.5° до 180° или -180° до -157.5°
-            else if (degrees > 157.5 || degrees <= -157.5) {
+            } else if (deg > 157.5 || deg <= -157.5)
               this.joystickState.left = true;
-            }
-            // Влево-вверх: -157.5° до -112.5°
-            else if (degrees > -157.5 && degrees <= -112.5) {
+            else if (deg > -157.5 && deg <= -112.5) {
               this.joystickState.left = true;
               this.joystickState.up = true;
-            }
-            // Вверх: -112.5° до -67.5°
-            else if (degrees > -112.5 && degrees <= -67.5) {
+            } else if (deg > -112.5 && deg <= -67.5)
               this.joystickState.up = true;
-            }
-            // Вправо-вверх: -67.5° до -22.5°
-            else if (degrees > -67.5 && degrees <= -22.5) {
+            else if (deg > -67.5 && deg <= -22.5) {
               this.joystickState.right = true;
               this.joystickState.up = true;
             }
-
-            // ПРЫЖОК: если джойстик наклонён вверх
             if (this.joystickState.up && !this.joystickState.isJumping) {
               const now = this.time.now;
               if (now - this.lastJumpTime > 500) {
-                // Анти-спам прыжков
                 this.joystickState.isJumping = true;
                 this.lastJumpTime = now;
-
-                // Определяем направление прыжка
-                if (this.joystickState.left) {
+                if (this.joystickState.left)
                   this.joystickState.jumpDirection = "left";
-                  console.log("🕹️ Прыжок ВЛЕВО-ВВЕРХ");
-                } else if (this.joystickState.right) {
+                else if (this.joystickState.right)
                   this.joystickState.jumpDirection = "right";
-                  console.log("🕹️ Прыжок ВПРАВО-ВВЕРХ");
-                } else {
-                  this.joystickState.jumpDirection = null;
-                  console.log("🕹️ Прыжок ВВЕРХ");
-                }
-
-                // Сбрасываем прыжок через 100мс
+                else this.joystickState.jumpDirection = null;
                 this.time.delayedCall(100, () => {
                   this.joystickState.isJumping = false;
                   this.joystickState.jumpDirection = null;
                 });
               }
             }
-
-            // Визуальная обратная связь - меняем цвет стика
-            if (this.joystickState.up) {
-              this.joystickStick.setFillStyle(0x00ffff, 0.8); // Голубой для прыжка
-            } else if (this.joystickState.down) {
-              this.joystickStick.setFillStyle(0xffff00, 0.8); // Жёлтый для "вниз"
-            } else {
-              this.joystickStick.setFillStyle(0x00ff00, 0.6); // Зелёный для обычного движения
-            }
+            if (this.joystickState.up)
+              this.joystickStick.setFillStyle(0x00ffff, 0.8);
+            else if (this.joystickState.down)
+              this.joystickStick.setFillStyle(0xffff00, 0.8);
+            else this.joystickStick.setFillStyle(0x00ff00, 0.6);
           } else {
-            // В мёртвой зоне - сбрасываем всё
             this.joystickState.left = false;
             this.joystickState.right = false;
             this.joystickState.up = false;
@@ -4466,7 +3223,7 @@
       }
 
       // =================================================================
-      // GAME CONFIGURATION
+      // CONFIG
       // =================================================================
       const config = {
         type: Phaser.AUTO,
@@ -4495,16 +3252,10 @@
           VirtualControlsScene,
         ],
       };
-
       window.onload = async () => {
-        // Ждём загрузки шрифта перед запуском игры
         try {
           await document.fonts.ready;
-          console.log("Шрифты загружены!");
-        } catch (error) {
-          console.log("Ошибка загрузки шрифтов, запускаем игру в любом случае");
-        }
-
+        } catch (e) {}
         new Phaser.Game(config);
       };
     </script>
