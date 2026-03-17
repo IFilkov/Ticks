@@ -101,6 +101,11 @@
             frameHeight: 307,
           });
           this.load.image("boom", `${assetPath}boom.png`);
+          this.load.audio(
+            "bark_aggressive",
+            "assets/audio/bark_aggressive.mp3",
+          );
+          this.load.audio("scream1", "assets/audio/scream1.mp3");
           this.load.spritesheet("humanFight", `${assetPath}humanFight.png`, {
             frameWidth: 172,
             frameHeight: 249,
@@ -979,9 +984,20 @@
             this.dogFacing = "left";
           } else if (rightPressed) {
             this.dog.setVelocityX(200);
+            if (!this._dogGoingRight) {
+              this._dogGoingRight = true;
+              if (!this._barkCooldown) {
+                this._barkCooldown = true;
+                this.sound.play("bark_aggressive", { volume: 0.6 });
+                this.time.delayedCall(1500, () => {
+                  this._barkCooldown = false;
+                });
+              }
+            }
             this.dog.anims.play("dog_walk_right", true);
             this.dogFacing = "right";
           } else {
+            this._dogGoingRight = false;
             this.dog.setVelocityX(0);
             this.dog.anims.play("dog_idle", true);
             this.dog.flipX = this.dogFacing === "left";
@@ -1040,6 +1056,7 @@
                 this.registry.get("damageMultiplier") || 1;
               const damage = 10 * damageMultiplier;
               this.events.emit("damageHuman", damage);
+              this.sound.play("scream1", { volume: 0.7 });
               tick.destroy();
             }
           });
@@ -1786,6 +1803,7 @@
               const damage = 10 * damageMultiplier;
               console.log(`Клещ попал в голову человека! Урон -${damage} HP`);
               this.events.emit("damageHuman", damage);
+              this.sound.play("scream1", { volume: 0.7 });
               tick.destroy();
             }
           });
@@ -1944,10 +1962,24 @@
         updateDogAI() {
           this.dog.flipX = false;
           if (this.dog.body.velocity.x < 0) {
+            if (this._dogGoingRight) {
+              this._dogGoingRight = false;
+            }
             this.dog.anims.play("dog_walk_left", true);
           } else if (this.dog.body.velocity.x > 0) {
+            if (!this._dogGoingRight) {
+              this._dogGoingRight = true;
+              if (!this._barkCooldown) {
+                this._barkCooldown = true;
+                this.sound.play("bark_aggressive", { volume: 0.6 });
+                this.time.delayedCall(1500, () => {
+                  this._barkCooldown = false;
+                });
+              }
+            }
             this.dog.anims.play("dog_walk_right", true);
           } else {
+            this._dogGoingRight = false;
             this.dog.anims.play("dog_idle", true);
             this.dog.flipX = this.dogDirection === "left";
           }
@@ -3320,6 +3352,13 @@
           if (this.dog.body.velocity.x < 0) {
             this.dog.anims.play("dog_walk_left", true);
           } else if (this.dog.body.velocity.x > 0) {
+            if (!this._barkCooldown) {
+              this._barkCooldown = true;
+              this.sound.play("bark_aggressive", { volume: 0.6 });
+              this.time.delayedCall(1500, () => {
+                this._barkCooldown = false;
+              });
+            }
             this.dog.anims.play("dog_walk_right", true);
           } else {
             this.dog.anims.play("dog_idle", true);
