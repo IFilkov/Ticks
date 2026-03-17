@@ -102,7 +102,7 @@
             "bark_aggressive",
             "assets/audio/bark_aggressive.mp3",
           );
-          this.load.audio("groan1", "assets/audio/groan1.mp3");
+          this.load.audio("scream2", "assets/audio/scream2.mp3");
           this.load.audio("bark", "assets/audio/bark.mp3");
           this.load.audio("eat", "assets/audio/eat.mp3");
           this.load.audio("hit2", "assets/audio/hit2.mp3");
@@ -189,6 +189,7 @@
           if (this.sound.get("fon_menu")) {
             this.sound.stopByKey("fon_menu");
           }
+          this.sound.stopAll();
           this.bgm = this.sound.add("fon_menu", { loop: true, volume: 0.25 });
           this.bgm.play();
 
@@ -691,7 +692,7 @@
             ) {
               const dm = this.registry.get("damageMultiplier") || 1;
               this.events.emit("damageHuman", 10 * dm);
-              this.sound.play("groan1", { volume: 0.7 });
+              this.sound.play("scream2", { volume: 0.7 });
               tick.destroy();
             }
           });
@@ -1034,6 +1035,7 @@
             callbackScope: this,
           });
           // ── Фоновая музыка Scene2 ─────────────────────────────
+          this.sound.stopAll();
           this.bgm = this.sound.add("fon1", { loop: true, volume: 0.25 });
           this.bgm.play();
         }
@@ -1214,7 +1216,7 @@
             if (tick.isFalling && tick.body && !tick.isKicked) {
               const dm = this.registry.get("damageMultiplier") || 1;
               this.events.emit("damageHuman", 10 * dm);
-              this.sound.play("groan1", { volume: 0.7 });
+              this.sound.play("scream2", { volume: 0.7 });
               tick.destroy();
             }
           });
@@ -2087,6 +2089,7 @@
           this.boomCooldown = false;
           this.thrownConnecter = null;
           // ── Фоновая музыка Scene4 ─────────────────────────────
+          this.sound.stopAll();
           this.bgm = this.sound.add("fon2", { loop: true, volume: 0.25 });
           this.bgm.play();
         }
@@ -2360,6 +2363,9 @@
             this.dog.flipX = this.dogDirection === "left";
           }
         }
+        shutdown() {
+          if (this.bgm) this.bgm.stop();
+        }
       }
 
       // =================================================================
@@ -2625,6 +2631,7 @@
             },
           });
           // ── Фоновая музыка Scene5 ─────────────────────────────
+          this.sound.stopAll();
           this.bgm = this.sound.add("fon3", { loop: true, volume: 0.25 });
           this.bgm.play();
         }
@@ -3002,6 +3009,9 @@
           this.time.delayedCall(3500, () => {
             this.scene.start("MainMenuScene");
           });
+        }
+        shutdown() {
+          if (this.bgm) this.bgm.stop();
         }
         updateRobot() {
           if (!this.robot || !this.robot.active) return;
