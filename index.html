@@ -102,7 +102,7 @@
             "bark_aggressive",
             "assets/audio/bark_aggressive.mp3",
           );
-          this.load.audio("scream2", "assets/audio/scream2.mp3");
+          this.load.audio("groan1", "assets/audio/groan1.mp3");
           this.load.audio("bark", "assets/audio/bark.mp3");
           this.load.audio("eat", "assets/audio/eat.mp3");
           this.load.audio("hit2", "assets/audio/hit2.mp3");
@@ -113,6 +113,7 @@
           this.load.audio("rage", "assets/audio/rage.mp3");
           this.load.audio("krit", "assets/audio/krit.mp3");
           // ── Фоновые треки ───────────────────────────────────────
+          this.load.audio("bomj", "assets/audio/bomj.mp3");
           this.load.audio("fon_menu", "assets/audio/menu.mp3");
           this.load.audio("fon1", "assets/audio/fon1.mp3");
           this.load.audio("fon2", "assets/audio/fon2.mp3");
@@ -692,7 +693,7 @@
             ) {
               const dm = this.registry.get("damageMultiplier") || 1;
               this.events.emit("damageHuman", 10 * dm);
-              this.sound.play("scream2", { volume: 0.7 });
+              this.sound.play("groan1", { volume: 0.7 });
               tick.destroy();
             }
           });
@@ -1216,7 +1217,7 @@
             if (tick.isFalling && tick.body && !tick.isKicked) {
               const dm = this.registry.get("damageMultiplier") || 1;
               this.events.emit("damageHuman", 10 * dm);
-              this.sound.play("scream2", { volume: 0.7 });
+              this.sound.play("groan1", { volume: 0.7 });
               tick.destroy();
             }
           });
@@ -1403,6 +1404,7 @@
                 )
               ) {
                 closest.destroy();
+                this.sound.play("bomj", { volume: 0.8 });
                 if (!this.isHomelessDead) this.events.emit("healHomeless", 40);
                 this.homeless.setVelocityX(0);
                 this.homeless.anims.play("homeless_victory", true);
