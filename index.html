@@ -1,29 +1,3378 @@
-<!DOCTYPE html>
-<html lang="ru">
+<!doctype html>
+<html>
   <head>
     <meta charset="UTF-8" />
-    <title>Phaser Game</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Tick Defender</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      body {
+      @font-face {
+        font-family: "3_Muz-TV2000.ttf";
+        src: url("assets/fonts/3_Muz-TV2000.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+      }
+      * {
         margin: 0;
-        background: #000;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
         overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none;
+      }
+      body {
+        display: block;
+        background-color: #000000;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        /* Phaser FIT mode handles sizing — no override needed */
       }
     </style>
   </head>
   <body>
-    <!-- Phaser -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <script>
+      // =================================================================
+      // SCENE 1: PRELOAD
+      // =================================================================
+      class PreloadScene extends Phaser.Scene {
+        constructor() {
+          super("PreloadScene");
+        }
+        preload() {
+          const assetPath = "assets/images/";
+          this.load.spritesheet("player", `${assetPath}player_sprite.png`, {
+            frameWidth: 216,
+            frameHeight: 312,
+          });
+          this.load.spritesheet("dog_sprite", `${assetPath}dog_sprite.png`, {
+            frameWidth: 195,
+            frameHeight: 128,
+          });
+          this.load.spritesheet("homeless", `${assetPath}homeless_sprite.png`, {
+            frameWidth: 216,
+            frameHeight: 312,
+          });
+          this.load.image("tick", `${assetPath}tick.png`);
+          this.load.image("sky", `${assetPath}sky.jpg`);
+          this.load.image("background", `${assetPath}background.png`);
+          this.load.image("background2", `${assetPath}background2.png`);
+          this.load.image("mushroom", `${assetPath}mushroom.png`);
+          this.load.spritesheet("socket", `${assetPath}socket.png`, {
+            frameWidth: 512,
+            frameHeight: 512,
+          });
+          this.load.image("conecter", `${assetPath}conecter.png`);
+          this.load.spritesheet("flash", `${assetPath}flash.png`, {
+            frameWidth: 281,
+            frameHeight: 307,
+          });
+          this.load.image("boom", `${assetPath}boom.png`);
+          this.load.spritesheet("humanFight", `${assetPath}humanFight.png`, {
+            frameWidth: 172,
+            frameHeight: 249,
+          });
+          this.load.spritesheet("robot", `${assetPath}robot.png`, {
+            frameWidth: 172,
+            frameHeight: 249,
+          });
+          // ── Звуки ──────────────────────────────────────────────────────
+          this.load.audio(
+            "bark_aggressive",
+            "assets/audio/bark_aggressive.mp3",
+          );
+          this.load.audio("groan1", "assets/audio/groan1.mp3");
+          this.load.audio("bark", "assets/audio/bark.mp3");
+          this.load.audio("eat", "assets/audio/eat.mp3");
+          this.load.audio("hit2", "assets/audio/hit2.mp3");
+          this.load.audio("hit3", "assets/audio/hit3.mp3");
+          this.load.audio("tok", "assets/audio/tok.mp3");
+          this.load.audio("boom_snd", "assets/audio/boom.mp3");
+          this.load.audio("knockout", "assets/audio/knockout.mp3");
+          this.load.audio("rage", "assets/audio/rage.mp3");
+          this.load.audio("krit", "assets/audio/krit.mp3");
+          // ── Фоновые треки ───────────────────────────────────────
+          this.load.audio("bomj", "assets/audio/bomj.mp3");
+          this.load.audio("scream4", "assets/audio/scream4.mp3");
+          this.load.audio("scream2", "assets/audio/scream2.mp3");
+          // ── Превью сцен для SceneSelect ───────────────────────
+          this.load.image("preview1", "assets/images/preview1.png");
+          this.load.image("preview2", "assets/images/preview2.png");
+          this.load.image("preview3", "assets/images/preview3.png");
+          this.load.image("preview4", "assets/images/preview4.png");
+          this.load.audio("fon_menu", "assets/audio/menu.mp3");
+          this.load.audio("fon1", "assets/audio/fon1.mp3");
+          this.load.audio("fon2", "assets/audio/fon2.mp3");
+          this.load.audio("fon3", "assets/audio/fon3.mp3");
+        }
+        create() {
+          this.createAllAnimations();
+          this.scene.start("MainMenuScene");
+        }
+        createAllAnimations() {
+          const a = (key, tex, s, e, fps, rep) => {
+            if (!this.anims.exists(key))
+              this.anims.create({
+                key,
+                frames: this.anims.generateFrameNumbers(tex, {
+                  start: s,
+                  end: e,
+                }),
+                frameRate: fps,
+                repeat: rep,
+              });
+          };
+          a("human_walk", "player", 4, 11, 10, -1);
+          a("human_idle", "player", 0, 3, 5, -1);
+          a("human_death", "player", 12, 15, 10, 0);
+          a("dog_idle", "dog_sprite", 0, 3, 5, -1);
+          a("dog_walk_right", "dog_sprite", 12, 15, 10, -1);
+          a("dog_walk_left", "dog_sprite", 5, 7, 10, -1);
+          a("dog_jump", "dog_sprite", 12, 15, 12, 0);
+          a("dog_death", "dog_sprite", 0, 0, 1, 0);
+          a("menu_human_walk", "player", 4, 11, 10, -1);
+          a("menu_human_idle", "player", 0, 3, 5, -1);
+          a("menu_dog_idle", "dog_sprite", 0, 3, 5, -1);
+          a("menu_dog_walk_right", "dog_sprite", 12, 15, 10, -1);
+          a("menu_dog_walk_left", "dog_sprite", 5, 7, 10, -1);
+          a("homeless_idle", "homeless", 0, 3, 5, -1);
+          a("homeless_walk", "homeless", 4, 7, 10, -1);
+          a("homeless_run", "homeless", 4, 7, 14, -1);
+          a("homeless_death", "homeless", 8, 11, 8, 0);
+          a("homeless_victory", "homeless", 12, 15, 8, -1);
+          a("socket_fly", "socket", 0, 3, 6, -1);
+          a("fight_idle", "humanFight", 0, 3, 5, -1);
+          a("fight_walk", "humanFight", 4, 7, 10, -1);
+          a("fight_kick", "humanFight", 8, 11, 12, 0);
+          a("fight_punch", "humanFight", 12, 15, 12, 0);
+          a("robot_run", "robot", 0, 7, 12, -1);
+          a("robot_punch", "robot", 8, 11, 12, 0);
+          a("robot_kick", "robot", 12, 15, 12, 0);
+          a("flash_anim", "flash", 0, 7, 16, 0);
+        }
+      }
 
-    <!-- Сначала сцены -->
-    <script src="./js/scenes/PreloadScene.js"></script>
-    <script src="./js/scenes/GameScene.js"></script>
-    <script src="./js/scenes/UIScene.js"></script>
+      // =================================================================
+      // MAIN MENU
+      // =================================================================
+      class MainMenuScene extends Phaser.Scene {
+        constructor() {
+          super("MainMenuScene");
+        }
+        create() {
+          this.registry.set("difficulty", null);
+          this.registry.set("damageMultiplier", 1);
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+          this.add
+            .text(400, 200, "Клещ", {
+              fontSize: "200px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#eb1717",
+            })
+            .setOrigin(0.5)
+            .setShadow(2, 2, "#000000", 2, true, true);
+          // ── Фоновая музыка меню ────────────────────────────────
+          if (this.sound.get("fon_menu")) {
+            this.sound.stopByKey("fon_menu");
+          }
+          this.sound.stopAll();
+          this.bgm = this.sound.add("fon_menu", { loop: true, volume: 0.25 });
+          this.bgm.play();
 
-    <!-- Затем конфиг -->
-    <script src="./js/config.js"></script>
+          const btn = this.add
+            .text(400, 350, "Старт", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "82px",
+              color: "#00ff00",
+              fontStyle: "bold",
+            })
+            .setOrigin(0.5)
+            .setInteractive();
+          btn.on("pointerover", () => btn.setStyle({ fill: "#ff0" }));
+          btn.on("pointerout", () => btn.setStyle({ fill: "#00ff00" }));
+          btn.on("pointerdown", () => {
+            if (this.bgm) this.bgm.stop();
+            this.scene.start("DifficultySelectScene");
+          });
+          this.human = this.physics.add.sprite(100, 580, "player");
+          this.human.setOrigin(0.5, 1).body.allowGravity = false;
+          this.humanDirection = 1;
+          this.humanPaused = false;
+          this.time.addEvent({
+            delay: 6000,
+            loop: true,
+            callback: () => {
+              this.humanPaused = true;
+              this.time.delayedCall(4000, () => {
+                this.humanPaused = false;
+              });
+            },
+          });
+          this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
+          this.dog.setCollideWorldBounds(true);
+          this.dog.setOrigin(0.5, 1).body.allowGravity = false;
+          this.dogDirection = "left";
+          this.time.addEvent({
+            delay: Phaser.Math.Between(1000, 3000),
+            loop: true,
+            callback: () => {
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.dog.setVelocityX(-100);
+                this.dogDirection = "left";
+              } else if (a === "right") {
+                this.dog.setVelocityX(100);
+                this.dogDirection = "right";
+              } else this.dog.setVelocityX(0);
+            },
+          });
+        }
+        update() {
+          this.updateHumanAI();
+          this.updateDogAI();
+        }
+        updateDogAI() {
+          this.dog.flipX = false;
+          if (this.dog.body.velocity.x < 0)
+            this.dog.anims.play("menu_dog_walk_left", true);
+          else if (this.dog.body.velocity.x > 0)
+            this.dog.anims.play("menu_dog_walk_right", true);
+          else {
+            this.dog.anims.play("menu_dog_idle", true);
+            this.dog.flipX = this.dogDirection === "left";
+          }
+        }
+        updateHumanAI() {
+          if (this.humanPaused) {
+            this.human.setVelocityX(0);
+            this.human.anims.play("menu_human_idle", true);
+            return;
+          }
+          if (this.human.x >= 760) this.humanDirection = -1;
+          else if (this.human.x <= 40) this.humanDirection = 1;
+          this.human.setVelocityX(100 * this.humanDirection);
+          this.human.flipX = this.human.body.velocity.x < 0;
+          this.human.anims.play("menu_human_walk", true);
+        }
+      }
 
-    <!-- В самом конце — запуск игры -->
-    <script src="./js/main.js"></script>
+      // =================================================================
+      // DIFFICULTY SELECT
+      // =================================================================
+      class DifficultySelectScene extends Phaser.Scene {
+        constructor() {
+          super("DifficultySelectScene");
+        }
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+          this.add
+            .text(400, 150, "Выберите сложность", {
+              fontSize: "64px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ffffff",
+            })
+            .setOrigin(0.5)
+            .setShadow(3, 3, "#000000", 5, true, true);
+          const makeBtn = (
+            x,
+            y,
+            label,
+            color,
+            hcolor,
+            hint,
+            hintColor,
+            difficulty,
+            mult,
+          ) => {
+            const btn = this.add
+              .text(x, y, label, {
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                fontSize: "60px",
+                color,
+                fontStyle: "bold",
+              })
+              .setOrigin(0.5)
+              .setInteractive();
+            btn.on("pointerover", () => btn.setStyle({ fill: hcolor }));
+            btn.on("pointerout", () => btn.setStyle({ fill: color }));
+            btn.on("pointerdown", () => {
+              this.registry.set("difficulty", difficulty);
+              this.registry.set("damageMultiplier", mult);
+              this.scene.start("SceneSelectScene");
+            });
+            this.add
+              .text(x, y + 60, hint, {
+                fontSize: "24px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: hintColor,
+              })
+              .setOrigin(0.5);
+          };
+          makeBtn(
+            400,
+            280,
+            "Нормальный",
+            "#00ff00",
+            "#ff0",
+            "Обычный урон от клещей",
+            "#aaaaaa",
+            "normal",
+            1,
+          );
+          makeBtn(
+            400,
+            420,
+            "Хардкор",
+            "#ff0000",
+            "#ff00ff",
+            "Урон от клещей x2!",
+            "#ff6666",
+            "hardcore",
+            2,
+          );
+        }
+      }
+
+      // =================================================================
+      // SCENE SELECT
+      // =================================================================
+      class SceneSelectScene extends Phaser.Scene {
+        constructor() {
+          super("SceneSelectScene");
+        }
+        create() {
+          // Тёмный фон
+          this.add.rectangle(400, 300, 800, 600, 0x111111);
+
+          const diff = this.registry.get("difficulty");
+          const diffColor = diff === "hardcore" ? "#ff4444" : "#44ff44";
+          const diffLabel = diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ";
+
+          this.add
+            .text(400, 28, "Выберите сцену", {
+              fontSize: "38px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ffffff",
+            })
+            .setOrigin(0.5)
+            .setShadow(2, 2, "#000", 4, true, true);
+
+          this.add
+            .text(400, 62, `Сложность: ${diffLabel}`, {
+              fontSize: "20px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: diffColor,
+            })
+            .setOrigin(0.5);
+
+          const scenes = [
+            {
+              key: "preview1",
+              label: "Фаза 1",
+              sub: "Клещи",
+              start: () => {
+                this.scene.start("GameScene");
+                this.scene.launch("UIScene");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+            {
+              key: "preview2",
+              label: "Фаза 2",
+              sub: "Бомж",
+              start: () => {
+                this.scene.start("Scene2");
+                this.scene.launch("UIScene2");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+            {
+              key: "preview3",
+              label: "Фаза 3",
+              sub: "Розетка",
+              start: () => {
+                this.scene.start("Scene4");
+                this.scene.launch("UIScene4");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+            {
+              key: "preview4",
+              label: "Фаза 4",
+              sub: "Ринг",
+              start: () => {
+                this.scene.start("Scene5");
+                this.scene.launch("VirtualControlsScene");
+              },
+            },
+          ];
+
+          // Плитки: 2 строки × 2 колонки
+          const tileW = 340,
+            tileH = 210;
+          const cols = 2,
+            rows = 2;
+          const padX = (800 - cols * tileW) / 2; // 60
+          const startY = 88;
+          const gapX = 20,
+            gapY = 16;
+
+          scenes.forEach((s, i) => {
+            const col = i % cols,
+              row = Math.floor(i / cols);
+            const x = padX + col * (tileW + gapX) + tileW / 2;
+            const y = startY + row * (tileH + gapY) + tileH / 2;
+
+            // Рамка
+            const border = this.add
+              .rectangle(x, y, tileW + 4, tileH + 4, 0x444444)
+              .setInteractive();
+
+            // Превью-картинка
+            const img = this.add.image(x, y, s.key);
+            img.setDisplaySize(tileW, tileH);
+
+            // Затемнение снизу для текста
+            const grad = this.add.rectangle(
+              x,
+              y + tileH / 2 - 26,
+              tileW,
+              52,
+              0x000000,
+              0.65,
+            );
+
+            // Подпись
+            const label = this.add.text(
+              x - tileW / 2 + 10,
+              y + tileH / 2 - 48,
+              s.label,
+              {
+                fontSize: "22px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ffffff",
+                stroke: "#000",
+                strokeThickness: 3,
+              },
+            );
+            const sub = this.add.text(
+              x - tileW / 2 + 10,
+              y + tileH / 2 - 24,
+              s.sub,
+              {
+                fontSize: "16px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ffcc00",
+              },
+            );
+
+            // Hover эффект
+            border.on("pointerover", () => {
+              border.setFillStyle(0x00ff00);
+              img.setAlpha(0.85);
+              this.tweens.add({
+                targets: img,
+                scaleX: img.scaleX * 1.03,
+                scaleY: img.scaleY * 1.03,
+                duration: 120,
+                ease: "Power1",
+              });
+            });
+            border.on("pointerout", () => {
+              border.setFillStyle(0x444444);
+              img.setAlpha(1);
+              img.setDisplaySize(tileW, tileH);
+            });
+            border.on("pointerdown", () => s.start());
+          });
+
+          // Кнопка назад
+          const back = this.add
+            .text(400, 575, "← Назад", {
+              fontSize: "24px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#888888",
+            })
+            .setOrigin(0.5)
+            .setInteractive();
+          back.on("pointerover", () => back.setStyle({ fill: "#ffffff" }));
+          back.on("pointerout", () => back.setStyle({ fill: "#888888" }));
+          back.on("pointerdown", () =>
+            this.scene.start("DifficultySelectScene"),
+          );
+        }
+      }
+
+      // =================================================================
+      // GAME SCENE (Фаза 1)
+      // =================================================================
+      class GameScene extends Phaser.Scene {
+        constructor() {
+          super("GameScene");
+        }
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+          this.dog = this.physics.add.sprite(200, 580, "dog_sprite");
+          this.dog.setOrigin(0.5, 1);
+          this.dog.body.allowGravity = false;
+          this.dog.setCollideWorldBounds(true);
+          this.dog.hasMushroom = false;
+          this.mouth = this.add.zone(0, 0, 60, 60);
+          this.physics.world.enable(this.mouth);
+          this.mouth.body.setAllowGravity(false);
+          this.carriedMushroom = this.add
+            .sprite(0, 0, "mushroom")
+            .setScale(0.1)
+            .setVisible(false);
+          this.human = this.physics.add.sprite(100, 580, "player");
+          this.human.setOrigin(0.5, 1);
+          this.human.body.allowGravity = false;
+          this.human.body.setSize(
+            this.human.width * 0.5,
+            this.human.height * 0.9,
+          );
+          this.humanHealth = 100;
+          this.humanSpeed = 100;
+          this.humanDirection = 1;
+          this.humanPaused = false;
+          this.isHumanDead = false;
+          this.time.addEvent({
+            delay: 6000,
+            loop: true,
+            callback: () => {
+              this.humanPaused = true;
+              this.time.delayedCall(4000, () => {
+                this.humanPaused = false;
+              });
+            },
+          });
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
+          this.isJumping = false;
+          this.ticks = this.physics.add.group();
+          this.mushrooms = this.physics.add.group();
+          const isHardcore = this.registry.get("difficulty") === "hardcore";
+          this.wave = 1;
+          this.ticksToSpawn = 5;
+          this.spawnInterval = isHardcore ? 900 : 1500;
+          this.startWave();
+          this.time.addEvent({
+            delay: 10000,
+            loop: true,
+            callback: this.spawnMushroom,
+            callbackScope: this,
+          });
+        }
+        update() {
+          if (this.isHumanDead) return;
+          this.updateDog();
+          this.updateHuman();
+          this.updateCollisions();
+        }
+        spawnMushroom() {
+          if (this.mushrooms.countActive(true) > 0) return;
+          const x = Phaser.Math.Between(100, 700);
+          const mushroom = this.mushrooms.create(x, 580, "mushroom");
+          mushroom.setOrigin(0.5, 1).setScale(0.1);
+          mushroom.collected = false;
+          this.time.delayedCall(
+            8000,
+            () => {
+              if (mushroom.active && !mushroom.collected) mushroom.destroy();
+            },
+            [],
+            this,
+          );
+        }
+        collectMushroom(mouth, mushroom) {
+          if (this.dog.hasMushroom) return;
+          mushroom.collected = true;
+          mushroom.destroy();
+          this.dog.hasMushroom = true;
+          this.dog.setTint(0x00ff00);
+          this.mushroomCarryTimer = this.time.delayedCall(
+            8000,
+            () => {
+              this.dog.hasMushroom = false;
+              this.dog.clearTint();
+              this.sound.play("eat", { volume: 0.8 });
+            },
+            [],
+            this,
+          );
+        }
+        deliverMushroom() {
+          if (!this.dog.hasMushroom) return;
+          this.dog.hasMushroom = false;
+          this.sound.play("eat", { volume: 0.8 });
+          this.events.emit("damageHuman", -20);
+          this.dog.clearTint();
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+        }
+        updateDog() {
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          this.mouth.x = this.dog.body.center.x;
+          this.mouth.y = this.dog.body.center.y - 40;
+          if (this.dog.hasMushroom) {
+            this.carriedMushroom.setVisible(true);
+            const off = this.dogFacing === "left" ? -60 : 60;
+            this.carriedMushroom.x = this.mouth.x + off;
+            this.carriedMushroom.y = this.mouth.y;
+            const dp =
+              Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+              (mob && js.down);
+            if (dp) {
+              this.dog.hasMushroom = false;
+              this.dog.clearTint();
+              if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+            }
+          } else {
+            this.carriedMushroom.setVisible(false);
+          }
+          const jp =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (mob && js.isJumping);
+          if (jp && !this.isJumping) {
+            this.isJumping = true;
+            this.dog.anims.play("dog_jump");
+            let vx = 0;
+            if (mob && js.jumpDirection) {
+              if (js.jumpDirection === "left") {
+                vx = -200;
+                this.dogFacing = "left";
+              } else if (js.jumpDirection === "right") {
+                vx = 200;
+                this.dogFacing = "right";
+              }
+            } else {
+              if (this.cursors.left.isDown) {
+                vx = -200;
+                this.dogFacing = "left";
+              } else if (this.cursors.right.isDown) {
+                vx = 200;
+                this.dogFacing = "right";
+              }
+            }
+            this.dog.flipX = this.dogFacing === "left";
+            this.dog.setVelocityX(vx);
+            this.tweens.add({
+              targets: this.dog,
+              y: this.dog.y - 280,
+              duration: 400,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.dog.setVelocityX(0);
+              },
+            });
+          }
+          if (this.isJumping) return;
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          this.dog.flipX = false;
+          if (lp) {
+            this.dog.setVelocityX(-200);
+            this.dog.anims.play("dog_walk_left", true);
+            this.dogFacing = "left";
+            this._dogGoingRight = false;
+          } else if (rp) {
+            this.dog.setVelocityX(200);
+            if (!this._dogGoingRight) {
+              this._dogGoingRight = true;
+              if (!this._barkCooldown) {
+                this._barkCooldown = true;
+                this.sound.play("bark_aggressive", { volume: 0.6 });
+                this.time.delayedCall(1500, () => {
+                  this._barkCooldown = false;
+                });
+              }
+            }
+            this.dog.anims.play("dog_walk_right", true);
+            this.dogFacing = "right";
+          } else {
+            this._dogGoingRight = false;
+            this.dog.setVelocityX(0);
+            this.dog.anims.play("dog_idle", true);
+            this.dog.flipX = this.dogFacing === "left";
+          }
+        }
+        updateHuman() {
+          if (this.isHumanDead) return;
+          if (this.humanPaused) {
+            this.human.setVelocityX(0);
+          } else {
+            if (this.human.x >= 760) this.humanDirection = -1;
+            else if (this.human.x <= 40) this.humanDirection = 1;
+            this.human.setVelocityX(this.humanSpeed * this.humanDirection);
+          }
+          if (this.human.body.velocity.x > 0) {
+            this.human.flipX = false;
+            this.human.anims.play("human_walk", true);
+          } else if (this.human.body.velocity.x < 0) {
+            this.human.flipX = true;
+            this.human.anims.play("human_walk", true);
+          } else this.human.anims.play("human_idle", true);
+        }
+        updateCollisions() {
+          this.ticks.getChildren().forEach((tick) => {
+            if (!tick.active) return;
+            if (
+              !this.dog.hasMushroom &&
+              tick.isFalling &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.mouth.getBounds(),
+                tick.getBounds(),
+              )
+            ) {
+              tick.destroy();
+              this.sound.play("bark", { volume: 0.8 });
+              return;
+            }
+            if (
+              tick.isFalling &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.human.getBounds(),
+                tick.getBounds(),
+              )
+            ) {
+              const dm = this.registry.get("damageMultiplier") || 1;
+              this.events.emit("damageHuman", 10 * dm);
+              this.sound.play("scream2", { volume: 0.8 });
+              tick.destroy();
+            }
+          });
+          this.mushrooms.getChildren().forEach((m) => {
+            if (!m.active) return;
+            if (
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.mouth.getBounds(),
+                m.getBounds(),
+              )
+            )
+              this.collectMushroom(this.mouth, m);
+          });
+          if (
+            this.dog.hasMushroom &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.dog.getBounds(),
+              this.human.getBounds(),
+            )
+          )
+            this.deliverMushroom();
+        }
+        startWave() {
+          if (this.isHumanDead) return;
+          this.ticksSpawned = 0;
+          this.events.emit("updateWave", this.wave);
+          if (this.tickSpawner) this.tickSpawner.remove();
+          this.tickSpawner = this.time.addEvent({
+            delay: this.spawnInterval,
+            loop: true,
+            callback: () => {
+              if (this.ticksSpawned >= this.ticksToSpawn) {
+                this.tickSpawner.remove();
+                this.time.delayedCall(2000, () => {
+                  this.wave++;
+                  if (this.wave > 3) {
+                    this.scene.stop("GameScene");
+                    this.scene.stop("UIScene");
+                    this.scene.stop("VirtualControlsScene");
+                    this.scene.start("Scene2");
+                    this.scene.launch("UIScene2");
+                    this.scene.launch("VirtualControlsScene");
+                    return;
+                  }
+                  this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
+                  this.spawnInterval = Math.max(600, this.spawnInterval - 150);
+                  this.startWave();
+                });
+                return;
+              }
+              this.spawnTick();
+              this.ticksSpawned++;
+            },
+          });
+        }
+        spawnTick() {
+          if (this.isHumanDead) return;
+          const sx = Phaser.Math.Between(50, 750),
+            sy = 580,
+            py = Phaser.Math.Between(100, 300),
+            ex = sx + Phaser.Math.Between(-150, 150);
+          const tick = this.ticks.create(sx, sy, "tick");
+          if (!tick) return;
+          tick.setScale(0.8);
+          tick.body.setAllowGravity(false);
+          tick.isFalling = false;
+          this.tweens.add({
+            targets: tick,
+            x: ex,
+            ease: "Sine.easeInOut",
+            duration: Phaser.Math.Between(1200, 1800),
+            onUpdate: (tw, t) => {
+              const p = tw.progress,
+                h = sy - py;
+              t.y = sy - 4 * h * p * (1 - p);
+              if (!t.isFalling && p > 0.5) t.isFalling = true;
+            },
+            onComplete: () => {
+              if (tick) tick.destroy();
+            },
+          });
+        }
+        shutdown() {
+          if (this.tickSpawner) this.tickSpawner.remove();
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+          this.events.off("updateWave");
+          this.events.off("damageHuman");
+        }
+      }
+
+      // =================================================================
+      // UI SCENE (Фаза 1)
+      // =================================================================
+      class UIScene extends Phaser.Scene {
+        constructor() {
+          super("UIScene");
+        }
+        create() {
+          const ts = {
+            fontFamily: "3_Muz-TV2000.ttf",
+            fontSize: "16px",
+            fill: "#fff",
+          };
+          // Игрок HP — только полоска
+          this.add.text(10, 12, "Игрок:", ts);
+          this.healthBarBg = this.add
+            .rectangle(100, 22, 160, 18, 0x000000)
+            .setOrigin(0, 0.5);
+          this.healthBar = this.add
+            .rectangle(100, 22, 160, 18, 0x00ff00)
+            .setOrigin(0, 0.5);
+          // Волна по центру
+          this.waveText = this.add
+            .text(400, 30, "Волна 1", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "24px",
+              fill: "#eb8c17",
+            })
+            .setOrigin(0.5);
+          // Сложность — правый нижний угол
+          const diff = this.registry.get("difficulty");
+          this.add
+            .text(795, 585, diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: diff === "hardcore" ? "#ff4444" : "#44ff44",
+            })
+            .setOrigin(1, 1);
+          const gs = this.scene.get("GameScene");
+          if (gs && gs.scene.isActive()) {
+            gs.events.off("updateWave");
+            gs.events.off("damageHuman");
+            gs.events.on("updateWave", (w) => {
+              if (this.waveText && this.waveText.active)
+                this.waveText.setText(`Волна ${w}`);
+            });
+            gs.events.on("damageHuman", (dmg) => {
+              if (gs.isHumanDead) return;
+              gs.humanHealth -= dmg;
+              this.updateHealthBar(gs.humanHealth);
+              if (dmg > 0) {
+                gs.human.setTint(0xff0000);
+                gs.time.delayedCall(200, () => {
+                  if (gs.human) gs.human.clearTint();
+                });
+                const t = this.add
+                  .text(gs.human.x, gs.human.y - 150, `-${dmg}`, {
+                    fontSize: "32px",
+                    color: "#ff0000",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  })
+                  .setOrigin(0.5);
+                this.tweens.add({
+                  targets: t,
+                  y: t.y - 50,
+                  alpha: 0,
+                  duration: 1000,
+                  onComplete: () => t.destroy(),
+                });
+              } else {
+                gs.human.setTint(0x00ff00);
+                gs.time.delayedCall(400, () => {
+                  if (gs.human) gs.human.clearTint();
+                });
+                const t = this.add
+                  .text(gs.human.x, gs.human.y - 150, `+${Math.abs(dmg)}`, {
+                    fontSize: "32px",
+                    color: "#00ff00",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  })
+                  .setOrigin(0.5);
+                this.tweens.add({
+                  targets: t,
+                  y: t.y - 50,
+                  alpha: 0,
+                  duration: 1000,
+                  onComplete: () => t.destroy(),
+                });
+              }
+              if (gs.humanHealth <= 0) {
+                gs.isHumanDead = true;
+                const h = gs.human;
+                h.anims.play("human_death", true);
+                h.on(
+                  "animationcomplete",
+                  () => {
+                    h.setVisible(false);
+                    const gx = h.x,
+                      gy = h.y;
+                    this.add
+                      .rectangle(gx, gy - 50, 50, 80, 0x222222)
+                      .setStrokeStyle(2, 0x000000);
+                    this.add
+                      .ellipse(gx, gy - 90, 50, 40, 0x222222)
+                      .setStrokeStyle(2, 0x000000);
+                    this.add.rectangle(gx, gy - 75, 5, 30, 0x888888);
+                    this.add.rectangle(gx, gy - 83, 20, 5, 0x888888);
+                    gs.scene.pause();
+                    this.showGameOver("GameScene", "UIScene");
+                  },
+                  this,
+                );
+              }
+            });
+          }
+        }
+        updateHealthBar(health) {
+          const h = Math.max(0, health);
+          this.healthBar.width = (h / 100) * 160;
+          if (h > 60) this.healthBar.setFillStyle(0x00ff00);
+          else if (h > 30) this.healthBar.setFillStyle(0xffff00);
+          else this.healthBar.setFillStyle(0xff0000);
+        }
+        showGameOver(sn, ui) {
+          const t = this.add
+            .text(400, 300, "ИГРА ОКОНЧЕНА", {
+              fontSize: "80px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ff0000",
+              stroke: "#000000",
+              strokeThickness: 8,
+            })
+            .setOrigin(0.5)
+            .setShadow(4, 4, "#000000", 8, true, true);
+          this.tweens.add({
+            targets: t,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.5, to: 1.0 },
+            duration: 600,
+            ease: "Back.easeOut",
+          });
+          this.time.delayedCall(5000, () => {
+            this.scene.stop(sn);
+            this.scene.stop(ui);
+            this.scene.start("MainMenuScene");
+          });
+        }
+        shutdown() {
+          const gs = this.scene.get("GameScene");
+          if (gs) {
+            gs.events.off("updateWave");
+            gs.events.off("damageHuman");
+          }
+        }
+      }
+
+      // =================================================================
+      // SCENE 2 (Фаза 2)
+      // =================================================================
+      class Scene2 extends Phaser.Scene {
+        constructor() {
+          super("Scene2");
+        }
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background");
+          this.dog = this.physics.add.sprite(700, 580, "dog_sprite");
+          this.dog.setOrigin(0.5, 1);
+          this.dog.body.allowGravity = false;
+          this.dog.setCollideWorldBounds(true);
+          this.dog.body.setSize(150, 100);
+          this.dogHealth = 100;
+          this.dogDirection = "left";
+          this.isDogDead = false;
+          this.mouth = this.add.zone(0, 0, 80, 80);
+          this.physics.world.enable(this.mouth);
+          this.mouth.body.setAllowGravity(false);
+          this.footZone = this.add.zone(0, 0, 200, 60);
+          this.physics.world.enable(this.footZone);
+          this.footZone.body.setAllowGravity(false);
+          this.kickedTicksCount = 0;
+          this.kicksNeededForReward = 3;
+          this.human = this.physics.add.sprite(200, 580, "player");
+          this.human.setOrigin(0.5, 1);
+          this.human.body.allowGravity = false;
+          this.human.body.setSize(
+            this.human.width * 0.5,
+            this.human.height * 0.9,
+          );
+          this.human.setCollideWorldBounds(true);
+          this.human.hasMushroom = false;
+          this.humanFacing = "right";
+          this.humanHealth = 100;
+          this.isHumanDead = false;
+          this.carriedMushroom = this.add
+            .sprite(0, 0, "mushroom")
+            .setScale(0.1)
+            .setVisible(false);
+          this.homeless = this.physics.add.sprite(600, 580, "homeless");
+          this.homeless.setOrigin(0.5, 1);
+          this.homeless.body.allowGravity = false;
+          this.homeless.setCollideWorldBounds(true);
+          this.homeless.body.setSize(
+            this.homeless.width * 0.5,
+            this.homeless.height * 0.9,
+          );
+          this.homeless.setVisible(false);
+          this.homeless.active = false;
+          this.homeless.isFallen = false;
+          this.homeless.isVictory = false;
+          this.homelessActive = false;
+          this.homelessFacing = "left";
+          this.homelessHealth = 100;
+          this.isHomelessDead = false;
+          this.homelessInvulnerable = false;
+          this.time.addEvent({
+            delay: Phaser.Math.Between(1000, 3000),
+            loop: true,
+            callback: () => {
+              if (this.isDogDead) return;
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.dog.setVelocityX(-100);
+                this.dogDirection = "left";
+              } else if (a === "right") {
+                this.dog.setVelocityX(100);
+                this.dogDirection = "right";
+              } else this.dog.setVelocityX(0);
+            },
+          });
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
+          this.debugKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.D,
+          );
+          this.isJumping = false;
+          this.ticks = this.physics.add.group();
+          this.mushrooms = this.add.group();
+          const isHardcore = this.registry.get("difficulty") === "hardcore";
+          this.wave = 1;
+          this.ticksToSpawn = 5;
+          this.spawnInterval = isHardcore ? 900 : 1500;
+          this.startWave();
+          this.time.addEvent({
+            delay: 10000,
+            loop: true,
+            callback: this.spawnMushroom,
+            callbackScope: this,
+          });
+          // ── Фоновая музыка Scene2 ─────────────────────────────
+          this.sound.stopAll();
+          this.bgm = this.sound.add("fon1", { loop: true, volume: 0.25 });
+          this.bgm.play();
+        }
+        update() {
+          if (this.isDogDead || this.isHumanDead) return;
+          if (Phaser.Input.Keyboard.JustDown(this.debugKey))
+            this.physics.world.debugGraphic.visible =
+              !this.physics.world.debugGraphic.visible;
+          this.updateHumanPlayer();
+          this.updateDogAI();
+          this.updateHomeless();
+          this.updateCollisions();
+        }
+        spawnMushroom() {
+          if (
+            this.isDogDead ||
+            this.isHumanDead ||
+            this.mushrooms.countActive(true) > 0
+          )
+            return;
+          const x = Phaser.Math.Between(100, 700);
+          const m = this.mushrooms.create(x, 580, "mushroom");
+          m.setOrigin(0.5, 1).setScale(0.1);
+          m.collected = false;
+          this.time.delayedCall(
+            8000,
+            () => {
+              if (m.active && !m.collected) m.destroy();
+            },
+            [],
+            this,
+          );
+        }
+        collectMushroom(human, mushroom) {
+          if (this.human.hasMushroom) return;
+          mushroom.collected = true;
+          mushroom.destroy();
+          this.human.hasMushroom = true;
+          this.human.setTint(0x00ff00);
+          this.mushroomCarryTimer = this.time.delayedCall(
+            8000,
+            () => {
+              if (this.human && this.human.hasMushroom) {
+                this.human.hasMushroom = false;
+                this.human.clearTint();
+                this.sound.play("eat", { volume: 0.8 });
+                this.events.emit("healHuman", 20);
+              }
+            },
+            [],
+            this,
+          );
+        }
+        deliverMushroom() {
+          if (!this.human.hasMushroom) return;
+          this.human.hasMushroom = false;
+          this.human.clearTint();
+          this.sound.play("eat", { volume: 0.8 });
+          this.events.emit("healDog", 20);
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+        }
+        updateCollisions() {
+          this.physics.overlap(this.footZone, this.ticks, (fz, tick) => {
+            if (
+              !this.human.hasMushroom &&
+              tick.isFalling &&
+              tick.body &&
+              !tick.isKicked
+            ) {
+              tick.isKicked = true;
+              // Звук пинка клеща
+              this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+                volume: 0.8,
+              });
+              tick.isFalling = false;
+              this.kickedTicksCount++;
+              this.events.emit(
+                "updateKickCount",
+                this.kickedTicksCount,
+                this.kicksNeededForReward,
+              );
+              if (this.kickedTicksCount >= this.kicksNeededForReward) {
+                this.kickedTicksCount = 0;
+                this.events.emit(
+                  "updateKickCount",
+                  this.kickedTicksCount,
+                  this.kicksNeededForReward,
+                );
+                if (!this.isHumanDead) this.events.emit("healHuman", 20);
+                if (!this.isDogDead) this.events.emit("healDog", 20);
+                const rt = this.add
+                  .text(400, 200, "+20 HP!", {
+                    fontSize: "48px",
+                    fontFamily: '"3_Muz-TV2000.ttf"',
+                    color: "#00ff00",
+                    stroke: "#000",
+                    strokeThickness: 6,
+                  })
+                  .setOrigin(0.5);
+                this.tweens.add({
+                  targets: rt,
+                  y: rt.y - 50,
+                  alpha: 0,
+                  scale: 1.5,
+                  duration: 1500,
+                  ease: "Power2",
+                  onComplete: () => rt.destroy(),
+                });
+              }
+              const kd = this.humanFacing === "right" ? 1 : -1,
+                sx = tick.x,
+                sy = tick.y,
+                ex = sx + 200 * kd;
+              tick.body.setVelocity(0, 0);
+              tick.setTint(0x888888);
+              this.tweens.add({
+                targets: tick,
+                x: ex,
+                scale: 0.5,
+                ease: "Sine.easeOut",
+                duration: 500,
+                onUpdate: (tw) => {
+                  const t = tw.progress;
+                  tick.y = sy - 4 * 150 * t * (1 - t);
+                  tick.rotation = t * Math.PI * 4 * kd;
+                  tick.alpha = 1 - t * 0.5;
+                },
+                onComplete: () => {
+                  if (tick && tick.active) tick.destroy();
+                },
+              });
+            }
+          });
+          if (
+            this.homelessActive &&
+            !this.homeless.isFallen &&
+            !this.homeless.isVictory &&
+            this.isJumping
+          ) {
+            this.physics.overlap(
+              this.footZone,
+              this.homeless,
+              (fz, homeless) => {
+                if (
+                  this.isJumping &&
+                  !homeless.isFallen &&
+                  !homeless.isVictory &&
+                  !this.homelessInvulnerable
+                ) {
+                  // Звук пинка бомжа
+                  this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+                    volume: 0.8,
+                  });
+                  // Крит при HP игрока < 25%
+                  let homelessDmg = Phaser.Math.Between(0, 20);
+                  if (this.humanHealth < 25) {
+                    const critChance = 1.0; // 100% крит при HP < 25%
+                    if (Math.random() < critChance) {
+                      homelessDmg = homelessDmg * 3; // x3 урон при крите
+                      this.sound.play("krit", { volume: 1.0 });
+                      const critTxt = this.add
+                        .text(this.homeless.x, this.homeless.y - 160, "КРИТ!", {
+                          fontSize: "36px",
+                          fontFamily: '"3_Muz-TV2000.ttf"',
+                          color: "#ffff00",
+                          stroke: "#ff0000",
+                          strokeThickness: 5,
+                        })
+                        .setOrigin(0.5)
+                        .setDepth(20);
+                      this.tweens.add({
+                        targets: critTxt,
+                        y: critTxt.y - 60,
+                        alpha: 0,
+                        scale: 1.4,
+                        duration: 800,
+                        ease: "Power2",
+                        onComplete: () => critTxt.destroy(),
+                      });
+                    }
+                  }
+                  this.events.emit("damageHomeless", homelessDmg);
+                  if (this.homelessHealth <= 0 && !this.isHomelessDead) {
+                    this.isHomelessDead = true;
+                    this.homelessDied(homeless);
+                    return;
+                  }
+                  homeless.isFallen = true;
+                  homeless.isVictory = false;
+                  homeless.setVelocityX(0);
+                  homeless.originalY = homeless.y;
+                  homeless.setOrigin(0.5, 0.5);
+                  homeless.y = homeless.y - 312 / 2;
+                  homeless.anims.play("homeless_death", true);
+                  this.time.delayedCall(3000, () => {
+                    if (homeless && homeless.active) {
+                      homeless.isFallen = false;
+                      homeless.setOrigin(0.5, 1);
+                      homeless.y = homeless.originalY;
+                      // 5 секунд неуязвимости после вставания
+                      this.homelessInvulnerable = true;
+                      this.homeless.setTint(0xaaaaff);
+                      this.time.delayedCall(5000, () => {
+                        this.homelessInvulnerable = false;
+                        if (this.homeless && this.homeless.active)
+                          this.homeless.clearTint();
+                      });
+                    }
+                  });
+                }
+              },
+            );
+          }
+          this.physics.overlap(this.mouth, this.ticks, (mo, tick) => {
+            if (tick.isFalling && tick.body && !tick.isKicked) {
+              const dm = this.registry.get("damageMultiplier") || 1;
+              this.events.emit("damageHuman", 10 * dm);
+              this.sound.play("scream2", { volume: 0.8 });
+              tick.destroy();
+            }
+          });
+          this.physics.overlap(this.dog, this.ticks, (dog, tick) => {
+            if (tick.isFalling && tick.body && !tick.isKicked) {
+              const dm = this.registry.get("damageMultiplier") || 1;
+              this.events.emit("damageDog", 10 * dm);
+              this.sound.play("bark", { volume: 0.8 });
+              tick.destroy();
+            }
+          });
+          this.mushrooms.getChildren().forEach((m) => {
+            if (!m.active) return;
+            if (
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.human.getBounds(),
+                m.getBounds(),
+              )
+            )
+              this.collectMushroom(this.human, m);
+          });
+          if (
+            this.human.hasMushroom &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.dog.getBounds(),
+              this.human.getBounds(),
+            )
+          )
+            this.deliverMushroom();
+        }
+        updateHumanPlayer() {
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          this.mouth.x = this.human.body.center.x;
+          this.mouth.y = this.human.body.center.y - 100;
+          this.footZone.x = this.human.body.center.x;
+          this.footZone.y = this.human.body.center.y + 120;
+          if (this.human.hasMushroom) {
+            this.carriedMushroom.setVisible(true);
+            const off = this.humanFacing === "left" ? -60 : 60;
+            this.carriedMushroom.x = this.human.x + off;
+            this.carriedMushroom.y = this.human.y - 150;
+            const dp =
+              Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+              (mob && js.down);
+            if (dp) {
+              this.human.hasMushroom = false;
+              this.human.clearTint();
+              this.sound.play("eat", { volume: 0.8 });
+              if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+              this.events.emit("healHuman", 20);
+            }
+          } else this.carriedMushroom.setVisible(false);
+          const jp =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (mob && js.isJumping);
+          if (jp && !this.isJumping) {
+            this.isJumping = true;
+            let vx = 0;
+            if (mob && js.jumpDirection) {
+              if (js.jumpDirection === "left") {
+                vx = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (js.jumpDirection === "right") {
+                vx = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            } else {
+              if (this.cursors.left.isDown) {
+                vx = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (this.cursors.right.isDown) {
+                vx = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            }
+            this.human.setVelocityX(vx);
+            this.tweens.add({
+              targets: this.human,
+              y: this.human.y - 280,
+              duration: 400,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.human.setVelocityX(0);
+              },
+            });
+          }
+          if (this.isJumping) return;
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          if (lp) {
+            this.human.setVelocityX(-200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = true;
+            this.humanFacing = "left";
+          } else if (rp) {
+            this.human.setVelocityX(200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = false;
+            this.humanFacing = "right";
+          } else {
+            this.human.setVelocityX(0);
+            this.human.anims.play("human_idle", true);
+          }
+        }
+        updateDogAI() {
+          this.dog.flipX = false;
+          if (this.dog.body.velocity.x < 0) {
+            this._dogGoingRight = false;
+            this.dog.anims.play("dog_walk_left", true);
+          } else if (this.dog.body.velocity.x > 0) {
+            if (!this._dogGoingRight) {
+              this._dogGoingRight = true;
+              if (!this._barkCooldown) {
+                this._barkCooldown = true;
+                this.sound.play("bark_aggressive", { volume: 0.6 });
+                this.time.delayedCall(1500, () => {
+                  this._barkCooldown = false;
+                });
+              }
+            }
+            this.dog.anims.play("dog_walk_right", true);
+          } else {
+            this._dogGoingRight = false;
+            this.dog.anims.play("dog_idle", true);
+            this.dog.flipX = this.dogDirection === "left";
+          }
+        }
+        updateHomeless() {
+          if (!this.homelessActive) return;
+          if (this.homeless.isFallen) {
+            this.homeless.setVelocityX(0);
+            return;
+          }
+          if (this.homeless.isVictory) {
+            this.homeless.setVelocityX(0);
+            return;
+          }
+          const mushrooms = this.mushrooms
+            .getChildren()
+            .filter((m) => m.active);
+          if (mushrooms.length > 0) {
+            let closest = null,
+              minDist = Infinity;
+            mushrooms.forEach((m) => {
+              const d = Phaser.Math.Distance.Between(
+                this.homeless.x,
+                this.homeless.y,
+                m.x,
+                m.y,
+              );
+              if (d < minDist) {
+                minDist = d;
+                closest = m;
+              }
+            });
+            if (closest) {
+              const diff = closest.x - this.homeless.x;
+              if (Math.abs(diff) > 10) {
+                // При HP < 25% скорость x2
+                const hspeed = this.homelessHealth < 25 ? 1200 : 600;
+                if (diff > 0) {
+                  this.homeless.setVelocityX(hspeed);
+                  this.homeless.flipX = false;
+                  this.homelessFacing = "right";
+                } else {
+                  this.homeless.setVelocityX(-hspeed);
+                  this.homeless.flipX = true;
+                  this.homelessFacing = "left";
+                }
+                this.homeless.anims.play("homeless_run", true);
+              } else {
+                this.homeless.setVelocityX(0);
+                this.homeless.anims.play("homeless_idle", true);
+              }
+              if (
+                Phaser.Geom.Intersects.RectangleToRectangle(
+                  this.homeless.getBounds(),
+                  closest.getBounds(),
+                )
+              ) {
+                closest.destroy();
+                this.sound.play("bomj", { volume: 0.8 });
+                if (!this.isHomelessDead) this.events.emit("healHomeless", 40);
+                this.homeless.setVelocityX(0);
+                this.homeless.anims.play("homeless_victory", true);
+                this.homeless.isVictory = true;
+                this.time.delayedCall(1000, () => {
+                  if (this.homeless && this.homeless.active)
+                    this.homeless.isVictory = false;
+                });
+              }
+            }
+          } else {
+            if (
+              !this.homelessWalkTimer ||
+              this.time.now > this.homelessWalkTimer
+            ) {
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.homeless.setVelocityX(-320);
+                this.homeless.flipX = true;
+                this.homelessFacing = "left";
+              } else if (a === "right") {
+                this.homeless.setVelocityX(320);
+                this.homeless.flipX = false;
+                this.homelessFacing = "right";
+              } else this.homeless.setVelocityX(0);
+              this.homelessWalkTimer =
+                this.time.now + Phaser.Math.Between(2000, 4000);
+            }
+            if (Math.abs(this.homeless.body.velocity.x) > 0)
+              this.homeless.anims.play("homeless_walk", true);
+            else this.homeless.anims.play("homeless_idle", true);
+          }
+        }
+        homelessDied(homeless) {
+          // Звук смерти бомжа (ярость)
+          this.sound.play("scream4", { volume: 0.9 });
+          homeless.setVelocityX(0);
+          homeless.isFallen = true;
+          const fx = homeless.x,
+            fy = homeless.y;
+          homeless.setOrigin(0.5, 0.5);
+          homeless.y = homeless.y - 156;
+          homeless.anims.play("homeless_death", true);
+          const puddle = this.add.graphics();
+          puddle.fillStyle(0xffff00, 0.6);
+          puddle.setDepth(-1);
+          let pr = 0;
+          this.time.addEvent({
+            delay: 50,
+            repeat: 40,
+            callback: () => {
+              pr += 2;
+              puddle.clear();
+              puddle.fillStyle(0xffff00, 0.6);
+              puddle.fillEllipse(fx, fy, pr * 1.5, pr);
+              for (let i = 0; i < 5; i++) {
+                const a = Math.random() * Math.PI * 2,
+                  d = pr * (0.8 + Math.random() * 0.4);
+                puddle.fillCircle(
+                  fx + Math.cos(a) * d,
+                  fy + Math.sin(a) * d * 0.7,
+                  5 + Math.random() * 10,
+                );
+              }
+            },
+          });
+          this.time.delayedCall(4000, () => {
+            this.scene.stop("Scene2");
+            this.scene.stop("UIScene2");
+            this.scene.stop("VirtualControlsScene");
+            this.scene.start("Scene4");
+            this.scene.launch("UIScene4");
+            this.scene.launch("VirtualControlsScene");
+          });
+        }
+        startWave() {
+          if (this.wave > 12) {
+            this.scene.stop("Scene2");
+            this.scene.stop("UIScene2");
+            this.scene.start("MainMenuScene");
+            return;
+          }
+          if (this.isDogDead || this.isHumanDead) return;
+          this.ticksSpawned = 0;
+          this.events.emit("updateWave", this.wave);
+          if (this.wave >= 2 && !this.homelessActive) {
+            this.homelessActive = true;
+            this.homeless.setVisible(true);
+            this.homeless.active = true;
+            this.events.emit("showHomelessBar");
+          }
+          if (this.tickSpawner) this.tickSpawner.remove();
+          this.tickSpawner = this.time.addEvent({
+            delay: this.spawnInterval,
+            loop: true,
+            callback: () => {
+              if (this.ticksSpawned >= this.ticksToSpawn) {
+                this.tickSpawner.remove();
+                this.time.delayedCall(2000, () => {
+                  this.wave++;
+                  this.ticksToSpawn = Math.floor(this.ticksToSpawn * 1.4);
+                  this.spawnInterval = Math.max(600, this.spawnInterval - 150);
+                  this.startWave();
+                });
+                return;
+              }
+              this.spawnTick();
+              this.ticksSpawned++;
+            },
+          });
+        }
+        spawnTick() {
+          if (this.isDogDead || this.isHumanDead) return;
+          const sx = Phaser.Math.Between(50, 750),
+            sy = 580,
+            py = Phaser.Math.Between(100, 300),
+            ex = sx + Phaser.Math.Between(-150, 150);
+          const tick = this.ticks.create(sx, sy, "tick");
+          if (!tick) return;
+          tick.setScale(0.8);
+          tick.body.setAllowGravity(false);
+          tick.body.setSize(tick.width * 1.2, tick.height * 1.2);
+          tick.isFalling = false;
+          this.tweens.add({
+            targets: tick,
+            x: ex,
+            ease: "Sine.easeInOut",
+            duration: Phaser.Math.Between(1200, 1800),
+            onUpdate: (tw, t) => {
+              const p = tw.progress,
+                h = sy - py;
+              t.y = sy - 4 * h * p * (1 - p);
+              if (!t.isFalling && p > 0.5) t.isFalling = true;
+            },
+            onComplete: () => {
+              if (tick.active) tick.destroy();
+            },
+          });
+        }
+        shutdown() {
+          if (this.bgm) this.bgm.stop();
+          if (this.tickSpawner) this.tickSpawner.remove();
+          if (this.mushroomCarryTimer) this.mushroomCarryTimer.remove();
+          this.events.off("updateWave");
+          this.events.off("damageDog");
+          this.events.off("damageHuman");
+          this.events.off("healDog");
+          this.events.off("healHuman");
+          this.events.off("updateKickCount");
+          this.events.off("showHomelessBar");
+          this.events.off("damageHomeless");
+          this.events.off("healHomeless");
+        }
+      }
+
+      // =================================================================
+      // UI SCENE 2
+      // =================================================================
+      class UIScene2 extends Phaser.Scene {
+        constructor() {
+          super("UIScene2");
+        }
+        create() {
+          const ts = {
+            fontFamily: "3_Muz-TV2000.ttf",
+            fontSize: "14px",
+            fill: "#fff",
+          };
+
+          // ── Левый столбец: Собака + Бомж ──────────────────────
+          this.add.text(10, 10, "Собака:", ts);
+          this.dogHealthBarBg = this.add
+            .rectangle(70, 20, 140, 14, 0x000000)
+            .setOrigin(0, 0.5);
+          this.dogHealthBar = this.add
+            .rectangle(70, 20, 140, 14, 0x00ff00)
+            .setOrigin(0, 0.5);
+
+          // Бомж под собакой (слева) — скрыт до появления
+          this.homelessLabel = this.add
+            .text(10, 36, "Бомж:", ts)
+            .setVisible(false);
+          this.homelessHealthBarBg = this.add
+            .rectangle(70, 46, 140, 14, 0x000000)
+            .setOrigin(0, 0.5)
+            .setVisible(false);
+          this.homelessHealthBar = this.add
+            .rectangle(70, 46, 140, 14, 0xff9900)
+            .setOrigin(0, 0.5)
+            .setVisible(false);
+
+          // ── Правый столбец: Человек + Пинки ───────────────────
+          this.add.text(570, 10, "Человек:", ts);
+          this.humanHealthBarBg = this.add
+            .rectangle(630, 20, 160, 14, 0x000000)
+            .setOrigin(0, 0.5);
+          this.humanHealthBar = this.add
+            .rectangle(630, 20, 160, 14, 0x00ff00)
+            .setOrigin(0, 0.5);
+
+          // Пинки под HP человека
+          this.kickCountText = this.add.text(570, 36, "⚡ Пинков: 0/3", {
+            fontFamily: '"3_Muz-TV2000.ttf"',
+            fontSize: "13px",
+            fill: "#ffaa00",
+          });
+
+          // ── Волна по центру ───────────────────────────────────
+          this.waveText = this.add
+            .text(400, 18, "Волна 1", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "22px",
+              fill: "#eb8c17",
+            })
+            .setOrigin(0.5);
+
+          // ── Сложность — правый нижний угол ───────────────────
+          const diff = this.registry.get("difficulty");
+          this.add
+            .text(795, 585, diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: diff === "hardcore" ? "#ff4444" : "#44ff44",
+            })
+            .setOrigin(1, 1);
+          const gs = this.scene.get("Scene2");
+          if (gs && gs.scene.isActive()) {
+            [
+              "updateWave",
+              "damageDog",
+              "damageHuman",
+              "healDog",
+              "healHuman",
+              "updateKickCount",
+              "showHomelessBar",
+              "damageHomeless",
+              "healHomeless",
+            ].forEach((e) => gs.events.off(e));
+            gs.events.on("updateWave", (w) => {
+              if (this.waveText && this.waveText.active)
+                this.waveText.setText(`Волна ${w}`);
+            });
+            gs.events.on("showHomelessBar", () => {
+              this.homelessLabel.setVisible(true);
+              this.homelessHealthBarBg.setVisible(true);
+              this.homelessHealthBar.setVisible(true);
+            });
+            gs.events.on("damageHomeless", (dmg) => {
+              if (gs.isHomelessDead) return;
+              gs.homelessHealth -= dmg;
+              this.updateHomelessHealthBar(gs.homelessHealth);
+              gs.homeless.setTint(0xff0000);
+              gs.time.delayedCall(200, () => {
+                if (gs.homeless && gs.homeless.active) gs.homeless.clearTint();
+              });
+              const t = this.add
+                .text(gs.homeless.x, gs.homeless.y - 150, `-${dmg}`, {
+                  fontSize: "28px",
+                  color: "#ff0000",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 40,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => t.destroy(),
+              });
+            });
+            gs.events.on("healHomeless", (heal) => {
+              if (gs.isHomelessDead) return;
+              gs.homelessHealth = Math.min(100, gs.homelessHealth + heal);
+              this.updateHomelessHealthBar(gs.homelessHealth);
+              gs.homeless.setTint(0x00ff00);
+              gs.time.delayedCall(300, () => {
+                if (gs.homeless && gs.homeless.active) gs.homeless.clearTint();
+              });
+              const t = this.add
+                .text(gs.homeless.x, gs.homeless.y - 150, `+${heal}`, {
+                  fontSize: "28px",
+                  color: "#00ff00",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 40,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => t.destroy(),
+              });
+            });
+            gs.events.on("updateKickCount", (c, n) => {
+              if (this.kickCountText && this.kickCountText.active) {
+                this.kickCountText.setText(`⚡ Пинков: ${c}/${n}`);
+                this.tweens.add({
+                  targets: this.kickCountText,
+                  scale: 1.3,
+                  duration: 100,
+                  yoyo: true,
+                  ease: "Power2",
+                });
+              }
+            });
+            const handleDamage = (
+              who,
+              getHealth,
+              setHealth,
+              getSprite,
+              getDead,
+              setDead,
+              bar,
+              txt,
+              updateBar,
+              yOff,
+              extra,
+            ) => {
+              gs.events.on(`damage${who}`, (dmg) => {
+                if (getDead()) return;
+                setHealth(getHealth() - dmg);
+                updateBar(getHealth());
+                const sp = getSprite();
+                sp.setTint(0xff0000);
+                gs.time.delayedCall(200, () => {
+                  if (sp) sp.clearTint();
+                });
+                const t = this.add
+                  .text(sp.x, sp.y - yOff, `-${dmg}`, {
+                    fontSize: "32px",
+                    color: "#ff0000",
+                    fontFamily: "3_Muz-TV2000.ttf",
+                    stroke: "#000",
+                    strokeThickness: 4,
+                  })
+                  .setOrigin(0.5);
+                this.tweens.add({
+                  targets: t,
+                  y: t.y - 50,
+                  alpha: 0,
+                  duration: 1000,
+                  onComplete: () => t.destroy(),
+                });
+                if (getHealth() <= 0 && !getDead()) {
+                  setDead(true);
+                  extra(sp);
+                }
+              });
+            };
+            const makeDogDie = (dog) => {
+              dog.anims.play("dog_death", true);
+              dog.scene.sound.play("groan1", { volume: 0.8 });
+              dog.on(
+                "animationcomplete",
+                () => {
+                  dog.setVisible(false);
+                  const gx = dog.x,
+                    gy = dog.y;
+                  this.add
+                    .rectangle(gx, gy - 30, 40, 60, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add
+                    .ellipse(gx, gy - 60, 40, 30, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add.rectangle(gx, gy - 50, 4, 24, 0x888888);
+                  this.add.rectangle(gx, gy - 56, 16, 4, 0x888888);
+                  gs.scene.pause();
+                  this.showGameOver();
+                },
+                this,
+              );
+            };
+            const makeHumanDie = (human) => {
+              human.anims.play("human_death", true);
+              human.on(
+                "animationcomplete",
+                () => {
+                  human.setVisible(false);
+                  const gx = human.x,
+                    gy = human.y;
+                  this.add
+                    .rectangle(gx, gy - 50, 50, 80, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add
+                    .ellipse(gx, gy - 90, 50, 40, 0x222222)
+                    .setStrokeStyle(2, 0x000000);
+                  this.add.rectangle(gx, gy - 75, 5, 30, 0x888888);
+                  this.add.rectangle(gx, gy - 83, 20, 5, 0x888888);
+                  gs.scene.pause();
+                  this.showGameOver();
+                },
+                this,
+              );
+            };
+            gs.events.on("damageDog", (dmg) => {
+              if (gs.isDogDead) return;
+              gs.dogHealth -= dmg;
+              this.updateDogHealthBar(gs.dogHealth);
+              gs.dog.setTint(0xff0000);
+              gs.time.delayedCall(200, () => {
+                if (gs.dog) gs.dog.clearTint();
+              });
+              const t = this.add
+                .text(gs.dog.x, gs.dog.y - 100, `-${dmg}`, {
+                  fontSize: "32px",
+                  color: "#ff0000",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => t.destroy(),
+              });
+              if (gs.dogHealth <= 0) {
+                gs.isDogDead = true;
+                makeDogDie(gs.dog);
+              }
+            });
+            gs.events.on("damageHuman", (dmg) => {
+              if (gs.isHumanDead) return;
+              gs.humanHealth -= dmg;
+              this.updateHumanHealthBar(gs.humanHealth);
+              gs.human.setTint(0xff0000);
+              gs.time.delayedCall(200, () => {
+                if (gs.human) gs.human.clearTint();
+              });
+              const t = this.add
+                .text(gs.human.x, gs.human.y - 150, `-${dmg}`, {
+                  fontSize: "32px",
+                  color: "#ff0000",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => t.destroy(),
+              });
+              // Ярость когда HP < 25%
+              if (gs.humanHealth < 25) {
+                gs.sound.play("rage", { volume: 0.9 });
+              }
+              if (gs.humanHealth <= 0) {
+                gs.isHumanDead = true;
+                makeHumanDie(gs.human);
+              }
+            });
+            gs.events.on("healDog", (heal) => {
+              if (gs.isDogDead) return;
+              gs.dogHealth = Math.min(100, gs.dogHealth + heal);
+              this.updateDogHealthBar(gs.dogHealth);
+              gs.dog.setTint(0x00ff00);
+              gs.time.delayedCall(400, () => {
+                if (gs.dog) gs.dog.clearTint();
+              });
+              const t = this.add
+                .text(gs.dog.x, gs.dog.y - 100, `+${heal}`, {
+                  fontSize: "32px",
+                  color: "#00ff00",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => t.destroy(),
+              });
+            });
+            gs.events.on("healHuman", (heal) => {
+              if (gs.isHumanDead) return;
+              gs.humanHealth = Math.min(100, gs.humanHealth + heal);
+              this.updateHumanHealthBar(gs.humanHealth);
+              gs.human.setTint(0x00ff00);
+              gs.time.delayedCall(400, () => {
+                if (gs.human) gs.human.clearTint();
+              });
+              const t = this.add
+                .text(gs.human.x, gs.human.y - 150, `+${heal}`, {
+                  fontSize: "32px",
+                  color: "#00ff00",
+                  fontFamily: "3_Muz-TV2000.ttf",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => t.destroy(),
+              });
+            });
+          }
+        }
+        updateDogHealthBar(h) {
+          h = Math.max(0, h);
+          this.dogHealthBar.width = (h / 100) * 140;
+          if (h > 60) this.dogHealthBar.setFillStyle(0x00ff00);
+          else if (h > 30) this.dogHealthBar.setFillStyle(0xffff00);
+          else this.dogHealthBar.setFillStyle(0xff0000);
+        }
+        updateHumanHealthBar(h) {
+          h = Math.max(0, h);
+          this.humanHealthBar.width = (h / 100) * 160;
+          if (h > 60) this.humanHealthBar.setFillStyle(0x00ff00);
+          else if (h > 30) this.humanHealthBar.setFillStyle(0xffff00);
+          else this.humanHealthBar.setFillStyle(0xff0000);
+        }
+        updateHomelessHealthBar(h) {
+          h = Math.max(0, h);
+          this.homelessHealthBar.width = (h / 100) * 140;
+          if (h > 60) this.homelessHealthBar.setFillStyle(0xff9900);
+          else if (h > 30) this.homelessHealthBar.setFillStyle(0xffaa00);
+          else this.homelessHealthBar.setFillStyle(0xff0000);
+        }
+        showGameOver() {
+          const t = this.add
+            .text(400, 300, "ИГРА ОКОНЧЕНА", {
+              fontSize: "80px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color: "#ff0000",
+              stroke: "#000000",
+              strokeThickness: 8,
+            })
+            .setOrigin(0.5)
+            .setShadow(4, 4, "#000000", 8, true, true);
+          this.tweens.add({
+            targets: t,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.5, to: 1.0 },
+            duration: 600,
+            ease: "Back.easeOut",
+          });
+          this.time.delayedCall(5000, () => {
+            this.scene.stop("Scene2");
+            this.scene.stop("UIScene2");
+            this.scene.start("MainMenuScene");
+          });
+        }
+        shutdown() {
+          const gs = this.scene.get("Scene2");
+          if (gs) {
+            [
+              "updateWave",
+              "damageDog",
+              "damageHuman",
+              "healDog",
+              "healHuman",
+              "showHomelessBar",
+              "damageHomeless",
+              "healHomeless",
+              "updateKickCount",
+            ].forEach((e) => gs.events.off(e));
+          }
+        }
+      }
+
+      // =================================================================
+      // SCENE 4 (Розетка)
+      // =================================================================
+      class Scene4 extends Phaser.Scene {
+        constructor() {
+          super("Scene4");
+        }
+        create() {
+          this.add.image(400, 300, "sky");
+          this.add.image(400, 300, "background2");
+          this.human = this.physics.add.sprite(200, 580, "player");
+          this.human.setOrigin(0.5, 1);
+          this.human.body.allowGravity = false;
+          this.human.body.setSize(
+            this.human.width * 0.5,
+            this.human.height * 0.9,
+          );
+          this.human.setCollideWorldBounds(true);
+          this.humanFacing = "right";
+          this.isJumping = false;
+          this.humanHealth = 100;
+          this.isHumanDead = false;
+          this.dog = this.physics.add.sprite(600, 580, "dog_sprite");
+          this.dog.setOrigin(0.5, 1);
+          this.dog.body.allowGravity = false;
+          this.dog.setCollideWorldBounds(true);
+          this.dog.body.setSize(150, 100);
+          this.dogDirection = "left";
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
+          this.time.addEvent({
+            delay: Phaser.Math.Between(1500, 3000),
+            loop: true,
+            callback: () => {
+              const a = Phaser.Math.RND.pick(["left", "right", "idle"]);
+              if (a === "left") {
+                this.dog.setVelocityX(-80);
+                this.dogDirection = "left";
+              } else if (a === "right") {
+                this.dog.setVelocityX(80);
+                this.dogDirection = "right";
+              } else this.dog.setVelocityX(0);
+            },
+          });
+          this.socket = this.physics.add.sprite(
+            Phaser.Math.Between(150, 650),
+            Phaser.Math.Between(100, 350),
+            "socket",
+          );
+          this.socket.setOrigin(0.5, 0.5);
+          this.socket.body.allowGravity = false;
+          this.socket.setCollideWorldBounds(true);
+          this.socket.body.setBounce(1, 1);
+          this.socket.setScale(0.5);
+          this.socket.body.setSize(400, 400);
+          this.socket.anims.play("socket_fly", true);
+          this.socketHealth = 100;
+          this.isSocketDead = false;
+          const sd = Phaser.Math.RND.pick([
+            [200, 0],
+            [-200, 0],
+            [0, 180],
+            [0, -180],
+          ]);
+          this.socket.setVelocity(sd[0], sd[1]);
+          this.socketDirTimer = this.time.addEvent({
+            delay: Phaser.Math.Between(1500, 3000),
+            loop: true,
+            callback: () => {
+              if (!this.socket || !this.socket.active) return;
+              const d = Phaser.Math.RND.pick([
+                [210, 0],
+                [-210, 0],
+                [0, 190],
+                [0, -190],
+              ]);
+              const sm = Phaser.Math.FloatBetween(0.85, 1.3);
+              this.socket.setVelocity(d[0] * sm, d[1] * sm);
+            },
+          });
+          this.conecters = this.physics.add.group();
+          this.human.hasConnecter = false;
+          this.carriedConnecter = this.add
+            .image(0, 0, "conecter")
+            .setScale(0.18)
+            .setVisible(false);
+          this.time.addEvent({
+            delay: 12000,
+            loop: true,
+            callback: this.spawnConnecter,
+            callbackScope: this,
+          });
+          this.time.delayedCall(5000, this.spawnConnecter, [], this);
+          this.socketMouth = this.add.zone(0, 0, 80, 80);
+          this.physics.world.enable(this.socketMouth);
+          this.socketMouth.body.setAllowGravity(false);
+          this.socketMouth.x = -999;
+          this.flashCooldown = false;
+          this.conecterMouth = this.add.zone(0, 0, 60, 60);
+          this.physics.world.enable(this.conecterMouth);
+          this.conecterMouth.body.setAllowGravity(false);
+          this.conecterMouth.x = -999;
+          this.boomCooldown = false;
+          this.thrownConnecter = null;
+          // ── Фоновая музыка Scene4 ─────────────────────────────
+          this.sound.stopAll();
+          this.bgm = this.sound.add("fon2", { loop: true, volume: 0.25 });
+          this.bgm.play();
+        }
+        update() {
+          this.updateHumanPlayer();
+          this.updateDogAI();
+          this.updateConnecter();
+          if (this.socket && this.socket.active) {
+            const vel = this.socket.body.velocity;
+            if (vel.x < -10) this.socket.flipX = true;
+            else if (vel.x > 10) this.socket.flipX = false;
+            if (Math.abs(vel.x) < 15 && Math.abs(vel.y) < 15) {
+              const d = Phaser.Math.RND.pick([
+                [180, 0],
+                [-180, 0],
+                [0, 180],
+                [0, -180],
+              ]);
+              this.socket.setVelocity(d[0], d[1]);
+            }
+            this.socketMouth.x = this.socket.x;
+            this.socketMouth.y = this.socket.y;
+            if (
+              !this.flashCooldown &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.socketMouth.getBounds(),
+                this.human.getBounds(),
+              )
+            ) {
+              this.flashCooldown = true;
+              const fx = this.add.sprite(
+                this.human.x,
+                this.human.y - 150,
+                "flash",
+              );
+              fx.setScale(1.2);
+              fx.setBlendMode(Phaser.BlendModes.ADD);
+              fx.setDepth(10);
+              fx.anims.play("flash_anim");
+              fx.once("animationcomplete", () => fx.destroy());
+              this.human.setTint(0x44aaff);
+              this.time.delayedCall(300, () => {
+                if (this.human) this.human.clearTint();
+              });
+              this.time.delayedCall(1500, () => {
+                this.flashCooldown = false;
+              });
+              const socketDmg = Math.round(
+                5 * (this.registry.get("damageMultiplier") || 1),
+              );
+              this.sound.play("tok", { volume: 0.9 });
+              this.events.emit("damageHuman4", socketDmg);
+            }
+          } else this.socketMouth.x = -999;
+        }
+        updateHumanPlayer() {
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          const jp =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (mob && js.isJumping);
+          if (jp && !this.isJumping) {
+            this.isJumping = true;
+            let vx = 0;
+            if (mob && js.jumpDirection) {
+              if (js.jumpDirection === "left") {
+                vx = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (js.jumpDirection === "right") {
+                vx = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            } else {
+              if (this.cursors.left.isDown) {
+                vx = -200;
+                this.humanFacing = "left";
+                this.human.flipX = true;
+              } else if (this.cursors.right.isDown) {
+                vx = 200;
+                this.humanFacing = "right";
+                this.human.flipX = false;
+              }
+            }
+            this.human.setVelocityX(vx);
+            this.tweens.add({
+              targets: this.human,
+              y: this.human.y - 280,
+              duration: 400,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.human.setVelocityX(0);
+              },
+            });
+          }
+          if (this.isJumping) return;
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          if (lp) {
+            this.human.setVelocityX(-200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = true;
+            this.humanFacing = "left";
+          } else if (rp) {
+            this.human.setVelocityX(200);
+            this.human.anims.play("human_walk", true);
+            this.human.flipX = false;
+            this.humanFacing = "right";
+          } else {
+            this.human.setVelocityX(0);
+            this.human.anims.play("human_idle", true);
+          }
+          const djp =
+            Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
+            (mob && js.down && !this._prevDown);
+          this._prevDown = mob && js.down;
+          if (djp && this.human.hasConnecter && !this.thrownConnecter)
+            this.throwConnecter();
+        }
+        throwConnecter() {
+          this.human.hasConnecter = false;
+          this.carriedConnecter.setVisible(false);
+          if (this.conecterTimer) this.conecterTimer.remove();
+          const proj = this.physics.add.image(
+            this.carriedConnecter.x,
+            this.carriedConnecter.y,
+            "conecter",
+          );
+          proj.setScale(0.18);
+          proj.body.setAllowGravity(false);
+          proj.setDepth(5);
+          const angle = this.carriedConnecter.angle;
+          proj.setAngle(angle);
+          const speed = 600;
+          let vx = 0,
+            vy = 0;
+          if (angle === 0) vy = -speed;
+          else if (angle === 90) vx = speed;
+          else if (angle === -90) vx = -speed;
+          else if (angle === 180)
+            vx = this.humanFacing === "right" ? speed : -speed;
+          else vx = this.humanFacing === "right" ? speed : -speed;
+          proj.setVelocity(vx, vy);
+          this.conecterMouth.x = proj.x;
+          this.conecterMouth.y = proj.y;
+          this.thrownConnecter = proj;
+        }
+        spawnConnecter() {
+          if (this.conecters.countActive(true) > 0 || this.human.hasConnecter)
+            return;
+          const x = Phaser.Math.Between(80, 720);
+          const item = this.conecters.create(x, 575, "conecter");
+          item.setOrigin(0.5, 1).setScale(0.18);
+          item.body.allowGravity = false;
+          this.time.delayedCall(10000, () => {
+            if (item && item.active) item.destroy();
+          });
+        }
+        updateConnecter() {
+          if (!this.carriedConnecter) return;
+          if (!this.human.hasConnecter) {
+            this.conecters.getChildren().forEach((item) => {
+              if (!item.active) return;
+              if (
+                Phaser.Geom.Intersects.RectangleToRectangle(
+                  this.human.getBounds(),
+                  item.getBounds(),
+                )
+              ) {
+                item.destroy();
+                this.human.hasConnecter = true;
+                this.carriedConnecter.setVisible(true);
+                this.conecterTimer = this.time.delayedCall(8000, () => {
+                  this.human.hasConnecter = false;
+                  this.carriedConnecter.setVisible(false);
+                  this.conecterMouth.x = -999;
+                  this.conecterMouth.y = -999;
+                });
+              }
+            });
+          }
+          if (this.human.hasConnecter) {
+            const vel = this.human.body.velocity;
+            const coff = this.humanFacing === "left" ? -60 : 60;
+            this.carriedConnecter.x = this.human.x + coff;
+            this.carriedConnecter.y = this.human.y - 130;
+            if (vel.x > 10) this.carriedConnecter.angle = 90;
+            else if (vel.x < -10) this.carriedConnecter.angle = -90;
+            else if (this.isJumping) this.carriedConnecter.angle = 180;
+            else this.carriedConnecter.angle = 0;
+            this.conecterMouth.x = this.carriedConnecter.x;
+            this.conecterMouth.y = this.carriedConnecter.y;
+          } else {
+            if (!this.thrownConnecter) {
+              this.conecterMouth.x = -999;
+              this.conecterMouth.y = -999;
+            }
+          }
+          if (this.thrownConnecter) {
+            const p = this.thrownConnecter;
+            this.conecterMouth.x = p.x;
+            this.conecterMouth.y = p.y;
+            if (
+              !this.boomCooldown &&
+              this.socket &&
+              this.socket.active &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                this.conecterMouth.getBounds(),
+                this.socketMouth.getBounds(),
+              )
+            ) {
+              this.boomCooldown = true;
+              const bx = (p.x + this.socket.x) / 2,
+                by = (p.y + this.socket.y) / 2;
+              const boom = this.add.image(bx, by, "boom");
+              boom
+                .setScale(0.6)
+                .setBlendMode(Phaser.BlendModes.ADD)
+                .setDepth(15);
+              this.tweens.add({
+                targets: boom,
+                scale: { from: 0.2, to: 1.0 },
+                alpha: { from: 1, to: 0 },
+                duration: 600,
+                ease: "Power2",
+                onComplete: () => boom.destroy(),
+              });
+              const kick = Phaser.Math.RND.pick([
+                [300, 0],
+                [-300, 0],
+                [0, 260],
+                [0, -260],
+              ]);
+              this.socket.setVelocity(kick[0], kick[1]);
+              this.time.delayedCall(800, () => {
+                this.boomCooldown = false;
+              });
+              this.sound.play("boom_snd", { volume: 0.9 });
+              this.events.emit("damageSocket4", 20);
+              p.destroy();
+              this.thrownConnecter = null;
+              this.conecterMouth.x = -999;
+              this.conecterMouth.y = -999;
+            }
+            if (
+              p.active &&
+              (p.x < -50 || p.x > 850 || p.y < -50 || p.y > 650)
+            ) {
+              p.destroy();
+              this.thrownConnecter = null;
+              this.conecterMouth.x = -999;
+              this.conecterMouth.y = -999;
+            }
+          }
+        }
+        updateDogAI() {
+          this.dog.flipX = false;
+          if (this.dog.body.velocity.x < 0)
+            this.dog.anims.play("dog_walk_left", true);
+          else if (this.dog.body.velocity.x > 0) {
+            if (!this._barkCooldown) {
+              this._barkCooldown = true;
+              this.sound.play("bark_aggressive", { volume: 0.6 });
+              this.time.delayedCall(1500, () => {
+                this._barkCooldown = false;
+              });
+            }
+            this.dog.anims.play("dog_walk_right", true);
+          } else {
+            this.dog.anims.play("dog_idle", true);
+            this.dog.flipX = this.dogDirection === "left";
+          }
+        }
+        shutdown() {
+          if (this.bgm) this.bgm.stop();
+        }
+      }
+
+      // =================================================================
+      // UI SCENE 4
+      // =================================================================
+      class UIScene4 extends Phaser.Scene {
+        constructor() {
+          super("UIScene4");
+        }
+        create() {
+          const ts = {
+            fontFamily: '"3_Muz-TV2000.ttf"',
+            fontSize: "14px",
+            fill: "#fff",
+          };
+          // Игрок HP (слева) — только полоска
+          this.add.text(10, 10, "Игрок:", ts);
+          this.humanHpBg = this.add
+            .rectangle(70, 20, 160, 14, 0x000000)
+            .setOrigin(0, 0.5);
+          this.humanHpBar = this.add
+            .rectangle(70, 20, 160, 14, 0x00ff00)
+            .setOrigin(0, 0.5);
+          // Socket HP (справа) — только полоска
+          this.add.text(570, 10, "Socket:", ts);
+          this.socketHpBg = this.add
+            .rectangle(630, 20, 160, 14, 0x000000)
+            .setOrigin(0, 0.5);
+          this.socketHpBar = this.add
+            .rectangle(630, 20, 160, 14, 0x00ff00)
+            .setOrigin(0, 0.5);
+          // Сложность — правый нижний угол
+          const diff = this.registry.get("difficulty");
+          this.add
+            .text(795, 585, diff === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: diff === "hardcore" ? "#ff4444" : "#44ff44",
+            })
+            .setOrigin(1, 1);
+          const g = this.scene.get("Scene4");
+          if (g && g.scene.isActive()) {
+            g.events.off("damageHuman4");
+            g.events.off("damageSocket4");
+            g.events.on("damageHuman4", (dmg) => {
+              if (g.isHumanDead) return;
+              g.humanHealth = Math.max(0, g.humanHealth - dmg);
+              this.updateHumanBar(g.humanHealth);
+              const t = this.add
+                .text(g.human.x, g.human.y - 160, "-" + dmg, {
+                  fontSize: "28px",
+                  fontFamily: '"3_Muz-TV2000.ttf"',
+                  color: "#ff4444",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 900,
+                onComplete: () => t.destroy(),
+              });
+              if (g.humanHealth <= 0 && !g.isHumanDead) {
+                g.isHumanDead = true;
+                g.scene.pause();
+                this.showResult("ИГРА ОКОНЧЕНА", "#ff0000");
+              }
+            });
+            g.events.on("damageSocket4", (dmg) => {
+              if (g.isSocketDead) return;
+              g.socketHealth = Math.max(0, g.socketHealth - dmg);
+              this.updateSocketBar(g.socketHealth);
+              const t = this.add
+                .text(g.socket.x, g.socket.y - 80, "-" + dmg, {
+                  fontSize: "28px",
+                  fontFamily: '"3_Muz-TV2000.ttf"',
+                  color: "#ff8800",
+                  stroke: "#000",
+                  strokeThickness: 4,
+                })
+                .setOrigin(0.5);
+              this.tweens.add({
+                targets: t,
+                y: t.y - 50,
+                alpha: 0,
+                duration: 900,
+                onComplete: () => t.destroy(),
+              });
+              if (g.socketHealth <= 0 && !g.isSocketDead) {
+                g.isSocketDead = true;
+                g.socket.setVelocity(0, 0);
+                g.socket.anims.stop();
+                g.socket.setTint(0x333333);
+                g.scene.pause();
+                this.showResult("ПОБЕДА!", "#00ff00", true);
+              }
+            });
+          }
+        }
+        updateHumanBar(hp) {
+          const h = Math.max(0, hp);
+          this.humanHpBar.width = (h / 100) * 160;
+          this.humanHpBar.setFillStyle(
+            h > 60 ? 0x00ff00 : h > 30 ? 0xffff00 : 0xff0000,
+          );
+        }
+        updateSocketBar(hp) {
+          const h = Math.max(0, hp);
+          this.socketHpBar.width = (h / 100) * 160;
+          this.socketHpBar.setFillStyle(
+            h > 60 ? 0x00ff00 : h > 30 ? 0xffff00 : 0xff0000,
+          );
+        }
+        showResult(msg, color, victory) {
+          const txt = this.add
+            .text(400, 300, msg, {
+              fontSize: "80px",
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              color,
+              stroke: "#000000",
+              strokeThickness: 8,
+            })
+            .setOrigin(0.5);
+          this.tweens.add({
+            targets: txt,
+            alpha: { from: 0, to: 1 },
+            scale: { from: 0.5, to: 1.0 },
+            duration: 600,
+            ease: "Back.easeOut",
+          });
+          this.time.delayedCall(3000, () => {
+            this.scene.stop("Scene4");
+            this.scene.stop("UIScene4");
+            if (victory) this.scene.start("Scene5");
+            else this.scene.start("MainMenuScene");
+          });
+        }
+        shutdown() {
+          const g = this.scene.get("Scene4");
+          if (g) {
+            g.events.off("damageHuman4");
+            g.events.off("damageSocket4");
+          }
+        }
+      }
+
+      // =================================================================
+      // SCENE 5 (Ринг)
+      // =================================================================
+      class Scene5 extends Phaser.Scene {
+        constructor() {
+          super("Scene5");
+        }
+        preload() {
+          this.load.image("ring", "assets/images/ring.jpg");
+        }
+        create() {
+          this.add.image(400, 300, "ring").setDisplaySize(800, 600);
+          this.fighter = this.physics.add.sprite(400, 520, "humanFight");
+          this.fighter.setOrigin(0.5, 1);
+          this.fighter.body.allowGravity = false;
+          this.fighter.setCollideWorldBounds(true);
+          this.fighter.setScale(1.5);
+          this.fighter.anims.play("fight_idle", true);
+          this.fighterFacing = "right";
+          this.isAttacking = false;
+          this.robot = this.physics.add.sprite(650, 520, "robot");
+          this.robot.setOrigin(0.5, 1);
+          this.robot.body.allowGravity = false;
+          this.robot.setCollideWorldBounds(true);
+          this.robot.setScale(1.5);
+          this.robot.body.setSize(86, 224);
+          this.robot.anims.play("robot_run", true);
+          this.robotAttacking = false;
+          this.robotCooldown = false;
+          this.robotFacing = "left";
+          this.fighterHP = 100;
+          this.robotHP = 100;
+          this.fighterDead = false;
+          this.robotDead = false;
+          this.rageActive = false;
+          this.fighterHitCooldown = false;
+          this.robotHitCooldown = false;
+          this.fighterFist = this.add.zone(0, 0, 50, 50);
+          this.physics.world.enable(this.fighterFist);
+          this.fighterFist.body.setAllowGravity(false);
+          this.fighterFist.x = -999;
+          this.robotFist = this.add.zone(0, 0, 50, 50);
+          this.physics.world.enable(this.robotFist);
+          this.robotFist.body.setAllowGravity(false);
+          this.robotFist.x = -999;
+          // Игрок HP (слева)
+          this.add
+            .text(10, 10, "Игрок", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: "#fff",
+            })
+            .setDepth(22);
+          this.add
+            .rectangle(10, 26, 164, 16, 0x000000)
+            .setOrigin(0, 0.5)
+            .setDepth(20);
+          this.fighterHpBar = this.add
+            .rectangle(10, 26, 160, 12, 0x00ff00)
+            .setOrigin(0, 0.5)
+            .setDepth(21);
+          // Робот HP (справа)
+          this.add
+            .text(630, 10, "Робот", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: "#fff",
+            })
+            .setDepth(22);
+          this.add
+            .rectangle(630, 26, 164, 16, 0x000000)
+            .setOrigin(0, 0.5)
+            .setDepth(20);
+          this.robotHpBar = this.add
+            .rectangle(630, 26, 160, 12, 0xff4400)
+            .setOrigin(0, 0.5)
+            .setDepth(21);
+          // Сложность — правый нижний угол
+          const diff5 = this.registry.get("difficulty");
+          this.add
+            .text(795, 585, diff5 === "hardcore" ? "ХАРДКОР" : "НОРМАЛЬНЫЙ", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "14px",
+              fill: diff5 === "hardcore" ? "#ff4444" : "#44ff44",
+            })
+            .setOrigin(1, 1)
+            .setDepth(22);
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.jumpKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+          );
+          this.prevDown = false;
+          this.isJumping = false;
+          this.time.addEvent({
+            delay: 1000,
+            loop: true,
+            callback: () => {
+              if (!this.fighterDead && !this.fighterHitCooldown)
+                this.healTarget("fighter", 5);
+              if (!this.robotDead && !this.robotHitCooldown)
+                this.healTarget("robot", 5);
+            },
+          });
+          // ── Фоновая музыка Scene5 ─────────────────────────────
+          this.sound.stopAll();
+          this.bgm = this.sound.add("fon3", { loop: true, volume: 0.25 });
+          this.bgm.play();
+        }
+        update() {
+          if (this.fighterDead && this.robotDead) return;
+          const js = this.registry.get("joystickState") || {};
+          const mob = this.registry.get("isMobile") || false;
+          const lp = this.cursors.left.isDown || (mob && js.left);
+          const rp = this.cursors.right.isDown || (mob && js.right);
+          const dn = this.cursors.down.isDown || (mob && js.down);
+          const dj = dn && !this.prevDown;
+          this.prevDown = dn;
+          this.updateRobot();
+          this.updateHitZones();
+          this.checkHits();
+          const jp =
+            Phaser.Input.Keyboard.JustDown(this.jumpKey) ||
+            (mob && js.isJumping);
+          if (jp && !this.isJumping && !this.isAttacking) {
+            this.isJumping = true;
+            let vx = 0;
+            if (mob && js.jumpDirection === "left") {
+              vx = -200;
+              this.fighter.flipX = true;
+              this.fighterFacing = "left";
+            } else if (mob && js.jumpDirection === "right") {
+              vx = 200;
+              this.fighter.flipX = false;
+              this.fighterFacing = "right";
+            } else if (this.cursors.left.isDown) {
+              vx = -200;
+              this.fighter.flipX = true;
+              this.fighterFacing = "left";
+            } else if (this.cursors.right.isDown) {
+              vx = 200;
+              this.fighter.flipX = false;
+              this.fighterFacing = "right";
+            }
+            this.fighter.setVelocityX(vx);
+            this.tweens.add({
+              targets: this.fighter,
+              y: this.fighter.y - 220,
+              duration: 380,
+              yoyo: true,
+              ease: "Power2",
+              onComplete: () => {
+                this.isJumping = false;
+                this.fighter.setVelocityX(0);
+              },
+            });
+          }
+          if (this.isJumping) return;
+          if (dj && !this.isAttacking) {
+            this.isAttacking = true;
+            this.fighter.setVelocityX(0);
+            const ad = this.robot && this.robot.x > this.fighter.x ? 1 : -1;
+            this.fighter.flipX = ad === -1;
+            this.fighterFacing = ad === 1 ? "right" : "left";
+            const atk = Phaser.Math.RND.pick(["fight_kick", "fight_punch"]);
+            this.fighter.anims.play(atk, true);
+            this.fighter.once("animationcomplete", () => {
+              this.isAttacking = false;
+              this.fighter.anims.play("fight_idle", true);
+            });
+            return;
+          }
+          if (this.isAttacking) return;
+          if (lp) {
+            this.fighter.setVelocityX(-200);
+            this.fighter.flipX = true;
+            this.fighterFacing = "left";
+            this.fighter.anims.play("fight_walk", true);
+          } else if (rp) {
+            this.fighter.setVelocityX(200);
+            this.fighter.flipX = false;
+            this.fighterFacing = "right";
+            this.fighter.anims.play("fight_walk", true);
+          } else {
+            this.fighter.setVelocityX(0);
+            this.fighter.anims.play("fight_idle", true);
+          }
+        }
+        updateHitZones() {
+          if (this.isAttacking) {
+            const dir = this.robot && this.robot.x > this.fighter.x ? -1 : 1;
+            this.fighter.flipX = dir === -1;
+            this.fighterFacing = dir === 1 ? "right" : "left";
+            const ca = this.fighter.anims.currentAnim;
+            const ik = ca && ca.key === "fight_kick";
+            this.fighterFist.x = this.fighter.x - dir * (ik ? 129 : 80);
+            this.fighterFist.y = this.fighter.y - (ik ? 205 : 150);
+          } else {
+            this.fighterFist.x = -999;
+            this.fighterFist.y = -999;
+          }
+          if (this.robotAttacking) {
+            const dir = this.robotFacing === "right" ? 1 : -1;
+            this.robotFist.x = this.robot.x + dir * 80;
+            this.robotFist.y = this.robot.y - 120;
+          } else {
+            this.robotFist.x = -999;
+            this.robotFist.y = -999;
+          }
+        }
+        checkHits() {
+          if (
+            !this.fighterHitCooldown &&
+            this.isAttacking &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.fighterFist.getBounds(),
+              this.robot.getBounds(),
+            )
+          ) {
+            this.fighterHitCooldown = true;
+            const base = Phaser.Math.Between(0, 5);
+            const final = this.calcFighterDamage(base);
+            this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+              volume: 0.8,
+            });
+            this.applyDamage("robot", final);
+            const kbR = this.robot.x > this.fighter.x ? 1 : -1;
+            this.robot.setVelocityX(kbR * 300);
+            this.time.delayedCall(200, () => {
+              if (this.robot) this.robot.setVelocityX(0);
+            });
+            this.time.delayedCall(400, () => {
+              this.fighterHitCooldown = false;
+            });
+          }
+          if (
+            !this.robotHitCooldown &&
+            this.robotAttacking &&
+            Phaser.Geom.Intersects.RectangleToRectangle(
+              this.robotFist.getBounds(),
+              this.fighter.getBounds(),
+            )
+          ) {
+            this.robotHitCooldown = true;
+            this.sound.play(Phaser.Math.RND.pick(["hit2", "hit3"]), {
+              volume: 0.8,
+            });
+            const robotDmg = Math.round(
+              Phaser.Math.Between(0, 20) *
+                (this.registry.get("difficulty") === "hardcore" ? 1.2 : 1),
+            );
+            this.applyDamage("fighter", robotDmg);
+            const kbF = this.fighter.x > this.robot.x ? 1 : -1;
+            this.fighter.setVelocityX(kbF * 300);
+            this.time.delayedCall(200, () => {
+              if (this.fighter) this.fighter.setVelocityX(0);
+            });
+            this.time.delayedCall(400, () => {
+              this.robotHitCooldown = false;
+            });
+          }
+        }
+        applyDamage(target, dmg) {
+          if (target === "robot") {
+            if (this.robotDead) return;
+            this.robotHP = Math.max(0, this.robotHP - dmg);
+            this.robotHpBar.width = (this.robotHP / 100) * 160;
+            this.robotHpBar.setFillStyle(
+              this.robotHP > 60
+                ? 0xff4400
+                : this.robotHP > 30
+                  ? 0xffaa00
+                  : 0xff0000,
+            );
+            this.robot.setTint(0xff0000);
+            this.time.delayedCall(150, () => {
+              if (this.robot) this.robot.clearTint();
+            });
+            const t = this.add
+              .text(this.robot.x, this.robot.y - 260, "-" + dmg, {
+                fontSize: "28px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ff4400",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5)
+              .setDepth(30);
+            this.tweens.add({
+              targets: t,
+              y: t.y - 40,
+              alpha: 0,
+              duration: 700,
+              onComplete: () => t.destroy(),
+            });
+            if (this.robotHP <= 0) {
+              this.robotDead = true;
+              this.endFight("win");
+            }
+          } else {
+            if (this.fighterDead) return;
+            this.fighterHP = Math.max(0, this.fighterHP - dmg);
+            this.fighterHpBar.width = (this.fighterHP / 100) * 160;
+            this.fighterHpBar.setFillStyle(
+              this.fighterHP > 60
+                ? 0x00ff00
+                : this.fighterHP > 30
+                  ? 0xffff00
+                  : 0xff0000,
+            );
+            this.fighter.setTint(0xff0000);
+            this.time.delayedCall(150, () => {
+              if (this.fighter) this.fighter.clearTint();
+            });
+            const t = this.add
+              .text(this.fighter.x, this.fighter.y - 260, "-" + dmg, {
+                fontSize: "28px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ff0000",
+                stroke: "#000",
+                strokeThickness: 4,
+              })
+              .setOrigin(0.5)
+              .setDepth(30);
+            this.tweens.add({
+              targets: t,
+              y: t.y - 40,
+              alpha: 0,
+              duration: 700,
+              onComplete: () => t.destroy(),
+            });
+            if (this.fighterHP <= 0) {
+              this.fighterDead = true;
+              this.endFight("lose");
+            }
+          }
+        }
+        healTarget(target, amount) {
+          if (target === "fighter") {
+            if (this.fighterHP >= 100) return;
+            this.fighterHP = Math.min(100, this.fighterHP + amount);
+            this.fighterHpBar.width = (this.fighterHP / 100) * 160;
+            this.fighterHpBar.setFillStyle(
+              this.fighterHP > 60
+                ? 0x00ff00
+                : this.fighterHP > 30
+                  ? 0xffff00
+                  : 0xff0000,
+            );
+          } else {
+            if (this.robotHP >= 100) return;
+            this.robotHP = Math.min(100, this.robotHP + amount);
+            this.robotHpBar.width = (this.robotHP / 100) * 160;
+            this.robotHpBar.setFillStyle(
+              this.robotHP > 60
+                ? 0xff4400
+                : this.robotHP > 30
+                  ? 0xffaa00
+                  : 0xff0000,
+            );
+          }
+        }
+        calcFighterDamage(base) {
+          if (this.fighterHP > 20) return base;
+          let dmg = base * 5;
+          const critChance = 0.2 + ((20 - this.fighterHP) / 20) * 0.15;
+          if (Math.random() < critChance) {
+            dmg = base * 10;
+            // ── Звук крита ────────────────────────────────────────────
+            this.sound.play("krit", { volume: 1.0 });
+            const c = this.add
+              .text(this.robot.x, this.robot.y - 300, "КРИТ!", {
+                fontSize: "40px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ffff00",
+                stroke: "#ff0000",
+                strokeThickness: 6,
+              })
+              .setOrigin(0.5)
+              .setDepth(35);
+            this.tweens.add({
+              targets: c,
+              y: c.y - 60,
+              alpha: 0,
+              scale: 1.5,
+              duration: 800,
+              ease: "Power2",
+              onComplete: () => c.destroy(),
+            });
+          }
+          if (!this.rageActive) {
+            this.rageActive = true;
+            // ── Звук ярости ───────────────────────────────────────────
+            this.sound.play("rage", { volume: 0.9 });
+            this.rageIcon = this.add
+              .text(400, 80, "🔥 ЯРОСТЬ! 🔥", {
+                fontSize: "36px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color: "#ff4400",
+                stroke: "#000",
+                strokeThickness: 5,
+              })
+              .setOrigin(0.5)
+              .setDepth(35);
+            this.tweens.add({
+              targets: this.rageIcon,
+              alpha: { from: 0, to: 1 },
+              scale: { from: 0.5, to: 1.2 },
+              duration: 400,
+              ease: "Back.easeOut",
+              yoyo: true,
+              repeat: 2,
+            });
+            this.fighterHpBar.setFillStyle(0xff0000);
+          }
+          return Math.round(dmg);
+        }
+        endFight(result) {
+          if (this.bgm) this.bgm.stop();
+          this.robot.setVelocity(0, 0);
+          this.fighter.setVelocity(0, 0);
+          this.fighterDead = true;
+          this.robotDead = true;
+          if (result === "win") {
+            this.robot.setVisible(false);
+            this.sound.play("boom_snd", { volume: 1.0 });
+            [
+              { x: this.robot.x, y: this.robot.y - 150, s: 1.2 },
+              { x: this.robot.x - 50, y: this.robot.y - 80, s: 0.8 },
+              { x: this.robot.x + 40, y: this.robot.y - 200, s: 0.9 },
+            ].forEach((b, i) => {
+              this.time.delayedCall(i * 180, () => {
+                const bm = this.add.image(b.x, b.y, "boom");
+                bm.setScale(0.1)
+                  .setBlendMode(Phaser.BlendModes.ADD)
+                  .setDepth(25);
+                this.tweens.add({
+                  targets: bm,
+                  scale: { from: 0.1, to: b.s },
+                  alpha: { from: 1, to: 0 },
+                  duration: 600,
+                  ease: "Power2",
+                  onComplete: () => bm.destroy(),
+                });
+              });
+            });
+          } else {
+            this.sound.play("knockout", { volume: 1.0 });
+            const dy = this.fighter.y,
+              dx = this.fighter.x;
+            this.tweens.killTweensOf(this.fighter);
+            this.fighter.anims.stop();
+            this.fighter.body.setVelocity(0, 0);
+            this.fighter.body.setEnable(false);
+            this.isJumping = false;
+            this.fighter.setAngle(90);
+            this.fighter.x = dx;
+            this.fighter.y = dy;
+          }
+          const msg = result === "win" ? "ПОБЕДА!" : "НОКАУТ!";
+          const color = result === "win" ? "#00ff00" : "#ff0000";
+          this.time.delayedCall(result === "win" ? 600 : 200, () => {
+            const txt = this.add
+              .text(400, 280, msg, {
+                fontSize: "80px",
+                fontFamily: '"3_Muz-TV2000.ttf"',
+                color,
+                stroke: "#000000",
+                strokeThickness: 8,
+              })
+              .setOrigin(0.5)
+              .setDepth(40);
+            this.tweens.add({
+              targets: txt,
+              alpha: { from: 0, to: 1 },
+              scale: { from: 0.4, to: 1 },
+              duration: 500,
+              ease: "Back.easeOut",
+            });
+          });
+          this.time.delayedCall(3500, () => {
+            this.scene.start("MainMenuScene");
+          });
+        }
+        shutdown() {
+          if (this.bgm) this.bgm.stop();
+        }
+        updateRobot() {
+          if (!this.robot || !this.robot.active) return;
+          const dx = this.fighter.x - this.robot.x;
+          const dist = Math.abs(dx);
+          const stopGap = 120;
+          const touchRange = stopGap + 20;
+          if (dx < 0) {
+            this.robot.flipX = true;
+            this.robotFacing = "left";
+          } else {
+            this.robot.flipX = false;
+            this.robotFacing = "right";
+          }
+          if (this.robotAttacking) return;
+          if (dist <= touchRange) {
+            if (!this.robotCooldown) {
+              this.robotAttacking = true;
+              this.robotCooldown = true;
+              this.robot.setVelocityX(0);
+              const atk = Phaser.Math.RND.pick(["robot_punch", "robot_kick"]);
+              this.robot.anims.play(atk, true);
+              this.robot.once("animationcomplete", () => {
+                this.robotAttacking = false;
+                this.robot.anims.play("robot_run", true);
+                this.time.delayedCall(800, () => {
+                  this.robotCooldown = false;
+                });
+              });
+            } else {
+              this.robot.setVelocityX(0);
+              this.robot.anims.play("robot_run", true);
+            }
+          } else if (dist > stopGap) {
+            const speed = 160;
+            this.robot.setVelocityX(dx > 0 ? speed : -speed);
+            this.robot.anims.play("robot_run", true);
+          } else {
+            this.robot.setVelocityX(0);
+            this.robot.anims.play("robot_run", true);
+          }
+        }
+      }
+
+      // =================================================================
+      // VIRTUAL CONTROLS
+      // =================================================================
+      class VirtualControlsScene extends Phaser.Scene {
+        constructor() {
+          super({ key: "VirtualControlsScene", active: false });
+        }
+        create() {
+          const isMobile =
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+              navigator.userAgent,
+            ) || window.innerWidth < 768;
+          if (!isMobile) {
+            this.registry.set("isMobile", false);
+            return;
+          }
+          this.registry.set("isMobile", true);
+          this.joystickState = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            isJumping: false,
+            jumpDirection: null,
+          };
+          const jx = 680,
+            jy = 490,
+            br = 90,
+            sr = 44,
+            md = 60;
+          this.joystickBase = this.add.circle(jx, jy, br, 0x333333, 0.3);
+          this.joystickBase.setStrokeStyle(4, 0x666666, 0.6);
+          this.joystickBase.setScrollFactor(0);
+          this.joystickStick = this.add.circle(jx, jy, sr, 0x00ff00, 0.65);
+          this.joystickStick.setStrokeStyle(4, 0x00cc00, 0.9);
+          this.joystickStick.setScrollFactor(0);
+          const as = { fontSize: "16px", color: "#666666" };
+          [
+            { t: "⬆", x: jx, y: jy - br - 18 },
+            { t: "➡", x: jx + br + 18, y: jy },
+            { t: "⬇", x: jx, y: jy + br + 18 },
+            { t: "⬅", x: jx - br - 18, y: jy },
+          ].forEach((a) =>
+            this.add
+              .text(a.x, a.y, a.t, as)
+              .setOrigin(0.5)
+              .setScrollFactor(0)
+              .setAlpha(0.5),
+          );
+          this.joystickActive = false;
+          this.lastJumpTime = 0;
+          const zone = this.add.zone(jx, jy, br * 3, br * 3);
+          zone.setInteractive();
+          zone.setScrollFactor(0);
+          zone.on("pointerdown", (p) => {
+            this.joystickActive = true;
+            this.updateJoystick(p.x, p.y, jx, jy, md);
+          });
+          zone.on("pointermove", (p) => {
+            if (!this.joystickActive) return;
+            this.updateJoystick(p.x, p.y, jx, jy, md);
+          });
+          this.input.on("pointermove", (p) => {
+            if (!this.joystickActive) return;
+            this.updateJoystick(p.x, p.y, jx, jy, md);
+          });
+          const reset = () => {
+            if (!this.joystickActive) return;
+            this.joystickActive = false;
+            this.tweens.add({
+              targets: this.joystickStick,
+              x: jx,
+              y: jy,
+              duration: 100,
+              ease: "Power2",
+            });
+            this.joystickState.left = false;
+            this.joystickState.right = false;
+            this.joystickState.up = false;
+            this.joystickState.down = false;
+          };
+          zone.on("pointerup", reset);
+          zone.on("pointerout", reset);
+          this.input.on("pointerup", reset);
+          this.registry.set("joystickState", this.joystickState);
+          const hint = this.add
+            .text(jx, jy - 115, "Джойстик\nдля управления", {
+              fontFamily: '"3_Muz-TV2000.ttf"',
+              fontSize: "18px",
+              color: "#888888",
+              align: "center",
+            })
+            .setOrigin(0.5)
+            .setAlpha(0.6)
+            .setScrollFactor(0);
+          this.tweens.add({
+            targets: hint,
+            alpha: 0,
+            duration: 1000,
+            delay: 3000,
+            onComplete: () => hint.destroy(),
+          });
+        }
+        updateJoystick(px, py, cx, cy, md) {
+          const dx = px - cx,
+            dy = py - cy,
+            dist = Math.sqrt(dx * dx + dy * dy),
+            angle = Math.atan2(dy, dx);
+          let sx, sy;
+          if (dist > md) {
+            sx = cx + Math.cos(angle) * md;
+            sy = cy + Math.sin(angle) * md;
+          } else {
+            sx = px;
+            sy = py;
+          }
+          this.joystickStick.x = sx;
+          this.joystickStick.y = sy;
+          const dz = 10;
+          if (dist > dz) {
+            const deg = angle * (180 / Math.PI);
+            this.joystickState.left = false;
+            this.joystickState.right = false;
+            this.joystickState.up = false;
+            this.joystickState.down = false;
+            if (deg >= -22.5 && deg <= 22.5) this.joystickState.right = true;
+            else if (deg > 22.5 && deg <= 67.5) {
+              this.joystickState.right = true;
+              this.joystickState.down = true;
+            } else if (deg > 67.5 && deg <= 112.5)
+              this.joystickState.down = true;
+            else if (deg > 112.5 && deg <= 157.5) {
+              this.joystickState.left = true;
+              this.joystickState.down = true;
+            } else if (deg > 157.5 || deg <= -157.5)
+              this.joystickState.left = true;
+            else if (deg > -157.5 && deg <= -112.5) {
+              this.joystickState.left = true;
+              this.joystickState.up = true;
+            } else if (deg > -112.5 && deg <= -67.5)
+              this.joystickState.up = true;
+            else if (deg > -67.5 && deg <= -22.5) {
+              this.joystickState.right = true;
+              this.joystickState.up = true;
+            }
+            if (this.joystickState.up && !this.joystickState.isJumping) {
+              const now = this.time.now;
+              if (now - this.lastJumpTime > 500) {
+                this.joystickState.isJumping = true;
+                this.lastJumpTime = now;
+                if (this.joystickState.left)
+                  this.joystickState.jumpDirection = "left";
+                else if (this.joystickState.right)
+                  this.joystickState.jumpDirection = "right";
+                else this.joystickState.jumpDirection = null;
+                this.time.delayedCall(100, () => {
+                  this.joystickState.isJumping = false;
+                  this.joystickState.jumpDirection = null;
+                });
+              }
+            }
+            if (this.joystickState.up)
+              this.joystickStick.setFillStyle(0x00ffff, 0.8);
+            else if (this.joystickState.down)
+              this.joystickStick.setFillStyle(0xffff00, 0.8);
+            else this.joystickStick.setFillStyle(0x00ff00, 0.6);
+          } else {
+            this.joystickState.left = false;
+            this.joystickState.right = false;
+            this.joystickState.up = false;
+            this.joystickState.down = false;
+            this.joystickStick.setFillStyle(0x00ff00, 0.6);
+          }
+        }
+      }
+
+      // =================================================================
+      // CONFIG
+      // =================================================================
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: "#000000",
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: 800,
+          height: 600,
+        },
+        physics: { default: "arcade", arcade: { debug: false } },
+        scene: [
+          PreloadScene,
+          MainMenuScene,
+          DifficultySelectScene,
+          SceneSelectScene,
+          GameScene,
+          UIScene,
+          Scene2,
+          UIScene2,
+          Scene4,
+          UIScene4,
+          Scene5,
+          VirtualControlsScene,
+        ],
+      };
+      window.onload = async () => {
+        // Принудительно загружаем шрифт через FontFace API до старта игры
+        try {
+          const font = new FontFace(
+            "3_Muz-TV2000.ttf",
+            "url(assets/fonts/3_Muz-TV2000.ttf) format('truetype')",
+          );
+          const loaded = await font.load();
+          document.fonts.add(loaded);
+          await document.fonts.ready;
+        } catch (e) {
+          console.warn("Font load failed, starting anyway:", e);
+        }
+        new Phaser.Game(config);
+      };
+    </script>
   </body>
 </html>
