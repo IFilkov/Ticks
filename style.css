@@ -1,0 +1,6 @@
+@font-face {
+  font-family: "3_Muz-TV2000.ttf"; /* Это имя, которое мы будем использовать в игре */
+  src: url("assets/fonts/3_Muz-TV2000.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
